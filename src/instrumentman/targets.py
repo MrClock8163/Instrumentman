@@ -5,13 +5,10 @@ import json
 import re
 from typing import TypedDict, Iterator, Any
 
-try:
-    from jsonschema import validate
-except Exception:
-    validate = lambda *args: None  # noqa: E731
+from jsonschema import validate
+from geocompy.data import Coordinate
+from geocompy.geo.gcdata import Prism
 
-from ..data import Coordinate
-from ..geo.gcdata import Prism
 from .utils import make_directory
 
 

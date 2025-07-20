@@ -1,9 +1,8 @@
 from logging import DEBUG, ERROR, INFO, WARNING, Logger
 import os
-
-from click_extra import Color, echo, style, option, argument, Choice, IntRange
 from typing import Any, Callable, cast, TypeVar
 
+from click_extra import Color, echo, style, option, argument, Choice, IntRange
 from geocompy.communication import get_logger
 
 

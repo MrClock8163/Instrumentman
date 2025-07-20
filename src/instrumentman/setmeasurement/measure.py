@@ -5,38 +5,23 @@ from typing import Iterator, Literal
 from itertools import chain
 import pathlib
 
-try:
-    from click_extra import (
-        extra_command,
-        argument,
-        option,
-        option_group,
-        Choice,
-        IntRange,
-        file_path,
-        dir_path
-    )
-    from cloup.constraints import mutually_exclusive
-except ModuleNotFoundError:
-    print(
-        """
-Missing dependencies. The Set Measurement needs the following dependencies:
-- cloup
-- click-extra
+from click_extra import (
+    extra_command,
+    argument,
+    option,
+    option_group,
+    Choice,
+    IntRange,
+    file_path,
+    dir_path
+)
+from cloup.constraints import mutually_exclusive
+from geocompy.data import Angle, Coordinate
+from geocompy.communication import open_serial
+from geocompy.geo import GeoCom
+from geocompy.geo.gctypes import GeoComCode
+from geocompy.geo.gcdata import Face
 
-Install the missing dependencies manually, or install GeoComPy with the
-'apps' extra:
-
-pip install geocompy[apps]
-"""
-    )
-    exit(3)
-
-from ...data import Angle, Coordinate
-from ...communication import open_serial
-from ...geo import GeoCom
-from ...geo.gctypes import GeoComCode
-from ...geo.gcdata import Face
 from ..utils import (
     make_logger,
     com_baud_option,

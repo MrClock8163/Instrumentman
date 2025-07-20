@@ -1,5 +1,10 @@
 from click_extra import extra_group
 
+try:
+    from ._version import __version__ as __version__
+except Exception:
+    __version__ = "0.0.0"  # Placeholder value for source installs
+
 from . import morse
 from . import terminal
 from . import setup
@@ -8,11 +13,12 @@ from . import geocomtest
 
 
 @extra_group(
-    "geocom",
+    "iman",
     params=None
 )  # type: ignore[misc]
 def cli() -> None:
-    """Command line applications of the GeoComPy Python package."""
+    """Automated measurement programs and related utilities for surveying
+    instruments."""
     pass
 
 

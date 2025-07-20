@@ -7,48 +7,30 @@ from typing import Any, cast, Callable
 import inspect
 from textwrap import dedent
 
-try:
-    from textual import on
-    from textual.suggester import Suggester
-    from textual.binding import Binding
-    from textual.app import App, ComposeResult
-    from textual.widgets import (
-        Footer,
-        Header,
-        TabbedContent,
-        TabPane,
-        Button,
-        Input,
-        Label,
-        Select,
-        Log,
-        TextArea
-    )
-    from textual.containers import Grid, HorizontalGroup
-    from textual.validation import Validator, ValidationResult
-    from rapidfuzz import fuzz, process
-    from click_extra import extra_command
-except ModuleNotFoundError:
-    print(
-        """
-Missing dependencies. The Interactive Terminal app needs the following
-dependencies:
-- click-extra
-- rapidfuzz
-- textual
-
-Install the missing dependencies manually, or install GeoComPy with the
-'apps' extra:
-
-pip install geocompy[apps]
-"""
-    )
-    exit(3)
-
-from ...data import Angle, Coordinate
-from ...geo import GeoCom
-from ...gsi.dna import GsiOnlineDNA
-from ...communication import Connection, open_serial
+from textual import on
+from textual.suggester import Suggester
+from textual.binding import Binding
+from textual.app import App, ComposeResult
+from textual.widgets import (
+    Footer,
+    Header,
+    TabbedContent,
+    TabPane,
+    Button,
+    Input,
+    Label,
+    Select,
+    Log,
+    TextArea
+)
+from textual.containers import Grid, HorizontalGroup
+from textual.validation import Validator, ValidationResult
+from rapidfuzz import fuzz, process
+from click_extra import extra_command
+from geocompy.data import Angle, Coordinate
+from geocompy.geo import GeoCom
+from geocompy.gsi.dna import GsiOnlineDNA
+from geocompy.communication import Connection, open_serial
 
 
 class DummyGeoComConnection(Connection):

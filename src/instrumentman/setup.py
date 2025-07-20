@@ -1,35 +1,21 @@
 import os
 
-try:
-    from click_extra import (
-        extra_command,
-        extra_group,
-        argument,
-        option,
-        option_group,
-        IntRange,
-        Choice,
-        prompt,
-        confirm,
-        echo
-    )
-except ModuleNotFoundError:
-    print(
-        """
-Missing dependencies. The Setup app needs the following dependencies:
-- click-extra
+from click_extra import (
+    extra_command,
+    extra_group,
+    argument,
+    option,
+    option_group,
+    IntRange,
+    Choice,
+    prompt,
+    confirm,
+    echo
+)
+from geocompy.communication import open_serial
+from geocompy.geo import GeoCom
+from geocompy.geo.gcdata import Prism
 
-Install the missing dependencies manually, or install GeoComPy with the
-'apps' extra:
-
-pip install geocompy[apps]
-"""
-    )
-    exit(3)
-
-from ..communication import open_serial
-from ..geo import GeoCom
-from ..geo.gcdata import Prism
 from .utils import (
     echo_red,
     echo_green,

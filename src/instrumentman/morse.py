@@ -1,32 +1,19 @@
 from time import sleep
 from typing import Callable, Any
 
-try:
-    from click_extra import (
-        extra_command,
-        option,
-        option_group,
-        argument,
-        Choice,
-        IntRange,
-        progressbar
-    )
-except ModuleNotFoundError:
-    print(
-        """
-Missing dependencies. The Morse app needs the following dependencies:
-- click-extra
+from click_extra import (
+    extra_command,
+    option,
+    option_group,
+    argument,
+    Choice,
+    IntRange,
+    progressbar
+)
 
-Install the missing dependencies manually, or install GeoComPy with the
-'apps' extra:
+from geocompy.geo import GeoCom
+from geocompy.communication import open_serial
 
-pip install geocompy[apps]
-"""
-    )
-    exit(3)
-
-from ..geo import GeoCom
-from ..communication import open_serial
 from .utils import (
     echo_red,
     echo_green,

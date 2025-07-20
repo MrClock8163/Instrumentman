@@ -1,29 +1,14 @@
-try:
-    from click_extra import (
-        extra_command,
-        echo,
-        prompt
-    )
-except ModuleNotFoundError:
-    print(
-        """
-Missing dependencies. The GeoCom test app needs the following dependencies:
-- click-extra
-
-Install the missing dependencies manually, or install GeoComPy with the
-'apps' extra:
-
-pip install geocompy[apps]
-"""
-    )
-    exit(3)
-
+from click_extra import (
+    extra_command,
+    echo,
+    prompt
+)
 from serial import SerialException
+from geocompy.data import Angle
+from geocompy.geo import GeoCom
+from geocompy.geo.gctypes import GeoComCode
+from geocompy.communication import open_serial
 
-from ..data import Angle
-from ..geo import GeoCom
-from ..geo.gctypes import GeoComCode
-from ..communication import open_serial
 from .utils import (
     echo_red,
     echo_green,

@@ -4,34 +4,17 @@ import math
 from typing import Sequence
 import pathlib
 
-try:
-    from jmespath import search
-    from jsonschema import validate, ValidationError
-    from click_extra import (
-        extra_command,
-        argument,
-        option,
-        IntRange,
-        file_path
-    )
-except ModuleNotFoundError:
-    print(
-        """
-Missing dependencies. The Set Measurement processing needs the following
-dependencies:
-- jmespath
-- jsonschema
-- click-extra
+from jmespath import search
+from jsonschema import validate, ValidationError
+from click_extra import (
+    extra_command,
+    argument,
+    option,
+    IntRange,
+    file_path
+)
+from geocompy.data import Angle, Coordinate
 
-Install the missing dependencies manually, or install GeoComPy with the
-'apps' extra:
-
-pip install geocompy[apps]
-"""
-    )
-    exit(3)
-
-from ...data import Angle, Coordinate
 from .sessions import SessionDict
 from ..utils import (
     echo_red,
