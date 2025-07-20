@@ -1,5 +1,4 @@
 from click_extra import (
-    extra_command,
     echo,
     prompt
 )
@@ -9,13 +8,10 @@ from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
 from geocompy.communication import open_serial
 
-from .utils import (
+from ..utils import (
     echo_red,
     echo_green,
-    echo_yellow,
-    com_baud_option,
-    com_timeout_option,
-    com_port_argument
+    echo_yellow
 )
 
 
@@ -59,23 +55,11 @@ def tests(tps: GeoCom) -> None:
         echo_yellow(f"Mororization unavailable ({resp_changeface.response})")
 
 
-@extra_command(
-    "test",
-    params=None,
-    context_settings={"auto_envvar_prefix": None}
-)  # type: ignore[misc]
-@com_port_argument()
-@com_baud_option()
-@com_timeout_option()
-def cli(
+def main(
     port: str,
     baud: int = 9600,
     timeout: int = 15
 ) -> None:
-    """Rudimentary tests for determining what GeoCom functions are
-    available on an instrument.
-    """
-
     try:
         with open_serial(
             port,

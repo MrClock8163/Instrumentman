@@ -5,29 +5,13 @@ from typing import Iterator, Literal
 from itertools import chain
 import pathlib
 
-from click_extra import (
-    extra_command,
-    argument,
-    option,
-    option_group,
-    Choice,
-    IntRange,
-    file_path,
-    dir_path
-)
-from cloup.constraints import mutually_exclusive
 from geocompy.data import Angle, Coordinate
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
 from geocompy.geo.gcdata import Face
 
-from ..utils import (
-    make_logger,
-    com_baud_option,
-    com_timeout_option,
-    com_port_argument
-)
+from ..utils import make_logger
 from ..targets import (
     TargetPoint,
     TargetList,
@@ -157,102 +141,7 @@ def measure_set(
     return session
 
 
-@extra_command(
-    "measure",
-    params=None,
-    context_settings={"auto_envvar_prefix": None}
-)  # type: ignore[misc]
-@com_port_argument()
-@argument(
-    "targets",
-    type=file_path(exists=True),
-    help="JSON file containing target definitions"
-)
-@argument(
-    "directory",
-    type=dir_path(),
-    help="directory to save measurement output to"
-)
-@option_group(
-    "Connection options",
-    "Options related to the serial connection",
-    com_baud_option(),
-    com_timeout_option(),
-    option(
-        "-r",
-        "--retry",
-        help="number of connection retry attempts",
-        type=IntRange(min=0, max=10),
-        default=1
-    ),
-    option(
-        "--sync-after-timeout",
-        help="attempt to synchronize message que after a connection timeout",
-        is_flag=True
-    )
-)
-@option(
-    "-f",
-    "--format",
-    type=str,
-    default="setmeasurement_{time}.json",
-    help=(
-        "session output file name format with placeholders "
-        "(`{time}`: timestamp, `{order}`: order, `{cycle}`: cycles)"
-    )
-)
-@option(
-    "-c",
-    "--cycles",
-    type=IntRange(min=1),
-    default=1,
-    help="number of measurement cycles"
-)
-@option(
-    "-o",
-    "--order",
-    help="measurement order (capital letter: face 1, lower case: face 2)",
-    type=Choice(["AaBb", "AabB", "ABab", "ABba", "ABCD"]),
-    default="ABba"
-)
-@option(
-    "-s",
-    "--sync-time",
-    help="synchronize instrument time and date with the computer",
-    is_flag=True
-)
-@option(
-    "-p",
-    "--points",
-    type=str,
-    help=(
-        "targets to use from loaded target definition "
-        "(comma separated list, empty to use all)"
-    ),
-    default=""
-)
-@option_group(
-    "Logging options",
-    "Options related to the logging functionalities.",
-    option(
-        "--debug",
-        is_flag=True
-    ),
-    option(
-        "--info",
-        is_flag=True
-    ),
-    option(
-        "--warning",
-        is_flag=True
-    ),
-    option(
-        "--error",
-        is_flag=True
-    ),
-    constraint=mutually_exclusive
-)
-def cli(
+def main(
     port: str,
     targets: pathlib.Path,
     directory: pathlib.Path,
@@ -270,8 +159,6 @@ def cli(
     warning: bool = False,
     error: bool = False,
 ) -> None:
-    """Run sets of measurements to predefined targets."""
-
     log = make_logger("TPS", debug, info, warning, error)
     applog = make_logger("APP", debug, info, warning, error)
     applog.info("Starting measurement session")

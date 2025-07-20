@@ -1,25 +1,14 @@
 from time import sleep
 from typing import Callable, Any
 
-from click_extra import (
-    extra_command,
-    option,
-    option_group,
-    argument,
-    Choice,
-    IntRange,
-    progressbar
-)
+from click_extra import progressbar
 
 from geocompy.geo import GeoCom
 from geocompy.communication import open_serial
 
-from .utils import (
+from ..utils import (
     echo_red,
-    echo_green,
-    com_baud_option,
-    com_timeout_option,
-    com_port_argument
+    echo_green
 )
 
 
@@ -128,50 +117,7 @@ def relay_message(
                     )
 
 
-@extra_command(
-    "morse",
-    params=None,
-    context_settings={"auto_envvar_prefix": None}
-)  # type: ignore[misc]
-@com_port_argument()
-@argument(
-    "message",
-    help="message to relay as a string of ASCII characters",
-    type=str
-)
-@option(
-    "-i",
-    "--intensity",
-    help="beeping intensity",
-    type=IntRange(0, 100),
-    default=100
-)
-@option(
-    "-u",
-    "--unittime",
-    help="beep unit time in milliseconds [ms]",
-    type=IntRange(min=50),
-    default=50
-)
-@option(
-    "-c",
-    "--compatibility",
-    help="instrument compatibility",
-    type=Choice(["none", "TPS1000"], case_sensitive=False),
-    default="none"
-)
-@option(
-    "--ignore-non-ascii",
-    help="suppress encoding errors and skip non-ASCII characters",
-    is_flag=True
-)
-@option_group(
-    "Connection options",
-    "Options related to the serial connection",
-    com_baud_option(),
-    com_timeout_option()
-)
-def cli(
+def main(
     port: str,
     message: str,
     intensity: int = 100,
@@ -181,9 +127,6 @@ def cli(
     unittime: int = 50,
     compatibility: str = "none",
 ) -> None:
-    """Play a Morse encoded ASCII message through the beep signals
-        of a GeoCom capable total station.
-        """
     if not ignore_non_ascii:
         try:
             message.casefold().encode("ascii")
@@ -209,7 +152,3 @@ def cli(
             unittime * 1e-3
         )
         echo_green("Message complete.")
-
-
-if __name__ == "__main__":
-    cli()

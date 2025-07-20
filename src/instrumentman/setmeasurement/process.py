@@ -6,13 +6,6 @@ import pathlib
 
 from jmespath import search
 from jsonschema import validate, ValidationError
-from click_extra import (
-    extra_command,
-    argument,
-    option,
-    IntRange,
-    file_path
-)
 from geocompy.data import Angle, Coordinate
 
 from .sessions import SessionDict
@@ -108,44 +101,11 @@ def calc_coords(
     return Coordinate(x, y, z), Coordinate(x_dev, y_dev, z_dev)
 
 
-@extra_command(
-    "merge",
-    params=None,
-    context_settings={"auto_envvar_prefix": None}
-)  # type: ignore[misc]
-@argument(
-    "output",
-    help="output file",
-    type=file_path()
-)
-@argument(
-    "inputs",
-    help="set measurement session JSON files (glob notation)",
-    type=file_path(exists=True),
-    nargs=-1,
-    required=True
-)
-@option(
-    "--allow-oneface",
-    help="accept points with face 1 measurements only as well",
-    is_flag=True
-)
-def cli_merge(
+def main_merge(
     output: pathlib.Path,
     inputs: tuple[pathlib.Path],
     allow_oneface: bool = False
 ) -> None:
-    """Merge the output of multiple set measurement sessions.
-
-    The results of every set measurement session are saved to a separate file.
-    When multiple sessions are measured using the same targets from the same
-    station, the data files need to be merged to process them together.
-
-    .. note::
-        The merge will be refused if the station information, or the target
-        points do not match between the targeted sessions.
-    """
-
     sessions: list[SessionDict] = []
     for path in inputs:
         with path.open("rt", encoding="utf8") as file:
@@ -193,40 +153,11 @@ def cli_merge(
     )
 
 
-@extra_command(
-    "validate",
-    params=None,
-    context_settings={"auto_envvar_prefix": None}
-)  # type: ignore[misc]
-@argument(
-    "inputs",
-    help="set measurement session JSON files (glob notation)",
-    nargs=-1,
-    required=True,
-    type=file_path(exists=True)
-)
-@option(
-    "-s",
-    "--schema-only",
-    help="only validate the JSON schema",
-    is_flag=True
-)
-@option(
-    "--allow-oneface",
-    help="accept points with face 1 measurements only as well",
-    is_flag=True
-)
-def cli_validate(
+def main_validate(
     inputs: tuple[pathlib.Path],
     schema_only: bool = False,
     allow_oneface: bool = False
 ) -> None:
-    """Validate session output files.
-
-    After the measurement sessions are finished, it might be useful to
-    validate, that each session succeeded, no points were skipped.
-    """
-
     sessions: list[SessionDict] = []
     for path in inputs:
         with path.open("rt", encoding="utf8") as file:
@@ -262,46 +193,7 @@ def cli_validate(
         exit(4)
 
 
-@extra_command(
-    "calc",
-    params=None,
-    context_settings={"auto_envvar_prefix": None}
-)  # type: ignore[misc]
-@argument(
-    "input",
-    help="input session file to process",
-    type=file_path(exists=True)
-)
-@argument(
-    "output",
-    help="output CSV file",
-    type=file_path(readable=False)
-)
-@option(
-    "--header",
-    help="write column headers",
-    is_flag=True
-)
-@option(
-    "-d",
-    "--delimiter",
-    help="column delimiter character",
-    type=str,
-    default=","
-)
-@option(
-    "-p",
-    "--precision",
-    help="decimal precision",
-    type=IntRange(min=0),
-    default=4
-)
-@option(
-    "--allow-oneface",
-    help="accept points with face 1 measurements only as well",
-    is_flag=True
-)
-def cli_calc(
+def main_calc(
     input: pathlib.Path,
     output: pathlib.Path,
     header: bool = False,
@@ -309,14 +201,6 @@ def cli_calc(
     precision: int = 4,
     allow_oneface: bool = False
 ) -> None:
-    """Calculate results from set measurements.
-
-    The most common calculation needed after set measurements is the
-    determination of the target coordinates, from results of multiple
-    measurement sessions and/or cycles. The resulting coordinates (as well as
-    their deviations) are saved to a simple CSV file.
-    """
-
     with input.open("rt", encoding="utf8") as file:
         data: SessionDict = json.load(file)
 

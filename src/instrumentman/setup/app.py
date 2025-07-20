@@ -1,12 +1,6 @@
 import os
 
 from click_extra import (
-    extra_command,
-    extra_group,
-    argument,
-    option,
-    option_group,
-    IntRange,
     Choice,
     prompt,
     confirm,
@@ -16,15 +10,12 @@ from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gcdata import Prism
 
-from .utils import (
+from ..utils import (
     echo_red,
     echo_green,
-    echo_yellow,
-    com_baud_option,
-    com_timeout_option,
-    com_port_argument
+    echo_yellow
 )
-from .targets import (
+from ..targets import (
     TargetList,
     TargetPoint,
     load_targets_from_json,
@@ -119,39 +110,7 @@ def measure_targets(tps: GeoCom, filepath: str) -> TargetList | None:
     return points
 
 
-@extra_command(
-    "measure",
-    params=None,
-    context_settings={"auto_envvar_prefix": None}
-)  # type: ignore[misc]
-@com_port_argument()
-@argument(
-    "output",
-    help=(
-        "path to save the JSON containing the recorded targets "
-        "(if the file already exists, the new targets can be appended)"
-    ),
-    type=str
-)
-@option_group(
-    "Connection options",
-    "Options related to the serial connection",
-    com_baud_option(),
-    com_timeout_option(),
-    option(
-        "-r",
-        "--retry",
-        help="number of connection retry attempts",
-        type=IntRange(min=0, max=10),
-        default=1
-    ),
-    option(
-        "--sync-after-timeout",
-        help="attempt to synchronize message que after a connection timeout",
-        is_flag=True
-    )
-)
-def cli_measure(
+def main_measure(
     port: str,
     output: str,
     baud: int = 9600,
@@ -159,17 +118,6 @@ def cli_measure(
     retry: int = 1,
     sync_after_timeout: bool = False
 ) -> None:
-    """Measure target points.
-
-    The program gives instructions in the terminal at each step.
-
-    .. caution::
-        :class: warning
-
-        The appropriate prism type needs to be set on the instrument before
-        recording each target point. The program will automatically request
-        the type from the instrument after the point is measured.
-    """
 
     with open_serial(
         port,
@@ -188,48 +136,7 @@ def cli_measure(
     echo_green(f"Saved setup results at '{output}'")
 
 
-@extra_command(
-    "import",
-    params=None,
-    context_settings={"auto_envvar_prefix": None}
-)  # type: ignore[misc]
-@argument(
-    "reflector",
-    type=Choice([e.name for e in Prism if e.name != 'USER'])
-)
-@argument(
-    "input",
-    type=str
-)
-@argument(
-    "output",
-    type=str
-)
-@option(
-    "-d",
-    "--delimiter",
-    help="column delimiter character",
-    type=str,
-    default=","
-)
-@option(
-    "-c",
-    "--columns",
-    help=(
-        "column spec "
-        "(P: point ID, E: easting, N: northing, Z: height, _: ignore)"
-    ),
-    type=str,
-    default="PENZ"
-)
-@option(
-    "-s",
-    "--skip",
-    help="number of header rows to skip",
-    type=IntRange(min=0),
-    default=0
-)
-def cli_import(
+def main_import(
     reflector: str,
     input: str,
     output: str,
@@ -237,31 +144,6 @@ def cli_import(
     columns: str = "PENZ",
     skip: int = 0
 ) -> None:
-    """Import target points.
-
-    If a coordinate list already exists with the target points, it can
-    be imported from CSV format.
-
-    As a CSV file may contain any number and types of columns, the
-    mapping to the relevant columns can be given with a column spec.
-    A column spec is a string, with each character representing a
-    column type.
-
-    - ``P``: point ID
-    - ``E``: easting
-    - ``N``: northing
-    - ``Z``: up/height
-    - ``_``: ignore/skip column
-
-    Every column spec must specify the ``PENZ`` fields in the appropriate
-    order.
-
-    Examples:
-
-    - ``PENZ``: standard column order
-    - ``P_ENZ``: skipping 2nd column containing point codes
-    - ``EN_Z_P``: mixed column order and skipping
-    """
 
     if os.path.exists(output):
         action: str = prompt(
@@ -326,15 +208,3 @@ def cli_import(
 
     export_targets_to_json(output, points)
     echo_green(f"Saved import results at '{os.path.abspath(output)}'")
-
-
-@extra_group("targets", params=None)  # type: ignore[misc]
-def cli() -> None:
-    """Record target points for later automated measurements."""
-
-
-cli.add_command(cli_measure)
-cli.add_command(cli_import)
-
-if __name__ == "__main__":
-    cli()
