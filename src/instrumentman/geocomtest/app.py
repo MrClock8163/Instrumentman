@@ -58,13 +58,17 @@ def tests(tps: GeoCom) -> None:
 def main(
     port: str,
     baud: int = 9600,
-    timeout: int = 15
+    timeout: int = 15,
+    retry: int = 1,
+    sync_after_timeout: bool = False
 ) -> None:
     try:
         with open_serial(
             port,
             speed=baud,
-            timeout=timeout
+            timeout=timeout,
+            retry=retry,
+            sync_after_timeout=sync_after_timeout
         ) as com:
             tps = GeoCom(com)
             tests(tps)

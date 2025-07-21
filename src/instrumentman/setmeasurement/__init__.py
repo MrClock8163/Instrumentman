@@ -4,17 +4,15 @@ from click_extra import (
     extra_command,
     argument,
     option,
-    option_group,
     Choice,
     IntRange,
     file_path,
     dir_path
 )
-from cloup.constraints import mutually_exclusive
 
 from ..utils import (
-    com_baud_option,
-    com_timeout_option,
+    com_option_group,
+    logging_option_group,
     com_port_argument
 )
 
@@ -35,24 +33,7 @@ from ..utils import (
     type=dir_path(),
     help="directory to save measurement output to"
 )
-@option_group(
-    "Connection options",
-    "Options related to the serial connection",
-    com_baud_option(),
-    com_timeout_option(),
-    option(
-        "-r",
-        "--retry",
-        help="number of connection retry attempts",
-        type=IntRange(min=0, max=10),
-        default=1
-    ),
-    option(
-        "--sync-after-timeout",
-        help="attempt to synchronize message que after a connection timeout",
-        is_flag=True
-    )
-)
+@com_option_group()
 @option(
     "-f",
     "--format",
@@ -93,27 +74,7 @@ from ..utils import (
     ),
     default=""
 )
-@option_group(
-    "Logging options",
-    "Options related to the logging functionalities.",
-    option(
-        "--debug",
-        is_flag=True
-    ),
-    option(
-        "--info",
-        is_flag=True
-    ),
-    option(
-        "--warning",
-        is_flag=True
-    ),
-    option(
-        "--error",
-        is_flag=True
-    ),
-    constraint=mutually_exclusive
-)
+@logging_option_group()
 def cli_measure(**kwargs: Any) -> None:
     """Run sets of measurements to predefined targets."""
     from .measure import main

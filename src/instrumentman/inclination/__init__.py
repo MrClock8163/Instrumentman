@@ -4,15 +4,13 @@ from click_extra import (
     extra_command,
     argument,
     option,
-    option_group,
     IntRange,
     File,
     file_path
 )
 
 from ..utils import (
-    com_baud_option,
-    com_timeout_option,
+    com_option_group,
     com_port_argument
 )
 
@@ -23,12 +21,7 @@ from ..utils import (
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
 @com_port_argument()
-@option_group(
-    "Connection options",
-    "",
-    com_baud_option(),
-    com_timeout_option()
-)
+@com_option_group()
 @option(
     "-o",
     "--output",
