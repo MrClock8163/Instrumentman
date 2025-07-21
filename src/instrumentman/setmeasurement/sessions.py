@@ -4,9 +4,10 @@ import json
 from datetime import datetime
 from typing import TypedDict, NotRequired
 
-from ...data import Angle, Coordinate
-from ...geo.gcdata import Face
-from .. import make_directory
+from geocompy.data import Angle, Coordinate
+from geocompy.geo.gcdata import Face
+
+from ..utils import make_directory
 
 
 class PointDict(TypedDict):
