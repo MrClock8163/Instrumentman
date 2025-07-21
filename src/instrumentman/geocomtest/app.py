@@ -1,6 +1,6 @@
 from click_extra import (
     echo,
-    prompt
+    pause
 )
 from serial import SerialException
 from geocompy.data import Angle
@@ -25,7 +25,7 @@ def tests(tps: GeoCom) -> None:
         "The program will attempt to use motorized functions. Give "
         "appropriate clearance for the instrument!"
     )
-    prompt("Press ENTER when ready to proceed...")
+    pause("Press any key when ready to proceed...")
 
     echo("(Switching ATR off...)")
     tps.aut.switch_atr(False)
