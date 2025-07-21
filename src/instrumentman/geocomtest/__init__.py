@@ -10,7 +10,7 @@ from ..utils import (
 
 
 @extra_command(
-    "test",
+    "geocom",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -18,6 +18,8 @@ from ..utils import (
 @com_baud_option()
 @com_timeout_option()
 def cli(**kwargs: Any) -> None:
+    """Test the availability of various GeoCom protocol functions on an
+    instrument."""
     from .app import main
 
     main(**kwargs)
