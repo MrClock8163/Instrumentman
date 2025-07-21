@@ -2,10 +2,12 @@ from typing import Any
 
 from click_extra import (
     extra_command,
+    argument,
     option,
     option_group,
     IntRange,
-    File
+    File,
+    file_path
 )
 
 from ..utils import (
@@ -58,3 +60,44 @@ def cli_measure(**kwargs: Any) -> None:
     from .app import main_measure
 
     main_measure(**kwargs)
+
+
+@extra_command(
+    "inclination",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
+@argument(
+    "input",
+    help="inclination measurement file to process",
+    type=file_path()
+)
+def cli_calc(**kwargs: Any) -> None:
+    """Calculate inclination from multiple measurements."""
+    from .app import main_calc
+
+    main_calc(**kwargs)
+
+
+@extra_command(
+    "inclination",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
+@argument(
+    "output",
+    help="output file",
+    type=file_path()
+)
+@argument(
+    "inputs",
+    help="inclination measurement files",
+    type=file_path(exists=True),
+    nargs=-1,
+    required=True
+)
+def cli_merge(**kwargs: Any) -> None:
+    """Merge results from multiple inclination measurements."""
+    from .app import main_merge
+
+    main_merge(**kwargs)
