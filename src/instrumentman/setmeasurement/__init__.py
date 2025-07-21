@@ -1,7 +1,6 @@
 from typing import Any
 
 from click_extra import (
-    extra_group,
     extra_command,
     argument,
     option,
@@ -21,7 +20,7 @@ from ..utils import (
 
 
 @extra_command(
-    "measure",
+    "sets",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -123,7 +122,7 @@ def cli_measure(**kwargs: Any) -> None:
 
 
 @extra_command(
-    "merge",
+    "sets",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -161,7 +160,7 @@ def cli_merge(**kwargs: Any) -> None:
 
 
 @extra_command(
-    "validate",
+    "sets",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -195,7 +194,7 @@ def cli_validate(**kwargs: Any) -> None:
 
 
 @extra_command(
-    "calc",
+    "sets",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -244,14 +243,3 @@ def cli_calc(**kwargs: Any) -> None:
     from .process import main_calc
 
     main_calc(**kwargs)
-
-
-@extra_group("sets", params=None)  # type: ignore[misc]
-def cli() -> None:
-    """Conduct sets of measurements to predefined targets."""
-
-
-cli.add_command(cli_merge)
-cli.add_command(cli_validate)
-cli.add_command(cli_calc)
-cli.add_command(cli_measure)

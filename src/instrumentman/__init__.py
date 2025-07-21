@@ -22,8 +22,42 @@ def cli() -> None:
     pass
 
 
+@cli.group("measure", params=None)  # type: ignore[misc]
+def cli_measure() -> None:
+    """Conduct measurements."""
+
+
+@cli.group("import", params=None)  # type: ignore[misc]
+def cli_import() -> None:
+    """Import external data and convert it for use with other commands."""
+
+
+@cli.group("calc", params=None)  # type: ignore[misc]
+def cli_calc() -> None:
+    """Preform calculations from measurement results."""
+
+
+@cli.group("merge", params=None)  # type: ignore[misc]
+def cli_merge() -> None:
+    """Merge various output files."""
+
+
+@cli.group("validate", params=None)  # type: ignore[misc]
+def cli_validate() -> None:
+    """Validate intermediate files."""
+
+
+@cli.group("test", params=None)  # type: ignore[misc]
+def cli_test() -> None:
+    """Test protocol responsiveness."""
+
+
 cli.add_command(morse.cli)
 cli.add_command(terminal.cli)
-cli.add_command(setup.cli)
-cli.add_command(setmeasurement.cli)
-cli.add_command(geocomtest.cli)
+cli_measure.add_command(setmeasurement.cli_measure)
+cli_measure.add_command(setup.cli_measure)
+cli_calc.add_command(setmeasurement.cli_calc)
+cli_test.add_command(geocomtest.cli)
+cli_merge.add_command(setmeasurement.cli_merge)
+cli_validate.add_command(setmeasurement.cli_validate)
+cli_import.add_command(setup.cli_import)

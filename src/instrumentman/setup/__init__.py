@@ -1,7 +1,6 @@
 from typing import Any
 
 from click_extra import (
-    extra_group,
     extra_command,
     argument,
     option,
@@ -18,7 +17,7 @@ from ..utils import (
 
 
 @extra_command(
-    "measure",
+    "targets",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -67,7 +66,7 @@ def cli_measure(**kwargs: Any) -> None:
 
 
 @extra_command(
-    "import",
+    "targets",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -151,12 +150,3 @@ def cli_import(**kwargs: Any) -> None:
     from .app import main_import
 
     main_import(**kwargs)
-
-
-@extra_group("targets", params=None)  # type: ignore[misc]
-def cli() -> None:
-    """Record target points for later automated measurements."""
-
-
-cli.add_command(cli_measure)
-cli.add_command(cli_import)
