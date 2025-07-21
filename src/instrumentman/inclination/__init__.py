@@ -39,7 +39,7 @@ from ..utils import (
     "-p",
     "--positions",
     help="number of positions to measure around the circle",
-    type=IntRange(1),
+    type=IntRange(1, 12),
     default=1
 )
 @option(
