@@ -12,42 +12,39 @@ from . import setmeasurement
 from . import geocomtest
 
 
-@extra_group(
-    "iman",
-    params=None
-)  # type: ignore[misc]
+@extra_group("iman", params=None)  # type: ignore[misc]
 def cli() -> None:
     """Automated measurement programs and related utilities for surveying
     instruments."""
     pass
 
 
-@cli.group("measure", params=None)  # type: ignore[misc]
+@cli.group("measure")  # type: ignore[misc]
 def cli_measure() -> None:
     """Conduct measurements."""
 
 
-@cli.group("import", params=None)  # type: ignore[misc]
+@cli.group("import")  # type: ignore[misc]
 def cli_import() -> None:
     """Import external data and convert it for use with other commands."""
 
 
-@cli.group("calc", params=None)  # type: ignore[misc]
+@cli.group("calc")  # type: ignore[misc]
 def cli_calc() -> None:
     """Preform calculations from measurement results."""
 
 
-@cli.group("merge", params=None)  # type: ignore[misc]
+@cli.group("merge")  # type: ignore[misc]
 def cli_merge() -> None:
     """Merge various output files."""
 
 
-@cli.group("validate", params=None)  # type: ignore[misc]
+@cli.group("validate")  # type: ignore[misc]
 def cli_validate() -> None:
     """Validate intermediate files."""
 
 
-@cli.group("test", params=None)  # type: ignore[misc]
+@cli.group("test")  # type: ignore[misc]
 def cli_test() -> None:
     """Test protocol responsiveness."""
 
