@@ -1,4 +1,5 @@
 from io import TextIOWrapper
+from time import sleep
 
 from click_extra import echo
 from geocompy.data import Angle
@@ -31,6 +32,7 @@ def run_measure(
         hz = Angle(a, 'deg').normalized()
         tps.aut.turn_to(hz, v)
 
+        sleep(1)
         fullangles = tps.tmc.get_angle_inclination('MEASURE')
         if fullangles.params is None:
             continue
