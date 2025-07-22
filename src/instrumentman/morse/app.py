@@ -124,6 +124,8 @@ def main(
     ignore_non_ascii: bool = False,
     baud: int = 9600,
     timeout: int = 15,
+    retry: int = 1,
+    sync_after_timeout: bool = False,
     unittime: int = 50,
     compatibility: str = "none",
 ) -> None:
@@ -134,7 +136,13 @@ def main(
             echo_red("The message contains non-ASCII characters.")
             exit(1)
 
-    with open_serial(port, speed=baud, timeout=timeout) as com:
+    with open_serial(
+        port,
+        speed=baud,
+        timeout=timeout,
+        retry=retry,
+        sync_after_timeout=sync_after_timeout
+    ) as com:
         tps = GeoCom(com)
         beepstart = tps.bmm.beep_start
         beepstop = tps.bmm.beep_stop

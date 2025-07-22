@@ -4,14 +4,12 @@ from click_extra import (
     extra_command,
     argument,
     option,
-    option_group,
     IntRange,
     Choice
 )
 
 from ..utils import (
-    com_baud_option,
-    com_timeout_option,
+    com_option_group,
     com_port_argument
 )
 
@@ -30,24 +28,7 @@ from ..utils import (
     ),
     type=str
 )
-@option_group(
-    "Connection options",
-    "Options related to the serial connection",
-    com_baud_option(),
-    com_timeout_option(),
-    option(
-        "-r",
-        "--retry",
-        help="number of connection retry attempts",
-        type=IntRange(min=0, max=10),
-        default=1
-    ),
-    option(
-        "--sync-after-timeout",
-        help="attempt to synchronize message que after a connection timeout",
-        is_flag=True
-    )
-)
+@com_option_group()
 def cli_measure(**kwargs: Any) -> None:
     """Measure target points.
 

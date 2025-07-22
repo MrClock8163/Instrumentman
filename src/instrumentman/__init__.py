@@ -10,6 +10,7 @@ from . import terminal
 from . import setup
 from . import setmeasurement
 from . import geocomtest
+from . import inclination
 
 
 @extra_group("iman", params=None)  # type: ignore[misc]
@@ -53,8 +54,11 @@ cli.add_command(morse.cli)
 cli.add_command(terminal.cli)
 cli_measure.add_command(setmeasurement.cli_measure)
 cli_measure.add_command(setup.cli_measure)
+cli_measure.add_command(inclination.cli_measure)
 cli_calc.add_command(setmeasurement.cli_calc)
+cli_calc.add_command(inclination.cli_calc)
 cli_test.add_command(geocomtest.cli)
 cli_merge.add_command(setmeasurement.cli_merge)
+cli_merge.add_command(inclination.cli_merge)
 cli_validate.add_command(setmeasurement.cli_validate)
 cli_import.add_command(setup.cli_import)

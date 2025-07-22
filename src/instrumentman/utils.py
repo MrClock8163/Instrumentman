@@ -7,10 +7,12 @@ from click_extra import (
     echo,
     style,
     option,
+    option_group,
     argument,
     Choice,
     IntRange
 )
+from cloup.constraints import mutually_exclusive
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -72,6 +74,51 @@ def com_baud_option() -> Callable[[F], F]:
         ),
         callback=lambda ctx, param, value: int(value),
         default="9600"
+    )
+
+
+def com_option_group() -> Callable[[F], F]:
+    return option_group(
+        "Connection options",
+        "Options related to the serial connection",
+        com_baud_option(),
+        com_timeout_option(),
+        option(
+            "-r",
+            "--retry",
+            help="number of connection retry attempts",
+            type=IntRange(min=0, max=10),
+            default=1
+        ),
+        option(
+            "--sync-after-timeout",
+            help="attempt to synchronize message que after a timeout",
+            is_flag=True
+        )
+    )
+
+
+def logging_option_group() -> Callable[[F], F]:
+    return option_group(
+        "Logging options",
+        "Options related to the logging functionalities.",
+        option(
+            "--debug",
+            is_flag=True
+        ),
+        option(
+            "--info",
+            is_flag=True
+        ),
+        option(
+            "--warning",
+            is_flag=True
+        ),
+        option(
+            "--error",
+            is_flag=True
+        ),
+        constraint=mutually_exclusive
     )
 
 
