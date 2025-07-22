@@ -198,11 +198,16 @@ def main(
             retry=retry,
             sync_after_timeout=sync_after_timeout
         ) as com:
-            if protocol == "geocom":
-                tps = GeoCom(com)
-                tests_geocom(tps)
-            elif protocol == "gsidna":
-                dna = GsiOnlineDNA(com)
-                tests_gsidna(dna)
+            try:
+                if protocol == "geocom":
+                    tps = GeoCom(com)
+                    tests_geocom(tps)
+                elif protocol == "gsidna":
+                    dna = GsiOnlineDNA(com)
+                    tests_gsidna(dna)
+            except Exception as e:
+                echo_red("An exception occured while running the tests")
+                echo_red(e)
+
     except (SerialException, ConnectionError) as e:
         echo_red(f"Connection was not successful ({e})")
