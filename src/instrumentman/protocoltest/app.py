@@ -67,26 +67,26 @@ def tests_gsidna(dna: GsiOnlineDNA) -> None:
     echo("Testing settings...")
     staff_get = dna.settings.get_staff_mode()
     if staff_get.value is None:
-        echo_red("Settings queries unavailable")
+        echo_yellow("Settings queries unavailable")
     else:
         echo_green("Settings queries available")
 
     staff_set = dna.settings.set_staff_mode(False)
     if not staff_set.value:
-        echo_red("Settings commands unavailable")
+        echo_yellow("Settings commands unavailable")
     else:
         echo_green("Settings commands available")
 
     echo("Testing measurements...")
     point_get = dna.measurements.get_point_id()
     if point_get is None:
-        echo_red("Measurement/database queries unavailable")
+        echo_yellow("Measurement/database queries unavailable")
     else:
         echo_green("Measurement/database queries available")
 
     point_set = dna.measurements.set_point_id("TEST")
     if not point_set.value:
-        echo_red("Measurement/database commands unavailable")
+        echo_yellow("Measurement/database commands unavailable")
     else:
         echo_green("Measurement/database commands available")
 
