@@ -5,8 +5,7 @@ from click_extra import (
     argument,
     option,
     IntRange,
-    File,
-    file_path
+    File
 )
 
 from ..utils import (
@@ -63,7 +62,13 @@ def cli_measure(**kwargs: Any) -> None:
 @argument(
     "input",
     help="inclination measurement file to process",
-    type=file_path()
+    type=File("rt", encoding="utf8")
+)
+@option(
+    "-o",
+    "--output",
+    help="file to save results to in CSV format",
+    type=File("wt", encoding="utf8", lazy=True)
 )
 def cli_calc(**kwargs: Any) -> None:
     """Calculate inclination from multiple measurements."""
@@ -80,12 +85,12 @@ def cli_calc(**kwargs: Any) -> None:
 @argument(
     "output",
     help="output file",
-    type=file_path()
+    type=File("wt", encoding="utf8", lazy=True)
 )
 @argument(
     "inputs",
     help="inclination measurement files",
-    type=file_path(exists=True),
+    type=File("rt", encoding="utf8"),
     nargs=-1,
     required=True
 )

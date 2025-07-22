@@ -1,7 +1,7 @@
 from io import TextIOWrapper
 from time import sleep
-from pathlib import Path
 from math import tan, atan, degrees
+from re import compile
 
 from click_extra import echo
 from geocompy.data import Angle, Coordinate
@@ -10,6 +10,9 @@ from geocompy.communication import open_serial
 
 from ..calculations import adjust_uniform_single
 from ..utils import echo_green
+
+
+_LINE = compile(r"^\d+(?:\.\d+)?(?:,\-?\d+\.\d+){2}$")
 
 
 def run_measure(
@@ -42,11 +45,13 @@ def run_measure(
         if fullangles.params is None:
             continue
 
+        az = fullangles.params[0]
         cross = fullangles.params[4]
         length = fullangles.params[5]
 
         echo(
-            f"{a % 360:d},{cross.asunit('deg') * 3600:.2f},"
+            f"{az.asunit('deg'):.4f},"
+            f"{cross.asunit('deg') * 3600:.2f},"
             f"{length.asunit('deg') * 3600:.2f}",
             output
         )
@@ -75,51 +80,75 @@ def main_measure(
 
 
 def main_merge(
-    inputs: list[Path],
-    output: Path
+    inputs: list[TextIOWrapper],
+    output: TextIOWrapper
 ) -> None:
-    with output.open("wt", encoding="utf8") as outfile:
-        echo("hz_deg,cross_sec,length_sec", outfile)
-        for item in inputs:
-            with item.open("rt", encoding="utf8") as infile:
-                next(infile)
-                echo(infile.read(), outfile, False)
+    echo("hz_deg,cross_sec,length_sec", output)
+    for item in inputs:
+        for line in item:
+            if not _LINE.match(line.strip()):
+                continue
+
+            echo(line, output, False)
 
     echo_green(f"Merged measurements from {len(inputs)} files.")
 
 
 def main_calc(
-    input: Path
+    input: TextIOWrapper,
+    output: TextIOWrapper | None = None
 ) -> None:
     points: list[Coordinate] = []
-    with input.open("rt", encoding="utf8") as file:
-        next(file)
-        for line in file:
-            fields = line.strip().split(",")
-            azimut = Angle(float(fields[0]), 'deg')
-            cross = Angle(float(fields[1]) / 3600, 'deg')
-            length = Angle(float(fields[2]) / 3600, 'deg')
 
-            coord = Coordinate(tan(cross), tan(length), 1)
-            bearing, inclination, s = coord.to_polar()
+    for line in input:
+        if not _LINE.match(line.strip()):
+            continue
 
-            points.append(
-                Coordinate.from_polar(
-                    (bearing + azimut).normalized(),
-                    inclination,
-                    s
-                )
+        fields = line.strip().split(",")
+        azimut = Angle(float(fields[0]), 'deg')
+        cross = Angle(float(fields[1]) / 3600, 'deg')
+        length = Angle(float(fields[2]) / 3600, 'deg')
+
+        coord = Coordinate(tan(cross), tan(length), 1)
+        bearing, inclination, s = coord.to_polar()
+
+        points.append(
+            Coordinate.from_polar(
+                (bearing + azimut).normalized(),
+                inclination,
+                s
             )
+        )
 
     x, x_dev = adjust_uniform_single([p.x for p in points])
     y, y_dev = adjust_uniform_single([p.y for p in points])
 
+    inc_x = degrees(atan(x)) * 3600
+    inc_y = degrees(atan(y)) * 3600
+    inc_x_dev = degrees(atan(x_dev)) * 3600
+    inc_y_dev = degrees(atan(y_dev)) * 3600
+
     direction, inc, _ = Coordinate(x, y, 1).to_polar()
 
+    if output is None:
+        echo(f"""Axis aligned:
+    inclination X: {inc_x:.1f}" +/- {inc_x_dev:.1f}"
+    inclination Y: {inc_y:.1f}" +/- {inc_y_dev:.1f}"
+Polar:
+    direction: {direction.asunit('deg'):.4f}°
+    inclination: {inc.asunit('deg') * 3600:.1f}\""""
+             )
+        return
+
     echo(
-        f"""Direction: {direction.to_dms()}
-Inclination: {inc.asunit('deg') * 3600:.1f} seconds
-Deviation easting: {degrees(atan(x_dev)) * 3600:.1f} seconds
-Deviation northing: {degrees(atan(y_dev)) * 3600:.1f} seconds
-        """
+        "inc_x_sec,inc_x_dev_sec,inc_y_sec,inc_y_dev_sec,dir_deg,inc_sec",
+        output
+    )
+
+    echo(
+        (
+            f"{inc_x:.1f},{inc_x_dev:.1f},{inc_y:.1f},{inc_y_dev:.1f},"
+            f"{direction.asunit('deg'):.4f},{inc.asunit('deg') * 3600:.1f}"
+        ),
+        output
     )
