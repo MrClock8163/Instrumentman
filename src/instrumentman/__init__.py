@@ -11,6 +11,7 @@ from . import setup
 from . import setmeasurement
 from . import protocoltest
 from . import inclination
+from . import filetransfer
 
 
 @extra_group("iman", params=None)  # type: ignore[misc]
@@ -51,6 +52,16 @@ def cli_test() -> None:
     """Test protocol responsiveness."""
 
 
+@cli.group("list")  # type: ignore[misc]
+def cli_list() -> None:
+    """List various data stored on the instrument."""
+
+
+@cli.group("download")  # type: ignore[misc]
+def cli_download() -> None:
+    """Download data from the instrument."""
+
+
 cli.add_command(morse.cli)
 cli.add_command(terminal.cli)
 cli_measure.add_command(setmeasurement.cli_measure)
@@ -64,3 +75,5 @@ cli_merge.add_command(setmeasurement.cli_merge)
 cli_merge.add_command(inclination.cli_merge)
 cli_validate.add_command(setmeasurement.cli_validate)
 cli_import.add_command(setup.cli_import)
+cli_list.add_command(filetransfer.cli_list)
+cli_download.add_command(filetransfer.cli_download)
