@@ -1,4 +1,4 @@
-from click_extra import extra_group
+from click_extra import extra_group, version_option
 
 try:
     from ._version import __version__ as __version__
@@ -14,6 +14,7 @@ from . import inclination
 
 
 @extra_group("iman", params=None)  # type: ignore[misc]
+@version_option()
 def cli() -> None:
     """Automated measurement programs and related utilities for surveying
     instruments."""
