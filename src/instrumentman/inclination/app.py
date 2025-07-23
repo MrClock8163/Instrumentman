@@ -3,7 +3,7 @@ from time import sleep
 from math import tan, atan, degrees
 from re import compile
 
-from click_extra import echo
+from click_extra import echo, progressbar
 from geocompy.data import Angle, Coordinate
 from geocompy.geo import GeoCom
 from geocompy.communication import open_serial
@@ -36,25 +36,30 @@ def run_measure(
         output
     )
 
-    for a in range(start, start + cycles * 360, turn):
-        hz = Angle(a, 'deg').normalized()
-        tps.aut.turn_to(hz, v)
+    with progressbar(
+        range(start, start + cycles * 360, turn),
+        label="Measuring",
+        hidden=output is None
+    ) as bar:
+        for a in bar:
+            hz = Angle(a, 'deg').normalized()
+            tps.aut.turn_to(hz, v)
 
-        sleep(1)
-        fullangles = tps.tmc.get_angle_inclination('MEASURE')
-        if fullangles.params is None:
-            continue
+            sleep(1)
+            fullangles = tps.tmc.get_angle_inclination('MEASURE')
+            if fullangles.params is None:
+                continue
 
-        az = fullangles.params[0]
-        cross = fullangles.params[4]
-        length = fullangles.params[5]
+            az = fullangles.params[0]
+            cross = fullangles.params[4]
+            length = fullangles.params[5]
 
-        echo(
-            f"{az.asunit('deg'):.4f},"
-            f"{cross.asunit('deg') * 3600:.2f},"
-            f"{length.asunit('deg') * 3600:.2f}",
-            output
-        )
+            echo(
+                f"{az.asunit('deg'):.4f},"
+                f"{cross.asunit('deg') * 3600:.2f},"
+                f"{length.asunit('deg') * 3600:.2f}",
+                output
+            )
 
 
 def main_measure(
