@@ -12,6 +12,7 @@ from . import setmeasurement
 from . import protocoltest
 from . import inclination
 from . import filetransfer
+from . import jobs
 
 
 @extra_group("iman", params=None)  # type: ignore[misc]
@@ -76,4 +77,5 @@ cli_merge.add_command(inclination.cli_merge)
 cli_validate.add_command(setmeasurement.cli_validate)
 cli_import.add_command(setup.cli_import)
 cli_list.add_command(filetransfer.cli_list)
+cli_list.add_command(jobs.cli_list)
 cli_download.add_command(filetransfer.cli_download)
