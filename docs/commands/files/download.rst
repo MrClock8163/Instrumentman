@@ -30,6 +30,23 @@ Requirements
 
 - GeoCom capable instrument
 
+Examples
+--------
+
+.. code-block:: shell
+    :caption: Downloading the root file of a job
+
+    iman download file -f database COM1 job.xcf job.xcf
+
+    // or
+    
+    iman download file COM1 DBX/job.xcf job.xcf
+
+.. code-block:: shell
+    :caption: Downloading an exported file from a CF card
+
+    iman list files -d cf COM1 Data/coordinates.txt coordinates.txt
+
 Usage
 -----
 

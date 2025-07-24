@@ -24,6 +24,19 @@ separators (contrary to other Windows conventions) and should end with a ``/``.
 If a special type of file is to be listed (e.g. database), then it is enough
 to specify the file type, the path can be left out.
 
+Examples
+--------
+
+.. code-block:: shell
+    :caption: Listing database files in internal memory
+
+    iman list files -f database COM1
+
+.. code-block:: shell
+    :caption: Listing all exported files on a CF card
+
+    iman list files -d cf COM1 Data/
+
 Usage
 -----
 
