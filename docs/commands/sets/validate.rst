@@ -7,7 +7,7 @@ that each session succeeded, no points were skipped.
 Requirements
 ------------
 
-- session result files from previous measurements
+- session result files from previous set measurements
 
 Examples
 --------

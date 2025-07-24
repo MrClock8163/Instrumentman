@@ -31,7 +31,7 @@ Content
     commands/terminal
     commands/targets/index
     commands/sets/index
-    
+    commands/inclination/index
 
 Indices
 

@@ -1,4 +1,4 @@
-:icon: material/console
+:icon: material/volume-high
 
 Morse
 =====

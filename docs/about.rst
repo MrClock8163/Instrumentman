@@ -1,5 +1,3 @@
-:icon: material/information-box
-
 Information
 ===========
 

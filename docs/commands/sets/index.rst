@@ -1,9 +1,9 @@
-:icon: material/console
+:icon: material/angle-acute
 
-Set Measurement
-===============
+Sets
+====
 
-The Set Measurement commands provide a simple way to conduct automated polar
+The set measurement commands provide a simple way to conduct automated polar
 measurements to predefined target points.
 
 .. toctree::
