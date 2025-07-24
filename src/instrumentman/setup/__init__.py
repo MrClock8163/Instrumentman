@@ -53,6 +53,7 @@ def cli_measure(**kwargs: Any) -> None:
 )  # type: ignore[misc]
 @argument(
     "reflector",
+    help="prism type of the targets",
     type=Choice(
         (
             'ROUND',
@@ -72,10 +73,12 @@ def cli_measure(**kwargs: Any) -> None:
 )
 @argument(
     "input",
+    help="csv file containing the target coordinates",
     type=str
 )
 @argument(
     "output",
+    help="path to save the target definition to",
     type=str
 )
 @option(

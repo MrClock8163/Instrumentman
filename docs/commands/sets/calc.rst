@@ -6,6 +6,11 @@ of the target coordinates, from results of multiple measurement sessions and/or
 cycles. The resulting coordinates (as well as their deviations) are saved
 to a simple CSV file.
 
+Requirements
+------------
+
+- session result file from previous measurement
+
 Examples
 --------
 

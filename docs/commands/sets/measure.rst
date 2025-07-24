@@ -1,10 +1,16 @@
-Measure
-=======
+Measurement
+===========
 
 Once the target definition JSON is created, the measurement sets can
 be started. In each measurement session the time, internal temperature
 and battery level are recorded at start. For each target the horizontal angle,
 zenith angle and slope distance are recorded.
+
+Requirements
+------------
+
+- Target definition file (see the Targets application)
+- GeoCom capable robotic total station with ATR
 
 Order
 -----

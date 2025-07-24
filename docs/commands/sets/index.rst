@@ -13,9 +13,3 @@ measurements to predefined target points.
     validate
     merge
     calc
-
-Requirements
-------------
-
-- Target definition file (see the Targets application)
-- GeoCom capable robotic total station with ATR

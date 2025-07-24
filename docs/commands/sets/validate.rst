@@ -4,6 +4,11 @@ Validation
 After the measurement sessions are finished, it might be useful to validate,
 that each session succeeded, no points were skipped.
 
+Requirements
+------------
+
+- session result files from previous measurements
+
 Examples
 --------
 

@@ -10,6 +10,11 @@ station, the data files need to be merged to process them together.
     The merge will be refused if the station information, or the target
     points do not match between the targeted sessions.
 
+Requirements
+------------
+
+- session result files from previous measurements
+
 Examples
 --------
 
