@@ -17,7 +17,6 @@ dependencies = [
     "rapidfuzz",
     "jsonschema",
     "jmespath",
-    "numpy",
     "click-extra"
 ]
 classifiers = [

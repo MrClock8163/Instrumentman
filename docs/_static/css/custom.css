@@ -1,12 +1,12 @@
 
 :root > * {
-    --md-primary-fg-color: #90AF90;
+    --md-primary-fg-color: #CFB41A;
     --md-accent-fg-color: #a9221d;
-    --md-typeset-a-color: #4a644c;
+    /* --md-typeset-a-color: #4a644c; */
 }
 
 [data-md-color-scheme="slate"] {
     /* --md-primary-fg-color:#4a644c; */
-    --md-typeset-a-color: #90AF90;
+    --md-typeset-a-color: #CFB41A;
     --md-code-bg-color: #333746;
 }

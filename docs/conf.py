@@ -1,7 +1,7 @@
 from instrumentman import __version__
 
 
-project = "I-man"
+project = "Instrumentman"
 copyright = "2025, MrClock8163"
 author = "MrClock8163"
 
@@ -18,7 +18,8 @@ extensions = [
     "notfound.extension",
     "sphinx_last_updated_by_git",
     "sphinx_immaterial",
-    "sphinx_mdinclude"
+    "sphinx_mdinclude",
+    "sphinx_click"
 ]
 
 intersphinx_mapping = {
@@ -40,8 +41,8 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
 ]
-# html_logo = "_static/logo.svg"
-# html_favicon = "_static/favicon.svg"
+html_logo = "_static/logo.svg"
+html_favicon = "_static/favicon.svg"
 html_last_updated_fmt = "%d %b %Y"
 html_copy_source = False
 html_scaled_image_link = False
