@@ -28,6 +28,7 @@ Content
 
     about
     commands/morse
+    commands/terminal
     commands/targets/index
     commands/sets/index
     
