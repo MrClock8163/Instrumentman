@@ -34,6 +34,7 @@ Content
     commands/inclination/index
     commands/protocoltest/index
     commands/files/index
+    commands/jobs/index
 
 Indices
 
