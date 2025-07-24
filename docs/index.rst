@@ -32,6 +32,7 @@ Content
     commands/targets/index
     commands/sets/index
     commands/inclination/index
+    commands/protocoltest/index
 
 Indices
 
