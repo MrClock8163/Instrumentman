@@ -33,6 +33,7 @@ Content
     commands/sets/index
     commands/inclination/index
     commands/protocoltest/index
+    commands/files/index
 
 Indices
 
