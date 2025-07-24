@@ -1,10 +1,12 @@
 <h1 align="center">
-<img src="https://raw.githubusercontent.com/mrclock8163/instrumentman/main/docs/iman_logo.png" alt="I-man logo" width="300">
+<img src="https://raw.githubusercontent.com/mrclock8163/instrumentman/main/docs/iman_logo.png" alt="I-man logo" width="400">
 </h1><br>
 
 [![PyPI - Version](https://img.shields.io/pypi/v/instrumentman)](https://pypi.org/project/instrumentman/)
 [![Python Version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FMrClock8163%2FInstrumentman%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)](https://pypi.org/project/instrumentman/)
 [![MIT](https://img.shields.io/github/license/mrclock8163/instrumentman)](https://opensource.org/license/mit)
+[![Tests status](https://img.shields.io/github/actions/workflow/status/mrclock8163/instrumentman/run-tests.yml?label=linting)](https://github.com/MrClock8163/Instrumentman)
+[![Docs status](https://app.readthedocs.org/projects/instrumentman/badge/?version=latest)](https://instrumentman.readthedocs.io/latest/)
 [![Typed](https://img.shields.io/pypi/types/geocompy)](https://pypi.org/project/geocompy/)
 
 Instrumentman (or I-man for short) is a Python CLI package, that is a
