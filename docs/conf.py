@@ -9,23 +9,12 @@ version = ".".join(__version__.split(".")[0:2])
 release = __version__
 
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.doctest",
-    "sphinx.ext.linkcode",
-    "sphinx.ext.napoleon",
-    "sphinxarg.ext",
     "notfound.extension",
     "sphinx_last_updated_by_git",
     "sphinx_immaterial",
     "sphinx_mdinclude",
     "sphinx_click"
 ]
-
-intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "geocompy": ("https://geocompy.readthedocs.io/latest/", None)
-}
 
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 templates_path = ["_templates"]
@@ -34,8 +23,6 @@ sphinx_immaterial_override_generic_admonitions = False
 sphinx_immaterial_override_builtin_admonitions = False
 sphinx_immaterial_override_version_directives = False
 sphinx_immaterial_generate_extra_admonitions = False
-
-add_module_names = False
 
 html_static_path = ["_static"]
 html_css_files = [
@@ -106,68 +93,8 @@ html_theme_options = {
     ]
 }
 
-# Immaterial toc adjustments
-object_description_options = [
-    (
-        "py:.*",
-        {
-            "include_fields_in_toc": False,
-            "include_rubrics_in_toc": False
-        }
-    ),
-    (
-        "py:parameter",
-        {
-            "include_in_toc": False
-        }
-    )
-]
-
-autodoc_default_options = {
-    "member-order": "groupwise",
-    "no-show-inheritance": True,
-    "members": True,
-    "undoc-members": True
-}
-autoclass_content = "both"
-
-napoleon_use_admonition_for_notes = True
-napoleon_preprocess_types = True
-napoleon_google_docstring = False
-napoleon_use_ivar = True
-napoleon_type_aliases: dict[str, str] = {}
-
-python_display_short_literal_types = True
-python_type_aliases: dict[str, str] = {}
-
 # Error checking
 nitpicky = True
-nitpick_ignore = {
-    ("py:class", "optional"),
-    ("py:class", "datetime"),
-    ("py:param", "_E"),
-    ("py:param", "_T"),
-    ("py:class", "_T"),
-    ("py:param", "_P"),
-    ("py:class", "_P")
-}
-nitpick_ignore_regex = {
-    ("py:obj", r"[a-zA-Z]{3}\.\w+")
-}
-
-
-# GitHub source linking
-def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
-    if domain != 'py':
-        return None
-    if not info['module']:
-        return None
-    filename = info['module'].replace('.', '/')
-    return (
-        "https://github.com/MrClock8163/"
-        f"geocompy/tree/main/src/{filename:s}.py"
-    )
-
 
 latex_documents = [
     (
