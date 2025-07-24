@@ -27,6 +27,7 @@ Content
     :caption: Applications
 
     about
+    commands/morse
     commands/targets/index
     commands/sets/index
     
