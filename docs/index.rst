@@ -1,10 +1,19 @@
+.. image:: iman_logo.png
+   :width: 600
+   :align: center
+   :alt: GeoComPy logo
+
+|
+|
+|
+
 ***********************************************
 Welcome to the **Instrumentman** documentation!
 ***********************************************
 
-The Instrumentman (or I-man for short) package is a collection of CLI
-surveying instrument automation tools, based on the protocols implemented
-in the `GeoComPy <https://github.com/MrClock8163/GeoComPy>`_ package.
+Collection of CLI surveying instrument automation tools, based on the
+protocols implemented in the
+`GeoComPy <https://github.com/MrClock8163/GeoComPy>`_ package.
 
 Links
 =====
@@ -15,6 +24,26 @@ Links
 
 Content
 =======
+
+.. toctree::
+    :maxdepth: 1
+
+    overview
+    changelog
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Applications
+
+    about
+    commands/morse
+    commands/terminal
+    commands/targets/index
+    commands/sets/index
+    commands/inclination/index
+    commands/protocoltest/index
+    commands/files/index
+    commands/jobs/index
 
 Indices
 

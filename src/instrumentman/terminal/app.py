@@ -278,7 +278,7 @@ class CmdInput(Input):
 
 class GeoComTerminal(App[None]):
     CSS_PATH = "app.tcss"
-    TITLE = "GeoComPy Interactive Terminal"
+    TITLE = "I-man Interactive Terminal"
 
     protocol: GeoCom | GsiOnlineDNA | None = None
 
