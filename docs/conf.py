@@ -176,7 +176,7 @@ latex_documents = [
         "manual", False
     )
 ]
-# latex_logo = "geocompy_logo.png"
+latex_logo = "iman_logo.png"
 latex_elements = {
     "papersize": "a4paper",
     "extraclassoptions": "oneside",

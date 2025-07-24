@@ -1,3 +1,12 @@
+.. image:: iman_logo.png
+   :width: 600
+   :align: center
+   :alt: GeoComPy logo
+
+|
+|
+|
+
 ***********************************************
 Welcome to the **Instrumentman** documentation!
 ***********************************************
