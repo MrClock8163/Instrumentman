@@ -114,7 +114,7 @@ def main_calc(
         cross = Angle(float(fields[1]) / 3600, 'deg')
         length = Angle(float(fields[2]) / 3600, 'deg')
 
-        coord = Coordinate(tan(cross), tan(length), 1)
+        coord = Coordinate(tan(cross), tan(length), 1).normalized()
         bearing, inclination, s = coord.to_polar()
 
         points.append(
@@ -127,13 +127,14 @@ def main_calc(
 
     x, x_dev = adjust_uniform_single([p.x for p in points])
     y, y_dev = adjust_uniform_single([p.y for p in points])
+    z, _ = adjust_uniform_single([p.z for p in points])
 
     inc_x = degrees(atan(x)) * 3600
     inc_y = degrees(atan(y)) * 3600
     inc_x_dev = degrees(atan(x_dev)) * 3600
     inc_y_dev = degrees(atan(y_dev)) * 3600
 
-    direction, inc, _ = Coordinate(x, y, 1).to_polar()
+    direction, inc, _ = Coordinate(x, y, z).to_polar()
 
     if output is None:
         echo(f"""Axis aligned:
