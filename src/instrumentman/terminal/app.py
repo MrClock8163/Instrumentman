@@ -47,7 +47,8 @@ class DummyGeoComConnection(Connection):
 
     _CMD = re.compile(
         r"^%R1Q,"
-        r"(?P<rpc>\d+):"
+        r"(?P<rpc>\d+)"
+        r"(?P<trid>,\d+)?:"
         r"(?:(?P<params>.*))?$"
     )
 
@@ -66,14 +67,29 @@ class DummyGeoComConnection(Connection):
     def send(self, message: str) -> None:
         return
 
+    def receive(self) -> str:
+        return ""
+
+    def is_open(self) -> bool:
+        return True
+
+    def reset(self) -> None:
+        return
+
     def exchange(self, cmd: str) -> str:
         if not self._CMD.match(cmd):
             return "%R1P,0,0:2"
 
-        if cmd == "%R1Q,5008:":
-            return "%R1P,0,0:0,1996,'07','19','10','13','2f'"
+        head, _ = cmd.split(":")
+        match head.split(","):
+            case [_, _, trid_str]:
+                pass
+            case _:
+                trid_str = "0"
 
-        return "%R1P,0,0:0"
+        trid = int(trid_str)
+
+        return f"%R1P,0,{trid}:0"
 
 
 # def open_serial(port: str, **kwargs: Any) -> DummyGeoComConnection:
@@ -336,6 +352,11 @@ class GeoComTerminal(App[None]):
                         validators=[Timeout()],
                         id="edit_timeout"
                     )
+                    yield Button(
+                        "Update",
+                        id="btn_update_timeout",
+                        disabled=True
+                    )
                 with HorizontalGroup(id="hg_buttons"):
                     yield Button("Test Connection", id="btn_test_com")
                     yield Button(
@@ -409,8 +430,22 @@ class GeoComTerminal(App[None]):
             )
             self.bell()
             return
+        baud = cast(int, self.query_one("#select_baud", Select).value)
+        timeout = self.query_one("#edit_timeout", Input)
+        if not timeout.is_valid:
+            self.notify(
+                "Invalid timeout value given!",
+                severity="error",
+                title="Error"
+            )
+            self.app.bell()
+            return
         try:
-            with open_serial(port.value) as com:
+            with open_serial(
+                port.value,
+                speed=baud,
+                timeout=int(timeout.value)
+            ) as com:
                 match self.query_one("#select_protocol", Select).value:
                     case Protocol.GEOCOM:
                         ans = com.exchange(r"%R1Q,0:\r\n")
@@ -478,7 +513,7 @@ class GeoComTerminal(App[None]):
             self.query_one("#edit_com", Input).disabled = True
             self.query_one("#select_protocol", Select).disabled = True
             self.query_one("#select_baud", Select).disabled = True
-            self.query_one("#edit_timeout", Input).disabled = True
+            self.query_one("#btn_update_timeout", Button).disabled = False
             self.query_one("#tab_cmd", TabPane).disabled = False
 
             self.notify("Connection successful.", title="Success")
@@ -509,7 +544,7 @@ class GeoComTerminal(App[None]):
             self.query_one("#edit_com", Input).disabled = False
             self.query_one("#select_protocol", Select).disabled = False
             self.query_one("#select_baud", Select).disabled = False
-            self.query_one("#edit_timeout", Input).disabled = False
+            self.query_one("#btn_update_timeout", Button).disabled = True
             self.query_one("#tab_cmd", TabPane).disabled = True
             self.sub_title = ""
         except Exception as e:
@@ -523,6 +558,37 @@ class GeoComTerminal(App[None]):
 
         self.notify("Disconnected.", title="Success")
         self.bell()
+
+    @on(Button.Pressed, "#btn_update_timeout")
+    def btn_update_timeout_pressed(self, event: Button.Pressed) -> None:
+        if self.protocol is None:
+            return
+
+        edit = self.query_one("#edit_timeout", Input)
+        if not edit.is_valid:
+            self.notify(
+                f"{edit.value} is not a valid timeout",
+                title="Error",
+                severity="error"
+            )
+            return
+
+        com = self.protocol._conn
+        try:
+            com._port.timeout = int(  # type: ignore[attr-defined]
+                edit.value
+            )
+            self.notify(
+                "Timeout updated",
+                title="Success",
+                severity="information"
+            )
+        except Exception:
+            self.notify(
+                f"{edit.value} is not a valid timeout",
+                title="Error",
+                severity="error"
+            )
 
 
 class ComPort(Validator):

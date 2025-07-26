@@ -1,8 +1,20 @@
 .connect {
-    grid-size: 2;
+    grid-size: 3;
     grid-columns: auto 1fr;
     grid-rows: auto;
     grid-gutter: 1;
+}
+
+#edit_com {
+    column-span: 2;
+}
+
+#select_protocol {
+    column-span: 2;
+}
+
+#select_baud {
+    column-span: 2;
 }
 
 #hg_buttons {
