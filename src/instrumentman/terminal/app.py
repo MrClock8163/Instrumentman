@@ -328,6 +328,14 @@ class GeoComTerminal(App[None]):
                         value=9600,
                         id="select_baud"
                     )
+                    yield Label("Timeout")
+                    yield Input(
+                        valid_empty=False,
+                        value="15",
+                        type="integer",
+                        validators=[Timeout()],
+                        id="edit_timeout"
+                    )
                 with HorizontalGroup(id="hg_buttons"):
                     yield Button("Test Connection", id="btn_test_com")
                     yield Button(
@@ -440,9 +448,22 @@ class GeoComTerminal(App[None]):
             self.app.bell()
             return
         baud = cast(int, self.query_one("#select_baud", Select).value)
+        timeout = self.query_one("#edit_timeout", Input)
+        if not timeout.is_valid:
+            self.notify(
+                "Invalid timeout value given!",
+                severity="error",
+                title="Error"
+            )
+            self.app.bell()
+            return
         try:
             log = get_app_logger(self, port.value)
-            com = open_serial(port.value, speed=baud)
+            com = open_serial(
+                port.value,
+                speed=baud,
+                timeout=int(timeout.value)
+            )
             match self.query_one("#select_protocol", Select).value:
                 case Protocol.GEOCOM:
                     self.protocol = GeoCom(com, log)
@@ -457,6 +478,7 @@ class GeoComTerminal(App[None]):
             self.query_one("#edit_com", Input).disabled = True
             self.query_one("#select_protocol", Select).disabled = True
             self.query_one("#select_baud", Select).disabled = True
+            self.query_one("#edit_timeout", Input).disabled = True
             self.query_one("#tab_cmd", TabPane).disabled = False
 
             self.notify("Connection successful.", title="Success")
@@ -487,6 +509,7 @@ class GeoComTerminal(App[None]):
             self.query_one("#edit_com", Input).disabled = False
             self.query_one("#select_protocol", Select).disabled = False
             self.query_one("#select_baud", Select).disabled = False
+            self.query_one("#edit_timeout", Input).disabled = False
             self.query_one("#tab_cmd", TabPane).disabled = True
             self.sub_title = ""
         except Exception as e:
@@ -511,3 +534,11 @@ class ComPort(Validator):
             return self.success()
 
         return self.failure("Not a valid COM port")
+
+
+class Timeout(Validator):
+    def validate(self, value: str) -> ValidationResult:
+        if value != "-" and int(value) < 0:
+            return self.failure("Timeout cannot be negative")
+
+        return self.success()
