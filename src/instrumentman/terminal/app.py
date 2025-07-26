@@ -97,6 +97,21 @@ class Protocol(IntEnum):
     GSIDNA = 1
 
 
+_BAUD = [
+    1200,
+    2400,
+    4800,
+    9600,
+    19200,
+    38400,
+    56000,
+    57600,
+    115200,
+    230400,
+    921600
+]
+
+
 class CmdSuggester(Suggester):
     PATH = re.compile(r"^(\w+(?:\.\w+)*)([\.\(]?)")
 
@@ -306,6 +321,13 @@ class GeoComTerminal(App[None]):
                         allow_blank=False,
                         id="select_protocol"
                     )
+                    yield Label("Baud")
+                    yield Select(
+                        [(str(b), b) for b in _BAUD],
+                        allow_blank=False,
+                        value=9600,
+                        id="select_baud"
+                    )
                 with HorizontalGroup(id="hg_buttons"):
                     yield Button("Test Connection", id="btn_test_com")
                     yield Button(
@@ -417,9 +439,10 @@ class GeoComTerminal(App[None]):
             )
             self.app.bell()
             return
+        baud = cast(int, self.query_one("#select_baud", Select).value)
         try:
             log = get_app_logger(self, port.value)
-            com = open_serial(port.value)
+            com = open_serial(port.value, speed=baud)
             match self.query_one("#select_protocol", Select).value:
                 case Protocol.GEOCOM:
                     self.protocol = GeoCom(com, log)
@@ -433,6 +456,7 @@ class GeoComTerminal(App[None]):
             event.button.disabled = True
             self.query_one("#edit_com", Input).disabled = True
             self.query_one("#select_protocol", Select).disabled = True
+            self.query_one("#select_baud", Select).disabled = True
             self.query_one("#tab_cmd", TabPane).disabled = False
 
             self.notify("Connection successful.", title="Success")
@@ -462,6 +486,7 @@ class GeoComTerminal(App[None]):
             event.button.disabled = True
             self.query_one("#edit_com", Input).disabled = False
             self.query_one("#select_protocol", Select).disabled = False
+            self.query_one("#select_baud", Select).disabled = False
             self.query_one("#tab_cmd", TabPane).disabled = True
             self.sub_title = ""
         except Exception as e:
