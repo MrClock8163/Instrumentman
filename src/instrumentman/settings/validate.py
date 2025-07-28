@@ -1,4 +1,3 @@
-from typing import Any
 from pathlib import Path
 import json
 import os
@@ -7,11 +6,11 @@ from jsonschema import validate, ValidationError
 from click_extra import echo
 
 from ..utils import echo_green, echo_red
-from .io import read_settings
+from .io import read_settings, SettingsDict
 
 
 def validate_settings(
-    settings: dict[str, Any],
+    settings: SettingsDict,
     print_error: bool = False
 ) -> bool:
     with open(

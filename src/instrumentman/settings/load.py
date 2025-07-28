@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, TypedDict
+from typing import Any, Callable
 
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
@@ -10,19 +10,9 @@ from geocompy.gsi.dna import GsiOnlineDNA
 from geocompy.gsi.gsitypes import GsiOnlineResponse
 from geocompy.gsi.dna.settings import GsiOnlineDNASettings
 
-from ..utils import echo_red, echo_yellow
-from .io import read_settings
+from ..utils import echo_red, echo_yellow, echo_green
+from .io import read_settings, SettingsDict
 from .validate import validate_settings
-
-
-class _SubsystemSettingsDict(TypedDict):
-    subsystem: str
-    options: dict[str, Any]
-
-
-class _SettingsDict(TypedDict):
-    protocol: str
-    settings: list[_SubsystemSettingsDict]
 
 
 def set_setting_geocom(
@@ -38,7 +28,7 @@ def set_setting_geocom(
     method: Callable[
         ...,
         GeoComResponse[Any]
-    ] | None = getattr(system, name)
+    ] | None = getattr(system, name, None)
     if method is None:
         echo_yellow(f"Could not find '{name}' to set '{setting}'")
         return
@@ -62,7 +52,7 @@ def set_setting_gsidna(
     method: Callable[
         ...,
         GsiOnlineResponse[bool]
-    ] | None = getattr(system, name)
+    ] | None = getattr(system, name, None)
     if method is None:
         echo_yellow(f"Could not find '{name}' to set '{setting}'")
         return
@@ -76,7 +66,7 @@ def set_setting_gsidna(
 
 def upload_settings_geocom(
     protocol: GeoCom,
-    settings: _SettingsDict
+    settings: SettingsDict
 ) -> None:
     for item in settings["settings"]:
         sysname = item["subsystem"]
@@ -94,7 +84,7 @@ def upload_settings_geocom(
 
 def upload_settings_gsidna(
     protocol: GsiOnlineDNA,
-    settings: _SettingsDict
+    settings: SettingsDict
 ) -> None:
     for item in settings["settings"]:
         sysname = item["subsystem"]
@@ -131,9 +121,15 @@ def main(
         speed=baud,
         timeout=timeout
     ) as com:
-        if "geocom" in data:
-            tps = GeoCom(com)
-            upload_settings_geocom(tps, data["geocom"])
-        elif "gsidna" in data:
-            dna = GsiOnlineDNA(com)
-            upload_settings_gsidna(dna, data["gsidna"])
+        match data["protocol"]:
+            case "geocom":
+                tps = GeoCom(com)
+                upload_settings_geocom(tps, data)
+            case "gsidna":
+                dna = GsiOnlineDNA(com)
+                upload_settings_gsidna(dna, data)
+            case _:
+                echo_red(f"Unknown protocol: {data["protocol"]}")
+                exit(1)
+
+        echo_green(f"Settings loaded from {settings}")

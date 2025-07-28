@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any, cast, TypedDict
 from pathlib import Path
 
 import json
@@ -8,30 +8,37 @@ import toml
 from ..utils import echo_red
 
 
-_SettingsDict = dict[str, Any]
+class SubsystemSettingsDict(TypedDict):
+    subsystem: str
+    options: dict[str, Any]
+
+
+class SettingsDict(TypedDict):
+    protocol: str
+    settings: list[SubsystemSettingsDict]
 
 
 def read_settings(
     file: Path,
     format: str = "auto"
-) -> _SettingsDict:
+) -> SettingsDict:
     if format == "auto":
         format = file.suffix[1:].lower() if file.suffix else ""
 
     match format:
         case "json":
             with file.open("rt", encoding="utf8") as settings:
-                data = cast(_SettingsDict, json.load(settings))
+                data = cast(SettingsDict, json.load(settings))
         case "yaml" | "yml":
             with file.open("rt", encoding="utf8") as settings:
-                data = cast(_SettingsDict, yaml.load(settings, yaml.Loader))
+                data = cast(SettingsDict, yaml.load(settings, yaml.Loader))
         case "toml":
             # The TOML package doesn't support heterogenous arrays, even tho it
             # was added to the language spec in 2019. Therefore the standard
             # lib tomllib/tomli has to be used for parsing.
             import tomllib as toml
             with file.open("rb") as settings:
-                data = cast(_SettingsDict, toml.load(settings))
+                data = cast(SettingsDict, toml.load(settings))
         case _:
             echo_red(f"Unknown file format: {format}")
             exit(1)
@@ -40,7 +47,7 @@ def read_settings(
 
 
 def write_settings(
-    data: _SettingsDict,
+    data: SettingsDict,
     file: Path,
     format: str = "auto"
 ) -> None:
@@ -50,7 +57,7 @@ def write_settings(
     with file.open("wt", encoding="utf8") as settings:
         match format:
             case "json":
-                json.dump(data, settings)
+                json.dump(data, settings, indent=4)
             case "yaml" | "yml":
                 yaml.dump(data, settings, yaml.Dumper)
             case "toml":
