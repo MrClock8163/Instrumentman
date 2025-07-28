@@ -2,8 +2,10 @@ from pathlib import Path
 from typing import Callable, Any
 from enum import Enum
 
+from geocompy.data import Angle
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
+from geocompy.geo.gctypes import GeoComResponse, GeoComSubsystem, GeoComCode
 from geocompy.gsi.dna import GsiOnlineDNA
 from geocompy.gsi.gsitypes import GsiOnlineResponse
 
@@ -15,12 +17,147 @@ def download_settings_geocom(
     tps: GeoCom,
     add_defaults: bool = False
 ) -> SettingsDict:
-    data: SettingsDict = {
-        "protocol": "geocom",
-        "settings": []
-    }
+    options: list[SubsystemSettingsDict] = [
+        {
+            "subsystem": "aut",
+            "options": {
+                "atr": True,
+                "lock": False,
+                "tolerance": [1, 1],
+                "timeout": [15, 15],
+                "fine_adjust_mode": "NORMAL",
+                "search_area": [0, 0, 0.1, 0.1, True],
+                "spiral": [0.1, 0.1],
+                "lock_onthefly": True
+            }
+        },
+        {
+            "subsystem": "bap",
+            "options": {
+                "target_type": "REFLECTOR",
+                "prism_type": "MINI",
+                "measurement_program": "SINGLE_REF_STANDARD",
+                "atr_setting": "NORMAL",
+                "reduced_atr_fov": False,
+                "precise_atr": True
+            }
+        },
+        {
+            "subsystem": "csv",
+            "options": {
+                "laserlot": True,
+                "laserlot_intensity": 100,
+                "charging": False,
+                "preferred_powersource": "INTERNAL"
+            }
+        },
+        {
+            "subsystem": "dna",
+            "options": {
+                "staffmode": False,
+                "curvature_correction": False,
+                "staff_type": "GPCL2"
+            }
+        },
+        {
+            "subsystem": "edm",
+            "options": {
+                "laserpointer": False,
+                "edm": True,
+                "boomerang_filter": True,
+                "tracklight_brightness": "MID",
+                "tracklight": False,
+                "guidelight_intensity": "OFF",
+                "boomerang_filter_new": True
+            }
+        },
+        {
+            "subsystem": "img",
+            "options": {
+                "telescopic_configuration": [0, 50, 6, "INTERNAL"],
+                "telescopic_exposure_time": 20
+            }
+        },
+        {
+            "subsystem": "kdm",
+            "options": {
+                "display_power": False
+            }
+        },
+        {
+            "subsystem": "sup",
+            "options": {
+                "poweroff_configuration": [False, "SLEEP", 600000],
+                "low_temperature_control": False,
+                "autorestart": True
+            }
+        },
+        {
+            "subsystem": "tmc",
+            "options": {
+                "compensator": True,
+                "edm_mode_v1": "SINGLE_STANDARD",
+                "edm_mode_v2": "SINGLE_STANDARD",
+                "angle_correction": [True, True, True, True]
+            }
+        }
+    ]
+    output_options: list[SubsystemSettingsDict] = []
+    for group in options:
+        settings: SubsystemSettingsDict = {
+            "subsystem": group["subsystem"],
+            "options": {}
+        }
 
-    return data
+        subsystem: GeoComSubsystem | None = getattr(
+            tps,
+            group["subsystem"],
+            None
+        )
+        if subsystem is None:
+            continue
+
+        for option, default in group["options"].items():
+            if isinstance(default, bool):
+                name = f"get_{option}_status"
+            else:
+                name = f"get_{option}"
+
+            method: Callable[
+                [],
+                GeoComResponse[Any]
+            ] | None = getattr(subsystem, name, None)
+            if method is None:
+                settings["options"][option] = default if add_defaults else None
+                continue
+
+            response = method()
+            value = response.params
+            if response.error != GeoComCode.OK or value is None:
+                settings["options"][option] = default if add_defaults else None
+                continue
+
+            if isinstance(value, tuple):
+                raw = value
+                value = []
+                for v in raw:
+                    if isinstance(v, Enum):
+                        value.append(v.name)
+                    elif isinstance(v, Angle):
+                        value.append(float(v))
+                    else:
+                        value.append(v)
+            elif isinstance(value, Enum):
+                value = value.name
+
+            settings["options"][option] = value
+
+        output_options.append(settings)
+
+    return {
+        "protocol": "geocom",
+        "settings": output_options
+    }
 
 
 def download_settings_gsidna(
@@ -86,6 +223,12 @@ def clean_settings(
         subsystem["options"] = {
             k: v for k, v in subsystem["options"].items() if v is not None
         }
+
+    settings["settings"] = [
+        s
+        for s in settings["settings"]
+        if len(s["options"]) > 0
+    ]
 
     return settings
 
