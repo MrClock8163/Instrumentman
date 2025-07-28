@@ -23,6 +23,11 @@ from ..utils import (
 )  # type: ignore[misc]
 @com_port_argument()
 @argument(
+    "protocol",
+    help="communication protocol",
+    type=Choice(["geocom", "gsidna"], case_sensitive=False)
+)
+@argument(
     "file",
     help="file to save settings to",
     type=file_path(readable=False)
@@ -51,7 +56,9 @@ from ..utils import (
 )
 def cli_save(**kwargs: Any) -> None:
     """Save instrument settings to file."""
-    ...
+    from .save import main
+
+    main(**kwargs)
 
 
 @extra_command(
