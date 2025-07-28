@@ -13,6 +13,7 @@ from . import protocoltest
 from . import inclination
 from . import filetransfer
 from . import jobs
+from . import settings
 
 
 @extra_group("iman", params=None)  # type: ignore[misc]
@@ -65,6 +66,8 @@ def cli_download() -> None:
 
 cli.add_command(morse.cli)
 cli.add_command(terminal.cli)
+cli.add_command(settings.cli_load)
+cli.add_command(settings.cli_save)
 cli_measure.add_command(setmeasurement.cli_measure)
 cli_measure.add_command(setup.cli_measure)
 cli_measure.add_command(inclination.cli_measure)
@@ -75,6 +78,7 @@ cli_test.add_command(protocoltest.cli_gsidna)
 cli_merge.add_command(setmeasurement.cli_merge)
 cli_merge.add_command(inclination.cli_merge)
 cli_validate.add_command(setmeasurement.cli_validate)
+cli_validate.add_command(settings.cli_validate)
 cli_import.add_command(setup.cli_import)
 cli_list.add_command(filetransfer.cli_list)
 cli_list.add_command(jobs.cli_list)

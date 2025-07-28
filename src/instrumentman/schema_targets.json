@@ -1,5 +1,5 @@
 {
-    "title": "GeoComPy set measurement targets schema",
+    "title": "Instrumentman set measurement targets schema",
     "description": "Target point records for set measurements",
     "tpye": "object",
     "additionalProperties": false,

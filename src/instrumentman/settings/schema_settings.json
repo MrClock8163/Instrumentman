@@ -1,0 +1,91 @@
+{
+    "title": "Instrumentman instrument settings schema",
+    "description": "Instrument settings",
+    "required": ["protocol", "settings"],
+    "properties": {
+        "protocol": {
+            "description": "Communication protocol",
+            "enum": ["geocom", "gsidna"]
+        },
+        "settings": {
+            "description": "Settings groups",
+            "tpye": "array",
+            "items": {
+                "type": "object",
+                "required": ["subsystem", "options"],
+                "properties": {
+                    "subsystem": {
+                        "description": "Protocol subsystem"
+                    },
+                    "options": {
+                        "description": "Settings to apply to subsystem",
+                        "type": "object"
+                    }
+                }
+            }
+        }
+    },
+    "if": {
+        "properties": {
+            "protocol": {"const": "geocom"}
+        }
+    },
+    "then": {
+        "properties": {
+            "settings": {
+                "items": {
+                    "properties": {
+                        "subsystem": {"enum": ["aut", "bap", "csv", "dna", "edm", "img", "kdm", "sup", "tmc"]},
+                        "options": {
+                            "patternProperties": {
+                                "^\\w+$": {
+                                    "title": "Setting",
+                                    "oneOf": [
+                                        {"type": "null"},
+                                        {"type": "string"},
+                                        {"type": "boolean"},
+                                        {"type": "number"},
+                                        {
+                                            "type": "array",
+                                            "unevaluatedItems": false,
+                                            "items": {
+                                                "oneOf": [
+                                                    {"type": "string"},
+                                                    {"type": "boolean"},
+                                                    {"type": "number"}
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "else": {
+        "properties": {
+            "settings": {
+                "items": {
+                    "properties": {
+                        "subsystem": {"enum": ["settings"]},
+                        "options": {
+                            "patternProperties": {
+                                "^\\w+$": {
+                                    "title": "Setting",
+                                    "oneOf": [
+                                        {"type": "string"},
+                                        {"type": "boolean"},
+                                        {"type": "number"}
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
