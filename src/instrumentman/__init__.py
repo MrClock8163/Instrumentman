@@ -13,6 +13,7 @@ from . import protocoltest
 from . import inclination
 from . import filetransfer
 from . import jobs
+from . import datatransfer
 
 
 @extra_group("iman", params=None)  # type: ignore[misc]
@@ -79,3 +80,4 @@ cli_import.add_command(setup.cli_import)
 cli_list.add_command(filetransfer.cli_list)
 cli_list.add_command(jobs.cli_list)
 cli_download.add_command(filetransfer.cli_download)
+cli_download.add_command(datatransfer.cli_download)
