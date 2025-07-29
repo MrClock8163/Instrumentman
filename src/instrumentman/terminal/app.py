@@ -448,11 +448,11 @@ class GeoComTerminal(App[None]):
             ) as com:
                 match self.query_one("#select_protocol", Select).value:
                     case Protocol.GEOCOM:
-                        ans = com.exchange(r"%R1Q,0:\r\n")
+                        ans = com.exchange(r"%R1Q,0:")
                         if ans != "%R1P,0,0:0":
                             raise Exception("Invalid response.")
                     case Protocol.GSIDNA:
-                        ans = com.exchange(r"a\r\n")
+                        ans = com.exchange(r"a")
                         if ans != "?":
                             raise Exception("Invalid response.")
 
