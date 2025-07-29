@@ -15,7 +15,7 @@ from .io import write_settings, SettingsDict, SubsystemSettingsDict
 
 def download_settings_geocom(
     tps: GeoCom,
-    add_defaults: bool = False
+    defaults: bool = False
 ) -> SettingsDict:
     options: list[SubsystemSettingsDict] = [
         {
@@ -128,13 +128,13 @@ def download_settings_geocom(
                 GeoComResponse[Any]
             ] | None = getattr(subsystem, name, None)
             if method is None:
-                settings["options"][option] = default if add_defaults else None
+                settings["options"][option] = default if defaults else None
                 continue
 
             response = method()
             value = response.params
             if response.error != GeoComCode.OK or value is None:
-                settings["options"][option] = default if add_defaults else None
+                settings["options"][option] = default if defaults else None
                 continue
 
             if isinstance(value, tuple):
@@ -162,7 +162,7 @@ def download_settings_geocom(
 
 def download_settings_gsidna(
     dna: GsiOnlineDNA,
-    add_defaults: bool = False
+    defaults: bool = False
 ) -> SettingsDict:
     settings: SubsystemSettingsDict = {
         "subsystem": "settings",
@@ -196,13 +196,13 @@ def download_settings_gsidna(
             GsiOnlineResponse[Any]
         ] | None = getattr(dna.settings, name, None)
         if method is None:
-            settings["options"][option] = default if add_defaults else None
+            settings["options"][option] = default if defaults else None
             continue
 
         response = method()
         value = response.value
         if value is None:
-            settings["options"][option] = default if add_defaults else None
+            settings["options"][option] = default if defaults else None
             continue
 
         if isinstance(value, Enum):
@@ -242,8 +242,7 @@ def main(
     retry: int = 1,
     sync_after_timeout: bool = False,
     format: str = "auto",
-    add_defaults: bool = False,
-    save_all: bool = False
+    defaults: bool = False
 ) -> None:
     with open_serial(
         port,
@@ -255,16 +254,15 @@ def main(
         match protocol:
             case "geocom":
                 tps = GeoCom(com)
-                data = download_settings_geocom(tps, add_defaults)
+                data = download_settings_geocom(tps, defaults)
             case "gsidna":
                 dna = GsiOnlineDNA(com)
-                data = download_settings_gsidna(dna, add_defaults)
+                data = download_settings_gsidna(dna, defaults)
             case _:
                 echo_red(f"Unknown protocol: '{protocol}'")
                 exit(1)
 
-    if not save_all:
-        data = clean_settings(data)
+    data = clean_settings(data)
 
     write_settings(data, file, format)
     echo_green(f"Settings saved at {file}")

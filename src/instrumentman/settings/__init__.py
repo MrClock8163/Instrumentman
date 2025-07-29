@@ -7,8 +7,6 @@ from click_extra import (
     file_path,
     Choice
 )
-from cloup import constraint
-from cloup.constraints import If, IsSet, require_all
 
 from ..utils import (
     com_port_argument,
@@ -41,18 +39,12 @@ from ..utils import (
     default="auto"
 )
 @option(
-    "--save-all",
-    help="save every setting, even if not applicable to the instrument",
+    "--defaults",
+    help=(
+        "add defaults for settings that could not be saved "
+        "(e.g. not applicable to the current instrument)"
+    ),
     is_flag=True
-)
-@option(
-    "--add-defaults",
-    help="add defaults for settings that cannot be saved",
-    is_flag=True
-)
-@constraint(
-    If(IsSet("add_defaults"), require_all),
-    ["add_defaults", "save_all"]
 )
 def cli_download(**kwargs: Any) -> None:
     """Save instrument settings to file."""
