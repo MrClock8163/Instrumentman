@@ -28,4 +28,5 @@ Applications
     commands/inclination/index
     commands/protocoltest/index
     commands/files/index
+    commands/data/index
     commands/jobs/index
