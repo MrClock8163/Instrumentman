@@ -17,7 +17,7 @@ from ..utils import (
 
 
 @extra_command(
-    "save",
+    "settings",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -54,7 +54,7 @@ from ..utils import (
     If(IsSet("add_defaults"), require_all),
     ["add_defaults", "save_all"]
 )
-def cli_save(**kwargs: Any) -> None:
+def cli_download(**kwargs: Any) -> None:
     """Save instrument settings to file."""
     from .save import main
 
@@ -62,7 +62,7 @@ def cli_save(**kwargs: Any) -> None:
 
 
 @extra_command(
-    "load",
+    "settings",
     params=None,
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
@@ -80,7 +80,7 @@ def cli_save(**kwargs: Any) -> None:
     type=Choice(["auto", "json", "yaml", "toml"], case_sensitive=False),
     default="auto"
 )
-def cli_load(**kwargs: Any) -> None:
+def cli_upload(**kwargs: Any) -> None:
     """Load instrument settings from file."""
     from .load import main
 

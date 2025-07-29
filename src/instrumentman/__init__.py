@@ -64,10 +64,13 @@ def cli_download() -> None:
     """Download data from the instrument."""
 
 
+@cli.group("upload")  # type: ignore[misc]
+def cli_upload() -> None:
+    """Upload data to the instrument."""
+
+
 cli.add_command(morse.cli)
 cli.add_command(terminal.cli)
-cli.add_command(settings.cli_load)
-cli.add_command(settings.cli_save)
 cli_measure.add_command(setmeasurement.cli_measure)
 cli_measure.add_command(setup.cli_measure)
 cli_measure.add_command(inclination.cli_measure)
@@ -83,3 +86,5 @@ cli_import.add_command(setup.cli_import)
 cli_list.add_command(filetransfer.cli_list)
 cli_list.add_command(jobs.cli_list)
 cli_download.add_command(filetransfer.cli_download)
+cli_download.add_command(settings.cli_download)
+cli_upload.add_command(settings.cli_upload)
