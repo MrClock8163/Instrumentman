@@ -183,7 +183,7 @@ def download_settings_gsidna(
         "delay": 0,
         "autooff": "SLEEP",
         "display_heater": False,
-        "curvature_correction": True,
+        "curvature_correction": False,
         "staff_mode": False,
         "format": "GSI8",
         "code_recording": "BEFORE"
