@@ -11,9 +11,6 @@ from ..utils import echo_green, echo_red, echo_yellow
 def main_download(
     port: str,
     baud: int = 9600,
-    timeout: int = 15,
-    retry: int = 1,
-    sync_after_timeout: bool = False,
     output: BufferedWriter | None = None,
     eof: str = ""
 ) -> None:
@@ -22,9 +19,7 @@ def main_download(
     with open_serial(
         port,
         speed=baud,
-        timeout=2,
-        retry=retry,
-        sync_after_timeout=sync_after_timeout
+        timeout=2
     ) as com:
         while True:
             try:

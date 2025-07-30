@@ -8,7 +8,7 @@ from click_extra import (
 
 from ..utils import (
     com_port_argument,
-    com_option_group
+    com_baud_option
 )
 
 
@@ -18,7 +18,7 @@ from ..utils import (
     context_settings={"auto_envvar_prefix": None}
 )  # type: ignore[misc]
 @com_port_argument()
-@com_option_group()
+@com_baud_option()
 @option(
     "-o",
     "--output",
