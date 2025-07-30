@@ -4,6 +4,7 @@ from click_extra import (
     extra_command,
     argument,
     option,
+    IntRange,
     File
 )
 
@@ -59,6 +60,13 @@ def cli_download(**kwargs: Any) -> None:
 )
 @com_baud_option(1200)
 @com_timeout_option()
+@option(
+    "-s",
+    "--skip",
+    help="number of header rows to skip",
+    type=IntRange(min=0),
+    default=0
+)
 def cli_upload(**kwargs: Any) -> None:
     """Upload ASCII data to the instrument."""
     from .app import main_upload

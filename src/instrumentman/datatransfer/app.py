@@ -50,7 +50,8 @@ def main_upload(
     port: str,
     file: TextIOWrapper,
     baud: int = 1200,
-    timeout: int = 15
+    timeout: int = 15,
+    skip: int = 0
 ) -> None:
     with open_serial(
         port,
@@ -58,6 +59,9 @@ def main_upload(
         timeout=timeout
     ) as com:
         try:
+            for _ in range(skip):
+                next(file)
+
             count = 0
             with progressbar(
                 file,
