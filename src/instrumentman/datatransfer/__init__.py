@@ -2,6 +2,7 @@ from typing import Any
 
 from click_extra import (
     extra_command,
+    argument,
     option,
     File
 )
@@ -43,3 +44,23 @@ def cli_download(**kwargs: Any) -> None:
     from .app import main_download
 
     main_download(**kwargs)
+
+
+@extra_command(
+    "data",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
+@com_port_argument()
+@argument(
+    "file",
+    help="data file to upload",
+    type=File("rt", encoding="ascii")
+)
+@com_baud_option(1200)
+@com_timeout_option()
+def cli_upload(**kwargs: Any) -> None:
+    """Upload ASCII data to the instrument."""
+    from .app import main_upload
+
+    main_upload(**kwargs)
