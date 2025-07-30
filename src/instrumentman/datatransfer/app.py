@@ -1,5 +1,4 @@
 from io import BufferedWriter
-from os import linesep
 
 from serial import SerialTimeoutException
 from click_extra import echo
@@ -11,32 +10,37 @@ from ..utils import echo_green, echo_red, echo_yellow
 def main_download(
     port: str,
     baud: int = 9600,
+    timeout: int = 2,
     output: BufferedWriter | None = None,
-    eof: str = ""
+    eof: str = "",
+    autoclose: bool = True
 ) -> None:
     eof_bytes = eof.encode("ascii")
-    eol_bytes = linesep.encode("ascii")
     with open_serial(
         port,
         speed=baud,
-        timeout=2
+        timeout=timeout
     ) as com:
+        eol_bytes = com.eombytes
+        started = False
         while True:
             try:
                 data = com.receive_binary()
+                started = True
                 echo(data.decode("ascii", "replace"))
                 if output is not None:
                     output.write(data + eol_bytes)
 
-                if data == eof_bytes:
-                    break
+                if data == eof_bytes and autoclose:
+                    echo_green("Transfer finished (end-of-file)")
+                    return
             except SerialTimeoutException:
-                pass
+                if started and autoclose:
+                    echo_green("Transfer finished (timeout)")
+                    return
             except KeyboardInterrupt:
                 echo_yellow("Transfer stopped manually")
                 return
             except Exception as e:
                 echo_red(f"Transfer interrupted by error ({e})")
                 return
-
-        echo_green("Transfer finished")

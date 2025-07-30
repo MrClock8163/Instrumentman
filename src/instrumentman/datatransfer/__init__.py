@@ -8,7 +8,8 @@ from click_extra import (
 
 from ..utils import (
     com_port_argument,
-    com_baud_option
+    com_baud_option,
+    com_timeout_option
 )
 
 
@@ -19,6 +20,7 @@ from ..utils import (
 )  # type: ignore[misc]
 @com_port_argument()
 @com_baud_option()
+@com_timeout_option(2)
 @option(
     "-o",
     "--output",
@@ -27,9 +29,14 @@ from ..utils import (
 )
 @option(
     "--eof",
-    help="end-of-file marker",
+    help="end-of-file marker (i.e. the last line to receive)",
     type=str,
     default=""
+)
+@option(
+    "--autoclose/--no-autoclose",
+    help="close transfer automatically upon timeout or when EOF is received",
+    default=True
 )
 def cli_download(**kwargs: Any) -> None:
     """Receive data sent from the instrument."""

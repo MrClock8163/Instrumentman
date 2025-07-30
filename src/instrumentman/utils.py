@@ -42,13 +42,15 @@ def com_port_argument() -> Callable[[F], F]:
     )
 
 
-def com_timeout_option() -> Callable[[F], F]:
+def com_timeout_option(
+    default: int = 15
+) -> Callable[[F], F]:
     return option(
         "-t",
         "--timeout",
         help="serial timeout",
         type=IntRange(min=0),
-        default=15
+        default=default
     )
 
 

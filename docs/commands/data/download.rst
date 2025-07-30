@@ -8,10 +8,12 @@ might use more common interchange formats.
 
 Some formats have an end-of-file (EOF) marker (e.g. the last line of the
 Trimble M5 format is simply ``END``), this can be specified as an option, to
-automatically finish the transfer, when this marker sequence is received.
+automatically finish the transfer when this marker sequence is received.
 Other formats (like the Leica GSI) do not have such a marker. In these cases
-the transfer has to be manually closed (with keyboard interrupt), once all
-data was received.
+the transfer will be closed if no data was received in the timeout window
+(timeout based automatic closing only occurs if the download at least started).
+When the automatic closing is disabled, the transfer has to be manually closed
+(with keyboard interrupt), once all data was received.
 
 To help detecting when the transfer finished, the output is always printed
 to the standard output, even if an output file is specified.
