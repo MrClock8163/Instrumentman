@@ -17,6 +17,8 @@ dependencies = [
     "rapidfuzz",
     "jsonschema",
     "jmespath",
+    "toml",
+    "PyYAML",
     "click-extra"
 ]
 classifiers = [
@@ -62,6 +64,8 @@ linting = [
     "types-pyserial",
     "types-jsonschema",
     "types-jmespath",
+    "types-toml",
+    "types-PyYAML",
     "mypy",
     "flake8"
 ]

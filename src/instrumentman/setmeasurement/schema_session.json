@@ -1,5 +1,5 @@
 {
-    "title": "GeoComPy set measurement session schema",
+    "title": "Instrumentman set measurement session schema",
     "description": "Data recorded during a set measurement session",
     "type": "object",
     "additionalProperties": false,

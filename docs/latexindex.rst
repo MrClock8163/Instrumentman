@@ -29,3 +29,4 @@ Applications
     commands/protocoltest/index
     commands/files/index
     commands/jobs/index
+    commands/settings/index
