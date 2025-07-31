@@ -12,14 +12,15 @@ description = "Surveying instrument automation applications."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "geocompy",
-    "textual",
-    "rapidfuzz",
-    "jsonschema",
-    "jmespath",
-    "toml",
-    "PyYAML",
-    "click-extra"
+    "pyserial>=3.5.0",
+    "geocompy>=0.8.1",
+    "textual>=3.2.0",
+    "rapidfuzz>=3.13.0",
+    "jsonschema>=4.21.0",
+    "jmespath>=1.0.1",
+    "toml>=0.10.2",
+    "PyYAML>=6.0.2",
+    "click-extra>=5.0.0"
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
