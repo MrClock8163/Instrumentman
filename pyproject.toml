@@ -12,15 +12,16 @@ description = "Surveying instrument automation applications."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "pyserial>=3.5.0",
-    "geocompy>=0.8.1",
-    "textual>=3.2.0",
-    "rapidfuzz>=3.13.0",
-    "jsonschema>=4.21.0",
-    "jmespath>=1.0.1",
-    "toml>=0.10.2",
-    "PyYAML>=6.0.2",
-    "click-extra>=5.0.0"
+    "pyserial ~= 3.5.0",
+    "geocompy >= 0.8.1",
+    "textual >= 3.2.0",
+    "rapidfuzz ~= 3.13.0",
+    "jsonschema ~= 4.21.0",
+    "jmespath ~= 1.0.1",
+    "toml ~= 0.10.2",
+    "PyYAML ~= 6.0.2",
+    "cloup ~= 3.0.7",
+    "click-extra ~= 5.0.2"
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -59,24 +60,24 @@ iman = "instrumentman:cli"
 testing = []
 linting = [
     {include-group = "testing"},
-    "types-pyserial>=3.5.0.20250326",
-    "types-jsonschema>=4.21.0.20240331",
-    "types-jmespath>=1.0.2.4",
-    "types-toml>=0.10.8.20240310",
-    "types-PyYAML>=6.0.12.20250516",
-    "mypy>=1.17.1",
-    "flake8>=7.3.0"
+    "types-pyserial ~= 3.5.0.20250326",
+    "types-jsonschema ~= 4.21.0.20240331",
+    "types-jmespath >= 1.0.2.4",
+    "types-toml >= 0.10.8.20240310",
+    "types-PyYAML >= 6.0.12.20250516",
+    "mypy >= 1.17.1",
+    "flake8 >= 7.3.0"
 ]
 development = [
     {include-group = "linting"}
 ]
 documentation = [
-    "sphinx==8.2.3",
-    "sphinx-notfound-page==1.1.0",
-    "sphinx-last-updated-by-git==0.3.8",
-    "sphinx-immaterial==0.13.5",
-    "sphinx-mdinclude==0.6.2",
-    "sphinx-click==6.0.0"
+    "sphinx ~= 8.2.3",
+    "sphinx-notfound-page ~= 1.1.0",
+    "sphinx-last-updated-by-git ~= 0.3.8",
+    "sphinx-immaterial ~= 0.13.5",
+    "sphinx-mdinclude ~= 0.6.2",
+    "sphinx-click ~= 6.0.0"
 ]
 
 [tool.hatch.version]
