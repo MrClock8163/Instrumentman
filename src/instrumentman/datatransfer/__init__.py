@@ -40,6 +40,14 @@ from ..utils import (
     help="close transfer automatically upon timeout or when EOF is received",
     default=True
 )
+@option(
+    "--inclide-eof/--no-include-eof",
+    help=(
+        "wether the EOF marker is part of the output format "
+        "(or just sent by the instrument regardless of the format in question)"
+    ),
+    default=False
+)
 def cli_download(**kwargs: Any) -> None:
     """Receive data sent from the instrument."""
     from .app import main_download

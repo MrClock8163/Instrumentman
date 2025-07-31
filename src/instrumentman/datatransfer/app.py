@@ -13,7 +13,8 @@ def main_download(
     timeout: int = 2,
     output: BufferedWriter | None = None,
     eof: str = "",
-    autoclose: bool = True
+    autoclose: bool = True,
+    include_eof: bool = False
 ) -> None:
     eof_bytes = eof.encode("ascii")
     with open_serial(
@@ -27,6 +28,11 @@ def main_download(
             try:
                 data = com.receive_binary()
                 started = True
+
+                if data == eof_bytes and autoclose and not include_eof:
+                    echo_green("Download finished (end-of-file)")
+                    return
+
                 echo(data.decode("ascii", "replace"))
                 if output is not None:
                     output.write(data + eol_bytes)
