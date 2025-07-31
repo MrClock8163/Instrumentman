@@ -6,8 +6,9 @@ whatever the instrument sends. Some instruments have their own data formats
 (maybe even a complete ASCII representation of their internal database), others
 might use more common interchange formats.
 
-Some formats have an end-of-file (EOF) marker (e.g. the last line of the
-Trimble M5 format is simply ``END``), this can be specified as an option, to
+Some formats have an end-of-file (EOF) marker, some instruments send an EOF
+marker regardless of the format (e.g. when the transfer is finished a Trimble
+M3 sends an EOF that is simply ``END``), this can be specified as an option to
 automatically finish the transfer when this marker sequence is received.
 Other formats (like the Leica GSI) do not have such a marker. In these cases
 the transfer will be closed if no data was received in the timeout window
