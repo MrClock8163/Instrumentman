@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.3.0 (in development)
+
+### Added
+
+- serial data downloader (`download data`)
+- serial data uploader (`upload data`)
+- instrument settings saver (`download settings`)
+- instrument settings loader (`upload settings`)
+- `terminal` was extended with new settings:
+  - baud
+  - timeout
+
+### Fixed
+
+- the connection test function in the `terminal` app did not work properly
+  with GSI Online DNA protocol
+
 ## v0.2.0
 
 First release of the applications in a new separate CLI package.
