@@ -50,6 +50,7 @@ keywords = ["geocom", "surveying", "leica", "totalstation", "monitoring", "autom
 Documentation = "https://instrumentman.readthedocs.io"
 Repository = "https://github.com/MrClock8163/Instrumentman"
 Issues = "https://github.com/MrClock8163/Instrumentman/issues"
+Changelog = "https://instrumentman.readthedocs.io/latest/changelog"
 
 [project.scripts]
 iman = "instrumentman:cli"
