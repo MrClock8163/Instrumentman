@@ -16,3 +16,4 @@ transfer commands can be used for simple download and upload operations.
     :maxdepth: 1
 
     download
+    upload
