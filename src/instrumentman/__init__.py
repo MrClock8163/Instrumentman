@@ -14,6 +14,7 @@ from . import inclination
 from . import filetransfer
 from . import jobs
 from . import datatransfer
+from . import settings
 
 
 @extra_group("iman", params=None)  # type: ignore[misc]
@@ -81,9 +82,12 @@ cli_test.add_command(protocoltest.cli_gsidna)
 cli_merge.add_command(setmeasurement.cli_merge)
 cli_merge.add_command(inclination.cli_merge)
 cli_validate.add_command(setmeasurement.cli_validate)
+cli_validate.add_command(settings.cli_validate)
 cli_import.add_command(setup.cli_import)
 cli_list.add_command(filetransfer.cli_list)
 cli_list.add_command(jobs.cli_list)
 cli_download.add_command(filetransfer.cli_download)
 cli_download.add_command(datatransfer.cli_download)
+cli_download.add_command(settings.cli_download)
 cli_upload.add_command(datatransfer.cli_upload)
+cli_upload.add_command(settings.cli_upload)

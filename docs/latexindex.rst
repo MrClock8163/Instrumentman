@@ -30,3 +30,4 @@ Applications
     commands/files/index
     commands/data/index
     commands/jobs/index
+    commands/settings/index

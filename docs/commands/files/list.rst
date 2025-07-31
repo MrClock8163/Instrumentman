@@ -24,6 +24,13 @@ separators (contrary to other Windows conventions) and should end with a ``/``.
 If a special type of file is to be listed (e.g. database), then it is enough
 to specify the file type, the path can be left out.
 
+.. note::
+
+    On newer instruments giving just the directory path might not be enough
+    to list all files in the directory. It may be necessary to give the path
+    in a glob-like pattern, with wildcards for the filenames (e.g. to to list
+    all files in the Data folder, the path would be ``Data/*.*``)
+
 Examples
 --------
 
