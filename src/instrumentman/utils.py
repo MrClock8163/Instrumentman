@@ -42,17 +42,21 @@ def com_port_argument() -> Callable[[F], F]:
     )
 
 
-def com_timeout_option() -> Callable[[F], F]:
+def com_timeout_option(
+    default: int = 15
+) -> Callable[[F], F]:
     return option(
         "-t",
         "--timeout",
         help="serial timeout",
         type=IntRange(min=0),
-        default=15
+        default=default
     )
 
 
-def com_baud_option() -> Callable[[F], F]:
+def com_baud_option(
+    default: int = 9600
+) -> Callable[[F], F]:
     return option(
         "-b",
         "--baud",
@@ -73,7 +77,7 @@ def com_baud_option() -> Callable[[F], F]:
             ]
         ),
         callback=lambda ctx, param, value: int(value),
-        default="9600"
+        default=str(default)
     )
 
 
