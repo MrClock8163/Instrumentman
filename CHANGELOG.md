@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.3.0 (in development)
+## Unreleased
 
 ### Added
 
@@ -17,7 +17,7 @@
 - the connection test function in the `terminal` app did not work properly
   with GSI Online DNA protocol
 
-## v0.2.0
+## v0.2.0 (2025-07-25)
 
 First release of the applications in a new separate CLI package.
 All CLIs are now based on Click and Click Extra, and registered as
@@ -54,7 +54,7 @@ subcommands under a common `iman` entry command.
 - `terminal` app could not be launched with Python 3.11 due
   to an f-string error
 
-## v0.1.0
+## v0.1.0 (2025-06-29)
 
 Originally released as part of
 [GeoComPy](https://github.com/MrClock8163/GeoComPy) v0.7.0
