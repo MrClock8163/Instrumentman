@@ -1,5 +1,10 @@
 # Changelog
 
+All notable changes in the Instrumentman project will be documented in this
+file.
+
+The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## Unreleased
 
 ### Added
@@ -11,6 +16,10 @@
 - `terminal` was extended with new settings:
   - baud
   - timeout
+
+### Changed
+
+- all package dependencies now have their minimum compatible version specified
 
 ### Fixed
 
