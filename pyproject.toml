@@ -58,7 +58,9 @@ Changelog = "https://instrumentman.readthedocs.io/latest/changelog"
 iman = "instrumentman:cli"
 
 [dependency-groups]
-testing = []
+testing = [
+    "pytest ~= 8.4.1"
+]
 linting = [
     {include-group = "testing"},
     "types-pyserial ~= 3.5.0.20250326",
@@ -93,7 +95,6 @@ version-file = "src/instrumentman/_version.py"
 [tool.pytest.ini_options]
 addopts = ["-ra", "-v", "--color=yes"]
 testpaths = ["tests"]
-required_plugins = "pytest-mock"
 
 [tool.mypy]
 strict = true
