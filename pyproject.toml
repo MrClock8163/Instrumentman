@@ -20,6 +20,7 @@ dependencies = [
     "jmespath ~= 1.0.1",
     "toml ~= 0.10.2",
     "PyYAML ~= 6.0.2",
+    "numpy ~= 2.0",
     "cloup ~= 3.0.7",
     "click-extra ~= 5.0.2"
 ]
