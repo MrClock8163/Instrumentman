@@ -199,7 +199,10 @@ def main_calc(
     header: bool = False,
     delimiter: str = ",",
     precision: int = 4,
-    allow_oneface: bool = False
+    allow_oneface: bool = False,
+    station: tuple[float, float, float] | None = None,
+    iheight: float | None = None,
+    orientation: str | None = None
 ) -> None:
     with input.open("rt", encoding="utf8") as file:
         data: SessionDict = json.load(file)
@@ -219,13 +222,26 @@ def main_calc(
     points = {"points": search("cycles[].points[]", data)}
     ptids = list(set(search("points[].name", points)))
 
-    station = Coordinate(
-        *data["station"]
-    ) + Coordinate(
-        0,
-        0,
-        data["instrumentheight"]
-    )
+    if station is None or iheight is None:
+        stn = Coordinate(
+            *data["station"]
+        ) + Coordinate(
+            0,
+            0,
+            data["instrumentheight"]
+        )
+    else:
+        stn = Coordinate(
+            station[0],
+            station[1],
+            station[2] + iheight
+        )
+
+    if orientation is None:
+        ori = Angle(0)
+    else:
+        ori = Angle.from_dms(orientation)
+
     coords: dict[str, list[Coordinate]] = {}
     for pt in ptids:
         measurements = search(
@@ -257,8 +273,8 @@ def main_calc(
                 echo_red("Not all measurements have data for both faces")
                 exit(4)
 
-            c = station + Coordinate.from_polar(
-                hz,
+            c = stn + Coordinate.from_polar(
+                (hz + ori).normalized(),
                 v,
                 d
             ) - Coordinate(

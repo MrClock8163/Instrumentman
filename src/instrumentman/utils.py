@@ -1,6 +1,7 @@
 from logging import DEBUG, ERROR, INFO, WARNING, Logger
 import os
 from typing import Any, Callable, cast, TypeVar
+from re import compile
 
 from click_extra import (
     Color,
@@ -10,7 +11,10 @@ from click_extra import (
     option_group,
     argument,
     Choice,
-    IntRange
+    IntRange,
+    ParamType,
+    Context,
+    Parameter
 )
 from cloup.constraints import mutually_exclusive
 
@@ -164,6 +168,28 @@ def echo_red(
     error: bool = False
 ) -> None:
     echo_color(message, Color.red, newline, error)
+
+
+class Angle(ParamType):
+    name = "angle"
+    _PAT = compile(r"^-?[0-9]{1,3}(-[0-9]{1,2}){0,2}(\.\d+)?$")
+
+    def convert(
+        self,
+        value: str,
+        param: Parameter | None,
+        ctx: Context | None
+    ) -> str:
+        if not self._PAT.match(value):
+            self.fail(
+                f"{value} is not a valid angle "
+                "(valid format is [-][DD]D-MM-SS[.SSSS...])",
+                param,
+                ctx
+            )
+            return
+
+        return value
 
 
 def make_directory(filepath: str) -> None:
