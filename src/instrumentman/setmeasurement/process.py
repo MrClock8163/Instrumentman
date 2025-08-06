@@ -201,7 +201,7 @@ def main_calc(
     precision: int = 4,
     allow_oneface: bool = False,
     station: tuple[float, float, float] | None = None,
-    iheight: float | None = None,
+    instrumentheight: float | None = None,
     orientation: str | None = None
 ) -> None:
     with input.open("rt", encoding="utf8") as file:
@@ -222,7 +222,7 @@ def main_calc(
     points = {"points": search("cycles[].points[]", data)}
     ptids = list(set(search("points[].name", points)))
 
-    if station is None or iheight is None:
+    if station is None or instrumentheight is None:
         stn = Coordinate(
             *data["station"]
         ) + Coordinate(
@@ -234,7 +234,7 @@ def main_calc(
         stn = Coordinate(
             station[0],
             station[1],
-            station[2] + iheight
+            station[2] + instrumentheight
         )
 
     if orientation is None:

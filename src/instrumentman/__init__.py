@@ -9,6 +9,7 @@ from . import morse
 from . import terminal
 from . import setup
 from . import setmeasurement
+from . import resection
 from . import protocoltest
 from . import inclination
 from . import filetransfer
@@ -77,6 +78,7 @@ cli_measure.add_command(setup.cli_measure)
 cli_measure.add_command(inclination.cli_measure)
 cli_calc.add_command(setmeasurement.cli_calc)
 cli_calc.add_command(inclination.cli_calc)
+cli_calc.add_command(resection.cli_calc)
 cli_test.add_command(protocoltest.cli_geocom)
 cli_test.add_command(protocoltest.cli_gsidna)
 cli_merge.add_command(setmeasurement.cli_merge)
@@ -91,3 +93,4 @@ cli_download.add_command(datatransfer.cli_download)
 cli_download.add_command(settings.cli_download)
 cli_upload.add_command(datatransfer.cli_upload)
 cli_upload.add_command(settings.cli_upload)
+cli_upload.add_command(resection.cli_upload)

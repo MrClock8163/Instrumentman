@@ -202,6 +202,7 @@ def cli_validate(**kwargs: Any) -> None:
     type=(float, float, float)
 )
 @option(
+    "--instrumentheight",
     "--iheight",
     help="override instrument height",
     type=float
@@ -213,7 +214,7 @@ def cli_validate(**kwargs: Any) -> None:
 )
 @constraint(
     all_or_none,
-    ["station", "iheight"]
+    ["station", "instrumentheight"]
 )
 def cli_calc(**kwargs: Any) -> None:
     """Calculate results from set measurements.
