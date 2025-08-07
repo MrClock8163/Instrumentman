@@ -47,7 +47,7 @@ from ..utils import (
 @option(
     "-f",
     "--filetype",
-    help="file type",
+    help="file type (ignored in recursive mode)",
     type=Choice(
         (
             "image",
@@ -63,6 +63,17 @@ from ..utils import (
         case_sensitive=False
     ),
     default="unknown"
+)
+@option(
+    "--recursive",
+    help="list directory content recursively in a tree view",
+    is_flag=True
+)
+@option(
+    "--depth",
+    help="recursive depth (-1: unlimited, 1<: depth of directory search)",
+    type=Choice(["-1"] + [str(x) for x in range(1, 11)]),
+    default="1"
 )
 def cli_list(**kwargs: Any) -> None:
     """List files on an instrument."""

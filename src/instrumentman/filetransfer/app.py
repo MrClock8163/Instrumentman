@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from io import BufferedWriter
+from typing import TypedDict
 
 from click_extra import echo, progressbar
 from geocompy.communication import open_serial
@@ -29,6 +32,12 @@ _DEVICE = {
     "usb": Device.USB,
     "ram": Device.RAM
 }
+
+
+class FileTreeItem(TypedDict):
+    name: str
+    size: int
+    children: list[FileTreeItem]
 
 
 def run_listing(
@@ -99,6 +108,114 @@ def run_listing(
 
     echo("-" * 90)
     echo(f"total: {count} files")
+
+
+def get_directory_items(
+    tps: GeoCom,
+    device: str,
+    directory: str,
+    depth: int = 0
+) -> list[FileTreeItem]:
+    if depth == 0:
+        return []
+
+    resp_setup = tps.ftr.setup_listing(
+        _DEVICE[device],
+        File.UNKNOWN,
+        f"{directory}/*"
+    )
+    if resp_setup.error != GeoComCode.OK:
+        # echo_red(f"Could not set up file listing ({resp_setup.error.name})")
+        # tps.ftr.abort_list()
+        return []
+
+    resp_list = tps.ftr.list()
+    if resp_list.error != GeoComCode.OK or resp_list.params is None:
+        # echo_red(f"Could not start listing ({resp_list.error.name})")
+        tps.ftr.abort_list()
+        return []
+
+    last, name, size, lastmodified = resp_list.params
+    if name == "":
+        # echo_yellow("Directory is empty or path does not exist")
+        tps.ftr.abort_list()
+        return []
+
+    output: list[FileTreeItem] = []
+    output.append(
+        {
+            "name": name,
+            "size": size,
+            "children": []
+        }
+    )
+    count = 1
+
+    while not last:
+        resp_list = tps.ftr.list(True)
+        if resp_list.error != GeoComCode.OK or resp_list.params is None:
+            # echo_red(
+            #     f"An error occured during listing ({resp_list.error.name})"
+            # )
+            tps.ftr.abort_list()
+            return []
+
+        last, name, size, lastmodified = resp_list.params
+        output.append(
+            {
+                "name": name,
+                "size": size,
+                "children": []
+            }
+        )
+        count += 1
+
+    tps.ftr.abort_list()
+    for item in output:
+        item["children"] = get_directory_items(
+            tps,
+            device,
+            f"{directory}/{item['name']}",
+            depth=(depth - 1) if depth > 0 else -1
+        )
+
+    return output
+
+
+def echo_file_tree(
+    tree: FileTreeItem,
+    depth: int,
+    indent: str = "    "
+) -> None:
+    fmt = "{:<80.80s}{:>10.10s}"
+    echo(
+        fmt.format(
+            indent * depth + tree["name"],
+            str(tree["size"])
+        )
+    )
+    for item in tree["children"]:
+        echo_file_tree(item, depth + 1, indent)
+
+
+def run_listing_tree(
+    tps: GeoCom,
+    dev: str,
+    directory: str,
+    depth: int = 1
+) -> None:
+    tree: FileTreeItem = {
+        "name": directory,
+        "size": 0,
+        "children": get_directory_items(
+            tps,
+            dev,
+            directory,
+            depth
+        )
+    }
+
+    echo_file_tree(tree, 0)
 
 
 def run_download(
@@ -180,7 +297,9 @@ def main_list(
     retry: int = 1,
     sync_after_timeout: bool = False,
     device: str = "internal",
-    filetype: str = "unknown"
+    filetype: str = "unknown",
+    recursive: bool = False,
+    depth: str = "1"
 ) -> None:
     with open_serial(
         port=port,
@@ -191,6 +310,9 @@ def main_list(
     ) as com:
         tps = GeoCom(com)
         try:
-            run_listing(tps, device, directory, filetype)
+            if not recursive:
+                run_listing(tps, device, directory, filetype)
+            else:
+                run_listing_tree(tps, device, directory, int(depth))
         finally:
             tps.ftr.abort_list()
