@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from io import BufferedWriter
 from typing import TypedDict
+import os
+from re import compile, IGNORECASE
 
 from click_extra import echo, progressbar
+from rich import print as rprint
+from rich.tree import Tree
+from rich.filesize import decimal
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
@@ -36,7 +41,7 @@ _DEVICE = {
 
 class FileTreeItem(TypedDict):
     name: str
-    size: int
+    size: int | str
     children: list[FileTreeItem]
 
 
@@ -125,19 +130,16 @@ def get_directory_items(
         f"{directory}/*"
     )
     if resp_setup.error != GeoComCode.OK:
-        # echo_red(f"Could not set up file listing ({resp_setup.error.name})")
         # tps.ftr.abort_list()
         return []
 
     resp_list = tps.ftr.list()
     if resp_list.error != GeoComCode.OK or resp_list.params is None:
-        # echo_red(f"Could not start listing ({resp_list.error.name})")
         tps.ftr.abort_list()
         return []
 
     last, name, size, lastmodified = resp_list.params
     if name == "":
-        # echo_yellow("Directory is empty or path does not exist")
         tps.ftr.abort_list()
         return []
 
@@ -154,9 +156,6 @@ def get_directory_items(
     while not last:
         resp_list = tps.ftr.list(True)
         if resp_list.error != GeoComCode.OK or resp_list.params is None:
-            # echo_red(
-            #     f"An error occured during listing ({resp_list.error.name})"
-            # )
             tps.ftr.abort_list()
             return []
 
@@ -182,20 +181,52 @@ def get_directory_items(
     return output
 
 
-def echo_file_tree(
+_RE_DBX = compile(r"(?:.X\d{2})|.xcf", IGNORECASE)
+
+
+def format_tree_item(
+    tree: FileTreeItem
+) -> str:
+    fmt_dir = ":open_file_folder: [bold blue]{name}"
+    fmt_likelydir = ":grey_question: [cyan]{name} [bright_black]({size})"
+    fmt_text = ":pencil: [green]{name} [bright_black]({size})"
+    fmt_img = ":framed_picture: [bright_magenta]{name} [bright_black]({size})"
+    fmt_dbx = ":package: [red]{name} [bright_black]({size})"
+    fmt_unkown = ":grey_question: {name} [bright_black]({size})"
+
+    name = tree["name"]
+    if isinstance(tree["size"], int):
+        tree["size"] = decimal(tree["size"])
+
+    if len(tree["children"]) > 0:
+        return fmt_dir.format_map(tree)
+
+    match os.path.splitext(name)[1].lower():
+        case "":
+            return fmt_likelydir.format_map(tree)
+        case ".jpg" | ".jpeg" | ".bmp" | ".dxf" | ".dwg":
+            return fmt_img.format_map(tree)
+        case ".txt" | ".gsi" | ".xml":
+            return fmt_text.format_map(tree)
+        case dbx if _RE_DBX.match(dbx):
+            return fmt_dbx.format_map(tree)
+
+    return fmt_unkown.format_map(tree)
+
+
+def build_file_tree(
     tree: FileTreeItem,
-    depth: int,
-    indent: str = "    "
-) -> None:
-    fmt = "{:<80.80s}{:>10.10s}"
-    echo(
-        fmt.format(
-            indent * depth + tree["name"],
-            str(tree["size"])
-        )
-    )
+    branch: Tree | None = None
+) -> Tree:
+
+    if branch is None:
+        branch = Tree(format_tree_item(tree))
+
     for item in tree["children"]:
-        echo_file_tree(item, depth + 1, indent)
+        node = branch.add(format_tree_item(item))
+        build_file_tree(item, node)
+
+    return branch
 
 
 def run_listing_tree(
@@ -215,7 +246,8 @@ def run_listing_tree(
         )
     }
 
-    echo_file_tree(tree, 0)
+    treeview = build_file_tree(tree)
+    rprint(treeview)
 
 
 def run_download(
