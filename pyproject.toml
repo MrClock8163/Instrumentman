@@ -13,7 +13,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "pyserial ~= 3.5.0",
-    "geocompy >= 0.8.1",
+    "geocompy >= 0.10.0",
     "textual >= 3.2.0",
     "rapidfuzz ~= 3.13.0",
     "jsonschema ~= 4.21.0",
