@@ -1,7 +1,8 @@
 from io import BufferedWriter, TextIOWrapper
 
 from serial import SerialTimeoutException
-from click_extra import echo, progressbar
+from rich.progress import Progress, TextColumn
+from click_extra import echo
 from geocompy.communication import open_serial
 
 from ..utils import echo_green, echo_red, echo_yellow
@@ -68,15 +69,13 @@ def main_upload(
             for _ in range(skip):
                 next(file)
 
-            count = 0
-            with progressbar(
-                file,
-                label="Uploading data",
-                item_show_func=lambda x: f"{count} line(s)"
-            ) as bar:
-                for line in bar:
+            with Progress(
+                *Progress.get_default_columns(),
+                TextColumn("{task.completed} line(s)")
+            ) as progress:
+                for line in progress.track(file, description="Uploading..."):
                     com.send(line)
-                    count += 1
+
         except Exception as e:
             echo_red(f"Upload interrupted by error ({e})")
             return
