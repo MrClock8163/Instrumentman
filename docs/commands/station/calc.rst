@@ -13,6 +13,11 @@ indicates, that one of the control points moved.
 The resection is done in two steps, separate horizontal and vertical
 calculations.
 
+Requirements
+------------
+
+- session result file from previous set measurement
+
 Usage
 -----
 

@@ -10,6 +10,11 @@ coordinates, instrument height and orientation.
     The station name cannot be set. It will remain the last point name set with
     the on-board software.
 
+Requirements
+------------
+
+- GeoCom capable total station
+
 Usage
 -----
 
