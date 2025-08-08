@@ -4,16 +4,19 @@ from click_extra import (
     extra_command,
     argument,
     option,
+    constraint,
     Choice,
     IntRange,
     file_path,
     dir_path
 )
+from cloup.constraints import all_or_none
 
 from ..utils import (
     com_option_group,
     logging_option_group,
-    com_port_argument
+    com_port_argument,
+    Angle
 )
 
 
@@ -192,6 +195,26 @@ def cli_validate(**kwargs: Any) -> None:
     "--allow-oneface",
     help="accept points with face 1 measurements only as well",
     is_flag=True
+)
+@option(
+    "--station",
+    help="override the recorded station coordinates",
+    type=(float, float, float)
+)
+@option(
+    "--instrumentheight",
+    "--iheight",
+    help="override instrument height",
+    type=float
+)
+@option(
+    "--orientation",
+    help="override instrument orientation",
+    type=Angle()
+)
+@constraint(
+    all_or_none,
+    ["station", "instrumentheight"]
 )
 def cli_calc(**kwargs: Any) -> None:
     """Calculate results from set measurements.

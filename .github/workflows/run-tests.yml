@@ -7,6 +7,30 @@ env:
   MYPY_FORCE_COLOR: 1
 
 jobs:  
+  testing:
+    name: Running tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+        
+      - name: Build and install package
+        run: python -m pip install .
+
+      - name: Test with pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --group testing
+          python -m pytest
+
   linting:
     name: Linting
     runs-on: ubuntu-latest

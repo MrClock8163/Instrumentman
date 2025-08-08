@@ -7,6 +7,14 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+### Added
+
+- Added resection calculation logic
+- Added station calculation (`calc station`) using resection from set
+  measurements
+- Added station uploading (`upload station`) to set station coordinates and
+  orientation
+
 ### Changed
 
 - Updated file listing to display results in a tree view
