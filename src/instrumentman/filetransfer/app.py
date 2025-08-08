@@ -1,12 +1,23 @@
-from io import BufferedWriter
+from __future__ import annotations
 
+from io import BufferedWriter
+from typing import TypedDict, Generator
+import os
+from re import compile, IGNORECASE
+
+from click._termui_impl import ProgressBar
 from click_extra import echo, progressbar
+from rich.console import Console, RenderableType
+from rich.text import Text
+from rich.tree import Tree
+from rich.table import Table
+from rich.filesize import decimal
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
 from geocompy.geo.gcdata import File, Device
 
-from ..utils import echo_red, echo_green, echo_yellow
+from ..utils import echo_red, echo_green
 
 
 _FILE = {
@@ -31,74 +42,186 @@ _DEVICE = {
 }
 
 
-def run_listing(
+class FileTreeItem(TypedDict):
+    name: str
+    size: int
+    date: str
+    children: list[FileTreeItem]
+
+
+def get_directory_items(
+    bar: ProgressBar[str],
     tps: GeoCom,
-    dev: str,
+    device: str,
     directory: str,
-    filetype: str
-) -> None:
+    filetype: str,
+    depth: int = 0
+) -> list[FileTreeItem]:
+    if depth == 0:
+        return []
+    bar.update(1, directory)
     resp_setup = tps.ftr.setup_listing(
-        _DEVICE[dev],
+        _DEVICE[device],
         _FILE[filetype],
-        directory
+        f"{directory}/*"
     )
     if resp_setup.error != GeoComCode.OK:
-        echo_red(f"Could not set up file listing ({resp_setup.error.name})")
-        return
+        return []
 
     resp_list = tps.ftr.list()
     if resp_list.error != GeoComCode.OK or resp_list.params is None:
-        echo_red(f"Could not start listing ({resp_list.error.name})")
-        return
+        tps.ftr.abort_list()
+        return []
 
     last, name, size, lastmodified = resp_list.params
     if name == "":
-        echo_yellow("Directory is empty or path does not exist")
-        return
+        tps.ftr.abort_list()
+        return []
 
-    count = 1
-    echo(f"{'file name':<55.55s}{'bytes':>10.10s}{'last modified':>25.25s}")
-    echo(f"{'---------':<55.55s}{'-----':>10.10s}{'-------------':>25.25s}")
-    fmt = "{name:<55.55s}{size:>10s}{date:>25.25s}"
-    echo(
-        fmt.format_map(
-            {
-                "name": name,
-                "size": str(size),
-                "date": (
-                    lastmodified.isoformat(sep=" ")
-                    if lastmodified is not None
-                    else ""
-                )
-            }
-        )
+    output: list[FileTreeItem] = []
+    output.append(
+        {
+            "name": name,
+            "size": size,
+            "date": (
+                lastmodified.isoformat(sep=" ")
+                if lastmodified is not None
+                else ""
+            ),
+            "children": []
+        }
     )
     while not last:
         resp_list = tps.ftr.list(True)
         if resp_list.error != GeoComCode.OK or resp_list.params is None:
-            echo_red(
-                f"An error occured during listing ({resp_list.error.name})"
-            )
-            return
+            tps.ftr.abort_list()
+            return []
 
         last, name, size, lastmodified = resp_list.params
-        echo(
-            fmt.format_map(
-                {
-                    "name": name,
-                    "size": str(size),
-                    "date": (
-                        lastmodified.isoformat(sep=" ")
-                        if lastmodified is not None
-                        else ""
-                    )
-                }
-            )
+        output.append(
+            {
+                "name": name,
+                "size": size,
+                "date": (
+                    lastmodified.isoformat(sep=" ")
+                    if lastmodified is not None
+                    else ""
+                ),
+                "children": []
+            }
         )
-        count += 1
 
-    echo("-" * 90)
-    echo(f"total: {count} files")
+    tps.ftr.abort_list()
+    for item in output:
+        item["children"] = get_directory_items(
+            bar,
+            tps,
+            device,
+            f"{directory}/{item['name']}",
+            filetype,
+            depth=(depth - 1) if depth > 0 else -1
+        )
+
+    return output
+
+
+_RE_DBX = compile(r"(?:.X\d{2})|.xcf", IGNORECASE)
+_fmt_dir = ":open_file_folder: [bold blue]{name}[/] [bright_black]({count})"
+_fmt_likelydir = ":grey_question: [cyan]{name}"
+_fmt_text = ":pencil: [green]{name}"
+_fmt_img = ":city_sunset: [bright_magenta]{name}"
+_fmt_dbx = ":package: [red]{name}"
+_fmt_unkown = ":grey_question: {name}"
+
+
+def format_tree_item(
+    tree: FileTreeItem
+) -> RenderableType:
+
+    if len(tree["children"]) > 0:
+        name = _fmt_dir.format(
+            name=tree["name"],
+            count=len(tree["children"])
+        )
+    else:
+        match os.path.splitext(tree["name"])[1].lower():
+            case "":
+                name = _fmt_likelydir.format_map(tree)
+            case ".jpg" | ".jpeg" | ".bmp" | ".dxf" | ".dwg":
+                name = _fmt_img.format_map(tree)
+            case ".txt" | ".gsi" | ".xml":
+                name = _fmt_text.format_map(tree)
+            case dbx if _RE_DBX.match(dbx):
+                name = _fmt_dbx.format_map(tree)
+            case _:
+                name = _fmt_unkown.format_map(tree)
+
+    grid = Table.grid(expand=True)
+    grid.add_column()
+    grid.add_column(justify="right")
+    grid.add_row(
+        Text.from_markup(name),
+        Text(
+            f"{decimal(tree['size']):>10.10s}{tree['date']:>25.25s}",
+            justify="right"
+        )
+    )
+    return grid
+
+
+def build_file_tree(
+    tree: FileTreeItem,
+    branch: Tree | None = None
+) -> Tree:
+    if branch is None:
+        branch = Tree(format_tree_item(tree))
+
+    for item in tree["children"]:
+        node = branch.add(format_tree_item(item))
+        build_file_tree(item, node)
+
+    return branch
+
+
+def _infinite_iterator() -> Generator[str, None, None]:
+    while True:
+        yield ""
+
+
+def run_listing_tree(
+    tps: GeoCom,
+    dev: str,
+    directory: str,
+    filetype: str | None,
+    depth: int = 1
+) -> None:
+    with progressbar(
+        _infinite_iterator(),
+        label="Searching directories",
+        item_show_func=lambda x: "" if x is None else str(x)
+    ) as bar:
+        tree: FileTreeItem = {
+            "name": (
+                f"{dev.upper()}/{directory}"
+                if directory != "/"
+                else dev.upper()
+            ),
+            "size": 0,
+            "date": "unknown",
+            "children": get_directory_items(
+                bar,
+                tps,
+                dev,
+                directory,
+                filetype or "unknown",
+                -1 if depth == 0 else depth
+            )
+        }
+        bar.finish()
+
+    treeview = build_file_tree(tree)
+    console = Console(width=120)
+    console.print(treeview)
 
 
 def run_download(
@@ -180,7 +303,8 @@ def main_list(
     retry: int = 1,
     sync_after_timeout: bool = False,
     device: str = "internal",
-    filetype: str = "unknown"
+    filetype: str | None = None,
+    depth: int = 1
 ) -> None:
     with open_serial(
         port=port,
@@ -191,6 +315,6 @@ def main_list(
     ) as com:
         tps = GeoCom(com)
         try:
-            run_listing(tps, device, directory, filetype)
+            run_listing_tree(tps, device, directory, filetype, depth)
         finally:
             tps.ftr.abort_list()
