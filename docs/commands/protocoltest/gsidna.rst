@@ -7,6 +7,11 @@ and a ``SET`` command are executed first to check if read-writes to the
 instrument settings are available. Then a ``GET`` and a ``PUT`` command is
 run to test if the GSI based measurement/database commands are responsive.
 
+Requirements
+------------
+
+- GSI Online DNA capable instrument
+
 Usage
 -----
 

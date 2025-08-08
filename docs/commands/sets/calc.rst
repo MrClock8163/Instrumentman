@@ -9,7 +9,7 @@ to a simple CSV file.
 Requirements
 ------------
 
-- session result file from previous set measurement
+- Session result file from previous set measurement
 
 Examples
 --------

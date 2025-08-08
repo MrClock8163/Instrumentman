@@ -8,6 +8,11 @@ relays a Morse encoded ASCII message through the speakers of a total station.
 The signals are played with the man-machine interface beep signals of the
 instrument.
 
+Requirements
+------------
+
+- GeoCom capable instrument
+
 Examples
 --------
 

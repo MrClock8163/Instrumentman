@@ -47,7 +47,7 @@ from ..utils import (
 @option(
     "-f",
     "--filetype",
-    help="file type",
+    help="file type (ignored in recursive mode)",
     type=Choice(
         (
             "image",
@@ -57,12 +57,19 @@ from ..utils import (
             "telescope-jpg",
             "telescope-bmp",
             "scan",
-            "unknown",
             "last"
         ),
         case_sensitive=False
+    )
+)
+@option(
+    "--depth",
+    help=(
+        "recursive depth "
+        "(0: unlimited; 1<=x: depth of directory search)"
     ),
-    default="unknown"
+    type=IntRange(0),
+    default=1
 )
 def cli_list(**kwargs: Any) -> None:
     """List files on an instrument."""

@@ -12,6 +12,15 @@ the structure must follow the required schema.
  
     Configs can be validated before upload with the validation command.
 
+Requirements
+------------
+
+- GeoCom capable instrument
+
+or
+
+- GSI Online DNA capable instrument
+
 Examples
 --------
 

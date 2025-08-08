@@ -6,6 +6,11 @@ can be calculated from the results. The results give the coordinate system
 axis-aligned inclination components and standard deviations, as well as the
 resulting inclination and its direction.
 
+Requirements
+------------
+
+- Inclination measurement files from previous measurements
+
 Methodology
 -----------
 

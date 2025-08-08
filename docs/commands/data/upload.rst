@@ -6,6 +6,11 @@ sending the file data line by line. Most instruments, that support data
 uploads through serial, accept coordinate data in CSV format. Some instruments
 also support their own specialized database record formats.
 
+Requirements
+------------
+
+- Instrument capable of serial ASCII data transfer
+
 .. caution::
     :class: warning
 

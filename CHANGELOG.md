@@ -15,6 +15,11 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added station uploading (`upload station`) to set station coordinates and
   orientation
 
+### Changed
+
+- Updated file listing to display results in a tree view
+- Reworked file listing to be able to run recursively to build full tree view
+
 ## v0.3.0 (2025-08-01)
 
 ### Added

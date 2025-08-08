@@ -27,6 +27,11 @@ to the standard output, even if an output file is specified.
     cannot be accurately represented with ASCII characters in the terminal
     (non-ASCII bytes are replaced with ``?`` symbols in the terminal output).
 
+Requirements
+------------
+
+- Instrument capable of serial ASCII data transfer
+
 Examples
 --------
 

@@ -12,6 +12,11 @@ see what part of the protocol might be usable on the instrument.
     command used for testing, but does not actually respond to the other
     commands of the subsystem with valid data.
 
+Requirements
+------------
+
+- GeoCom capable instrument
+
 Usage
 -----
 

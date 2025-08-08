@@ -7,7 +7,7 @@ targets definition can be created by importing the data from CSV format.
 Requirements
 ------------
 
-- point coordinates in CSV format
+- Point coordinates in CSV format
 
 Prism type
 ----------

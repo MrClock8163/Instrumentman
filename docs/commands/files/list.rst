@@ -19,17 +19,15 @@ Paths
 
 The most general way of file listing is to not specify a file type (defaulting
 to unknown), and giving the directory path. Such a path should use ``/`` as
-separators (contrary to other Windows conventions) and should end with a ``/``.
+separators (contrary to other Windows conventions) and might end with a ``/``.
 
 If a special type of file is to be listed (e.g. database), then it is enough
 to specify the file type, the path can be left out.
 
 .. note::
 
-    On newer instruments giving just the directory path might not be enough
-    to list all files in the directory. It may be necessary to give the path
-    in a glob-like pattern, with wildcards for the filenames (e.g. to to list
-    all files in the Data folder, the path would be ``Data/*.*``)
+    On older instruments, the file listing might not return directories. In
+    these cases the recursive file tree cannot be created.
 
 Examples
 --------
@@ -42,7 +40,12 @@ Examples
 .. code-block:: shell
     :caption: Listing all exported files on a CF card
 
-    iman list files -d cf COM1 Data/
+    iman list files -d cf COM1 Data
+
+.. code-block:: shell
+    :caption: Listing all contents of a directory recursively
+
+    iman list files --depth 0 COM1 Data
 
 Usage
 -----

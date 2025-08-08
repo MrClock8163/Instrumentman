@@ -7,6 +7,11 @@ these measurements is usually in the domain of arcseconds. If the inclination
 has to be known with better reliability, multiple measurements have to be
 taken, preferably in different horizontal positions of the instrument.
 
+Requirements
+------------
+
+- GeoCom capable robotic total station
+
 Results
 -------
 
@@ -16,11 +21,6 @@ measurement, the cross inclination and the length inclination. If the
 instrument was oriented to an existing coordinate system at the time, then the
 horizontal angles are whole circle bearings in that system, otherwise they
 are relative to the arbitrary orientation.
-
-Requirements
-------------
-
-- GeoCom capable robotic total station
 
 Examples
 --------
