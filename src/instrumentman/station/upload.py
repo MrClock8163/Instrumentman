@@ -12,12 +12,11 @@ def main(
     timeout: int = 15,
     retry: int = 1,
     sync_after_timeout: bool = False,
-    coordinates: tuple[float, float, float] = (0, 0, 0),
-    instrumentheight: float = 0,
-    orientation: str = "0-00-00"
+    coordinates: tuple[float, float, float] | None = None,
+    instrumentheight: float | None = None,
+    orientation: str | None = None,
+    azimuth: str | None = None
 ) -> None:
-    station = Coordinate(*coordinates)
-    ori = Angle.from_dms(orientation)
     with open_serial(
         port=port,
         speed=baud,
@@ -26,21 +25,35 @@ def main(
         sync_after_timeout=sync_after_timeout
     ) as com:
         tps = GeoCom(com)
-        resp_stn = tps.tmc.set_station(station, instrumentheight)
-        if resp_stn.error != GeoComCode.OK:
-            echo_red("Cannot set station")
-            exit(1)
+        if coordinates is not None and instrumentheight is not None:
+            resp_stn = tps.tmc.set_station(
+                Coordinate(*coordinates),
+                instrumentheight
+            )
+            if resp_stn.error != GeoComCode.OK:
+                echo_red("Cannot set station")
+                exit(1)
+            else:
+                echo_green("Station set")
 
-        resp_angle = tps.tmc.get_angle()
-        if resp_angle.error != GeoComCode.OK or resp_angle.params is None:
-            echo_red("Cannot set orientation")
-            exit(1)
+        if azimuth is not None:
+            hz = Angle.from_dms(azimuth)
+        elif orientation is not None:
+            resp_angle = tps.tmc.get_angle()
+            if resp_angle.error != GeoComCode.OK or resp_angle.params is None:
+                echo_red("Could not set orientation")
+                exit(1)
 
-        resp_ori = tps.tmc.set_azimuth(
-            (resp_angle.params[0] + ori).normalized()
-        )
+            hz = (
+                resp_angle.params[0]
+                + Angle.from_dms(orientation)
+            ).normalized()
+        else:
+            exit()
+
+        resp_ori = tps.tmc.set_azimuth(hz)
         if resp_ori.error != GeoComCode.OK:
-            echo_red("Cannot set orientation")
+            echo_red("Could not set orientation/azimuth")
             exit(1)
 
-        echo_green("Station and orientation set")
+        echo_green("Orientation/azimuth set")

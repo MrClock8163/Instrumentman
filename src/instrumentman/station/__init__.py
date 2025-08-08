@@ -6,6 +6,11 @@ from click_extra import (
     option,
     file_path
 )
+from cloup.constraints import (
+    constraint,
+    mutually_exclusive,
+    all_or_none
+)
 
 from ..utils import (
     com_port_argument,
@@ -60,23 +65,43 @@ def cli_calc(**kwargs: Any) -> None:
 @com_port_argument()
 @com_option_group()
 @option(
+    "-c",
     "--coordinates",
     help="station coordinates",
     type=(float, float, float),
-    default=(0, 0, 0)
+    is_flag=False,
+    flag_value=(0, 0, 0)
 )
 @option(
+    "-i",
     "--instrumentheight",
     "--iheight",
     help="instrument height",
     type=float,
-    default=0
+    is_flag=False,
+    flag_value=0
 )
 @option(
+    "-o",
     "--orientation",
     help="instrument orientation correction",
+    type=Angle()
+)
+@option(
+    "-a",
+    "--azimuth",
+    help="current azimuth",
     type=Angle(),
-    default="0-00-00"
+    is_flag=False,
+    flag_value="0-00-00"
+)
+@constraint(
+    mutually_exclusive,
+    ["orientation", "azimuth"]
+)
+@constraint(
+    all_or_none,
+    ["coordinates", "instrumentheight"]
 )
 def cli_upload(**kwargs: Any) -> None:
     """Upload station setup to instrument."""
