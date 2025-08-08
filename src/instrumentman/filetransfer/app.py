@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from io import BufferedWriter
-from typing import TypedDict
+from typing import TypedDict, Generator
 import os
 from re import compile, IGNORECASE
 
+from click._termui_impl import ProgressBar
 from click_extra import echo, progressbar
 from rich import print as rprint
 from rich.tree import Tree
@@ -116,6 +117,7 @@ def run_listing(
 
 
 def get_directory_items(
+    bar: ProgressBar[str],
     tps: GeoCom,
     device: str,
     directory: str,
@@ -123,14 +125,13 @@ def get_directory_items(
 ) -> list[FileTreeItem]:
     if depth == 0:
         return []
-
+    bar.update(1, directory)
     resp_setup = tps.ftr.setup_listing(
         _DEVICE[device],
         File.UNKNOWN,
         f"{directory}/*"
     )
     if resp_setup.error != GeoComCode.OK:
-        # tps.ftr.abort_list()
         return []
 
     resp_list = tps.ftr.list()
@@ -151,8 +152,6 @@ def get_directory_items(
             "children": []
         }
     )
-    count = 1
-
     while not last:
         resp_list = tps.ftr.list(True)
         if resp_list.error != GeoComCode.OK or resp_list.params is None:
@@ -167,11 +166,11 @@ def get_directory_items(
                 "children": []
             }
         )
-        count += 1
 
     tps.ftr.abort_list()
     for item in output:
         item["children"] = get_directory_items(
+            bar,
             tps,
             device,
             f"{directory}/{item['name']}",
@@ -218,7 +217,6 @@ def build_file_tree(
     tree: FileTreeItem,
     branch: Tree | None = None
 ) -> Tree:
-
     if branch is None:
         branch = Tree(format_tree_item(tree))
 
@@ -229,22 +227,38 @@ def build_file_tree(
     return branch
 
 
+def _infinite_iterator() -> Generator[str, None, None]:
+    while True:
+        yield ""
+
+
 def run_listing_tree(
     tps: GeoCom,
     dev: str,
     directory: str,
     depth: int = 1
 ) -> None:
-    tree: FileTreeItem = {
-        "name": directory,
-        "size": 0,
-        "children": get_directory_items(
-            tps,
-            dev,
-            directory,
-            1 if depth == 0 else depth
-        )
-    }
+    with progressbar(
+        _infinite_iterator(),
+        label="Searching directories",
+        item_show_func=lambda x: "" if x is None else str(x)
+    ) as bar:
+        tree: FileTreeItem = {
+            "name": (
+                f"{dev.upper()}/{directory}"
+                if directory != "/"
+                else dev.upper()
+            ),
+            "size": 0,
+            "children": get_directory_items(
+                bar,
+                tps,
+                dev,
+                directory,
+                1 if depth == 0 else depth
+            )
+        }
+        bar.finish()
 
     treeview = build_file_tree(tree)
     rprint(treeview)
