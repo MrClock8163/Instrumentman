@@ -242,7 +242,7 @@ def run_listing_tree(
             tps,
             dev,
             directory,
-            depth
+            1 if depth == 0 else depth
         )
     }
 
@@ -330,8 +330,8 @@ def main_list(
     sync_after_timeout: bool = False,
     device: str = "internal",
     filetype: str = "unknown",
-    recursive: bool = False,
-    depth: str = "1"
+    tree: bool = False,
+    depth: int = 1
 ) -> None:
     with open_serial(
         port=port,
@@ -342,9 +342,9 @@ def main_list(
     ) as com:
         tps = GeoCom(com)
         try:
-            if not recursive:
+            if not tree:
                 run_listing(tps, device, directory, filetype)
             else:
-                run_listing_tree(tps, device, directory, int(depth))
+                run_listing_tree(tps, device, directory, depth)
         finally:
             tps.ftr.abort_list()

@@ -65,15 +65,18 @@ from ..utils import (
     default="unknown"
 )
 @option(
-    "--recursive",
-    help="list directory content recursively in a tree view",
+    "--tree",
+    help="list directory content (recursively) in a tree view",
     is_flag=True
 )
 @option(
     "--depth",
-    help="recursive depth (-1: unlimited, 1<: depth of directory search)",
-    type=Choice(["-1"] + [str(x) for x in range(1, 11)]),
-    default="1"
+    help=(
+        "recursive depth "
+        "(-1: unlimited; 1<=x: depth of directory search; 0 is treated as 1)"
+    ),
+    type=IntRange(-1),
+    default=-1
 )
 def cli_list(**kwargs: Any) -> None:
     """List files on an instrument."""
