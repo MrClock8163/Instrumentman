@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 from io import BufferedWriter
-from typing import TypedDict, Generator
+from typing import TypedDict, Generator, Callable
 import os
 from re import compile, IGNORECASE
 
-from click._termui_impl import ProgressBar
-from click_extra import echo, progressbar
+from click_extra import echo
 from rich.console import Console, RenderableType
 from rich.text import Text
 from rich.tree import Tree
 from rich.table import Table
 from rich.filesize import decimal
+from rich.progress import Progress, TextColumn
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
@@ -50,7 +50,7 @@ class FileTreeItem(TypedDict):
 
 
 def get_directory_items(
-    bar: ProgressBar[str],
+    updater: Callable[[str], None],
     tps: GeoCom,
     device: str,
     directory: str,
@@ -59,7 +59,7 @@ def get_directory_items(
 ) -> list[FileTreeItem]:
     if depth == 0:
         return []
-    bar.update(1, directory)
+    updater(directory)
     resp_setup = tps.ftr.setup_listing(
         _DEVICE[device],
         _FILE[filetype],
@@ -114,7 +114,7 @@ def get_directory_items(
     tps.ftr.abort_list()
     for item in output:
         item["children"] = get_directory_items(
-            bar,
+            updater,
             tps,
             device,
             f"{directory}/{item['name']}",
@@ -195,11 +195,18 @@ def run_listing_tree(
     filetype: str | None,
     depth: int = 1
 ) -> None:
-    with progressbar(
-        _infinite_iterator(),
-        label="Searching directories",
-        item_show_func=lambda x: "" if x is None else str(x)
-    ) as bar:
+    console = Console(width=120)
+    with Progress(
+        *Progress.get_default_columns(),
+        TextColumn("{task.fields[path]}"),
+        console=console,
+        transient=True
+    ) as progress:
+        task = progress.add_task(
+            "Indexing directories...",
+            total=None,
+            path=""
+        )
         tree: FileTreeItem = {
             "name": (
                 f"{dev.upper()}/{directory}"
@@ -209,7 +216,7 @@ def run_listing_tree(
             "size": 0,
             "date": "unknown",
             "children": get_directory_items(
-                bar,
+                lambda path: progress.update(task, path=path),
                 tps,
                 dev,
                 directory,
@@ -217,10 +224,8 @@ def run_listing_tree(
                 -1 if depth == 0 else depth
             )
         }
-        bar.finish()
 
     treeview = build_file_tree(tree)
-    console = Console(width=120)
     console.print(treeview)
 
 
@@ -249,14 +254,12 @@ def run_download(
         echo_red(f"Could not set up file download ({resp_setup.error.name})")
         return
 
-    block_count = resp_setup.params
-    with progressbar(
-        range(block_count),
-        label="Downloading"
-    ) as bar:
-        for i in bar:
+    with Progress() as progress:
+        block_count = resp_setup.params
+        for i in progress.track(range(block_count), description="Downloading"):
             resp_pull = download(i + 1)
             if resp_pull.error != GeoComCode.OK or resp_pull.params is None:
+                progress.stop()
                 echo_red(
                     "An error occured during download "
                     f"({resp_setup.error.name})"
