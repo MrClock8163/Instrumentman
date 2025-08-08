@@ -57,26 +57,19 @@ from ..utils import (
             "telescope-jpg",
             "telescope-bmp",
             "scan",
-            "unknown",
             "last"
         ),
         case_sensitive=False
-    ),
-    default="unknown"
-)
-@option(
-    "--tree",
-    help="list directory content (recursively) in a tree view",
-    is_flag=True
+    )
 )
 @option(
     "--depth",
     help=(
         "recursive depth "
-        "(-1: unlimited; 1<=x: depth of directory search; 0 is treated as 1)"
+        "(0: unlimited; 1<=x: depth of directory search)"
     ),
-    type=IntRange(-1),
-    default=-1
+    type=IntRange(0),
+    default=1
 )
 def cli_list(**kwargs: Any) -> None:
     """List files on an instrument."""
