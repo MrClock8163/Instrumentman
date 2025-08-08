@@ -11,6 +11,15 @@ commands. The responses are displayed in a log format.
 
     .. image:: terminal_screenshot.svg
 
+Requirements
+------------
+
+- GeoCom capable instrument
+
+or
+
+- GSI Online DNA capable instrument
+
 Usage
 -----
 

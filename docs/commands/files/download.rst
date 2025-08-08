@@ -11,6 +11,11 @@ by either a file name and type, or a full file path.
     File downloads over serial (especially Bluetooth) are rather slow, and
     greatly affected by the communication speed settings.
 
+Requirements
+------------
+
+- GeoCom capable instrument
+
 Process
 -------
 
@@ -24,11 +29,6 @@ Under normal circumstances it is recommended to use the maximum chunk size,
 as this results in the fastest transfer. If the connection is not completely
 reliable, decreasing the chunk size might reduce the size of data, that needs
 to be resent due to timed out exchanges.
-
-Requirements
-------------
-
-- GeoCom capable instrument
 
 Examples
 --------

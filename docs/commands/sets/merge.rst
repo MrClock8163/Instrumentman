@@ -13,7 +13,7 @@ station, the data files need to be merged to process them together.
 Requirements
 ------------
 
-- session result files from previous set measurements
+- Session result files from previous set measurements
 
 Examples
 --------

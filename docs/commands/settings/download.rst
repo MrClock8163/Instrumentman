@@ -11,6 +11,15 @@ It is possible to save the default values for the parameters, that the
 instrument did not respond to. In this case, the config file might need to be
 manually cleaned of the irrelevant or unwanted settings.
 
+Requirements
+------------
+
+- GeoCom capable instrument
+
+or
+
+- GSI Online DNA capable instrument
+
 Examples
 --------
 

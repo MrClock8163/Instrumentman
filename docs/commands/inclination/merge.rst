@@ -6,16 +6,16 @@ files. If multiple measurements are from the same setup and need to be
 processed together, the files need to be merged. The merging command provides
 a convenience tool for this purpose.
 
+Requirements
+------------
+
+- Inclination measurement files from previous measurements
+
 .. note::
 
     The command does not do any semantic validation of the data in the
     specified files. It simply concatenates those rows from all files, that
     follow the required format.
-
-Requirements
-------------
-
-- inclination measurement files from previous measurements
 
 Usage
 -----
