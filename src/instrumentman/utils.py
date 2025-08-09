@@ -1,7 +1,20 @@
-from logging import DEBUG, ERROR, INFO, WARNING, Logger
+from logging import (
+    DEBUG,
+    ERROR,
+    INFO,
+    WARNING,
+    NOTSET,
+    Logger,
+    StreamHandler,
+    basicConfig,
+    Handler
+)
+from sys import stdout, stderr
+from logging.handlers import RotatingFileHandler
 import os
 from typing import Any, Callable, cast, TypeVar
 from re import compile
+from pathlib import Path
 
 from click_extra import (
     Color,
@@ -12,11 +25,20 @@ from click_extra import (
     argument,
     Choice,
     IntRange,
+    file_path,
     ParamType,
     Context,
     Parameter
 )
-from cloup.constraints import mutually_exclusive
+from cloup.constraints import (
+    ErrorFmt,
+    constraint,
+    mutually_exclusive,
+    require_one,
+    require_all,
+    If,
+    AnySet
+)
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -126,7 +148,78 @@ def logging_option_group() -> Callable[[F], F]:
             "--error",
             is_flag=True
         ),
-        constraint=mutually_exclusive
+        option(
+            "--file",
+            help="log to file",
+            type=file_path(readable=False)
+        ),
+        option(
+            "--stdout",
+            help="log to standard output",
+            is_flag=True
+        ),
+        option(
+            "--stderr",
+            help="log to standard error",
+            is_flag=True
+        ),
+        option(
+            "--format",
+            help=(
+                "logging format string (as accepted by the `logging` package "
+                "in '{' style)"
+            ),
+            type=str,
+            default="{asctime} <{name}> [{levelname}] {message}"
+        ),
+        option(
+            "--dateformat",
+            help="date-time format spec (as accepted by `strftime`)",
+            type=str,
+            default="%Y-%m-%d %H:%M:%S"
+        ),
+        option(
+            "--rotate",
+            help=(
+                "number of backup log files to rotate, and maximum size "
+                "(in bytes) of a log file before rotation"
+            ),
+            type=(IntRange(1), IntRange(1))
+        )
+    )
+
+
+def logging_levels_constraint() -> Callable[[F], F]:
+    return constraint(
+        mutually_exclusive,
+        ["debug", "info", "warning", "error"]
+    )
+
+
+def logging_output_constraint() -> Callable[[F], F]:
+    return constraint(
+        If(AnySet("file", "stdout", "stderr"), require_one),
+        ["debug", "info", "warning", "error"]
+    )
+
+
+def logging_target_constraint() -> Callable[[F], F]:
+    return constraint(
+        If(AnySet("debug", "info", "warning", "error"), require_one),
+        ["file", "stdout", "stderr"]
+    )
+
+
+def logging_rotation_constraint() -> Callable[[F], F]:
+    return constraint(
+        If("rotate", require_all).rephrased(
+            help="required if --rotate is set",
+            error=(
+                "when --rotate is set, the following parameter must also be "
+                f"set:\n{ErrorFmt.param_list}"
+            )
+        ),
+        ["file"]
     )
 
 
@@ -198,6 +291,62 @@ def make_directory(filepath: str) -> None:
         return
 
     os.makedirs(dirname, exist_ok=True)
+
+
+def configure_logging(
+    debug: bool = False,
+    info: bool = False,
+    warning: bool = False,
+    error: bool = False,
+    to_path: Path | None = None,
+    to_stdout: bool = False,
+    to_stderr: bool = False,
+    format: str = "{message}",
+    dateformat: str = "%Y-%m-%d %H:%M:%S",
+    rotate: tuple[int, int] | None = None
+) -> None:
+    if not any((debug, info, warning, error)):
+        return
+
+    level = NOTSET
+    if debug:
+        level = DEBUG
+    elif info:
+        level = INFO
+    elif warning:
+        level = WARNING
+    elif error:
+        level = ERROR
+
+    handlers: list[Handler] = []
+    if to_path is not None:
+        max_size = 0
+        backups = 0
+        if rotate is not None:
+            backups, max_size = rotate
+
+        handlers.append(
+            RotatingFileHandler(
+                to_path,
+                encoding="utf8",
+                maxBytes=max_size,
+                backupCount=backups
+            )
+        )
+
+    if to_stdout:
+        handlers.append(StreamHandler(stdout))
+
+    if to_stderr:
+        handlers.append(StreamHandler(stderr))
+
+    basicConfig(
+        format=format,
+        datefmt=dateformat,
+        style="{",
+        level=level,
+        handlers=handlers
+    )
 
 
 def make_logger(

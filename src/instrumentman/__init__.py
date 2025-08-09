@@ -1,3 +1,6 @@
+from pathlib import Path
+from logging import getLogger
+
 from click_extra import extra_group, version_option
 
 try:
@@ -5,6 +8,14 @@ try:
 except Exception:
     __version__ = "0.0.0"  # Placeholder value for source installs
 
+from .utils import (
+    logging_option_group,
+    logging_levels_constraint,
+    logging_output_constraint,
+    logging_target_constraint,
+    logging_rotation_constraint,
+    configure_logging
+)
 from . import morse
 from . import terminal
 from . import setup
@@ -20,10 +31,37 @@ from . import settings
 
 @extra_group("iman", params=None)  # type: ignore[misc]
 @version_option()
-def cli() -> None:
+@logging_option_group()
+@logging_levels_constraint()
+@logging_output_constraint()
+@logging_target_constraint()
+@logging_rotation_constraint()
+def cli(
+    debug: bool = False,
+    info: bool = False,
+    warning: bool = False,
+    error: bool = False,
+    file: Path | None = None,
+    stdout: bool = False,
+    stderr: bool = False,
+    format: str = "{message}",
+    dateformat: str = "%Y-%m-%d %H:%M:%S",
+    rotate: tuple[int, int] | None = None
+) -> None:
     """Automated measurement programs and related utilities for surveying
     instruments."""
-    pass
+    configure_logging(
+        debug,
+        info,
+        warning,
+        error,
+        file,
+        stderr,
+        stdout,
+        format,
+        dateformat,
+        rotate
+    )
 
 
 @cli.group("measure")  # type: ignore[misc]
