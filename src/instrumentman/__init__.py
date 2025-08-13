@@ -1,5 +1,4 @@
 from pathlib import Path
-from logging import getLogger
 
 from click_extra import extra_group, version_option
 
