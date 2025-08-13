@@ -3,7 +3,10 @@ from time import sleep
 from math import tan, atan, degrees
 from re import compile
 
-from click_extra import echo, progressbar
+from rich.console import Console
+from rich.progress import track
+from rich.table import Table, Column
+from click_extra import echo
 from geocompy.data import Angle, Coordinate
 from geocompy.geo import GeoCom
 from geocompy.communication import open_serial
@@ -31,35 +34,53 @@ def run_measure(
         if angles.params is not None:
             start = round(angles.params[0].asunit('deg'))
 
-    echo(
-        "hz_deg,cross_sec,length_sec",
-        output
-    )
-
-    with progressbar(
+    con = Console()
+    values: list[tuple[str, str, str]] = []
+    for a in track(
         range(start, start + cycles * 360, turn),
-        label="Measuring",
-        hidden=output is None
-    ) as bar:
-        for a in bar:
-            hz = Angle(a, 'deg').normalized()
-            tps.aut.turn_to(hz, v)
+        description="Measuring",
+        console=con
+    ):
+        hz = Angle(a, 'deg').normalized()
+        tps.aut.turn_to(hz, v)
 
-            sleep(1)
-            fullangles = tps.tmc.get_angle_inclination('MEASURE')
-            if fullangles.params is None:
-                continue
+        sleep(1)
+        fullangles = tps.tmc.get_angle_inclination('MEASURE')
+        if fullangles.params is None:
+            continue
 
-            az = fullangles.params[0]
-            cross = fullangles.params[4]
-            length = fullangles.params[5]
+        az = fullangles.params[0]
+        cross = fullangles.params[4]
+        length = fullangles.params[5]
 
-            echo(
-                f"{az.asunit('deg'):.4f},"
-                f"{cross.asunit('deg') * 3600:.2f},"
+        values.append(
+            (
+                f"{az.asunit('deg'):.4f}",
+                f"{cross.asunit('deg') * 3600:.2f}",
                 f"{length.asunit('deg') * 3600:.2f}",
-                output
             )
+        )
+
+    if output is not None:
+        print(
+            "hz_deg,cross_sec,length_sec",
+            file=output
+        )
+        for line in values:
+            print(
+                ",".join(line),
+                file=output
+            )
+    else:
+        table = Table(
+            Column(r"Hz \[deg]", justify='right'),
+            Column(r"Cross \[sec]", justify='right'),
+            Column(r"Length \[sec]", justify='right')
+        )
+        for line in values:
+            table.add_row(*line)
+
+        con.print(table)
 
 
 def main_measure(

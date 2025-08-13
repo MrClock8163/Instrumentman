@@ -1,7 +1,7 @@
 from time import sleep
 from typing import Callable, Any
 
-from click_extra import progressbar
+from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn
 
 from geocompy.geo import GeoCom
 from geocompy.communication import open_serial
@@ -90,12 +90,12 @@ def relay_message(
     unittime: float
 ) -> None:
     encoded = encode_message(message)
-    with progressbar(
-        encoded,
-        label="Relaying message",
-        show_eta=False
-    ) as stream:
-        for char in stream:
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn()
+    ) as progress:
+        for char in progress.track(encoded, description="Relaying message"):
             match char:
                 case ".":
                     beepstart()
