@@ -1,4 +1,6 @@
 from click_extra import echo
+from rich.live import Live
+from rich.table import Table, Column
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
@@ -23,35 +25,24 @@ def run_listing(tps: GeoCom) -> None:
         return
 
     count = 1
-    echo(f"{'job name':<50.50s}{'file name':<50.50s}")
-    echo(f"{'--------':<50.50s}{'---------':<50.50s}")
-    fmt = "{job:<50.50s}{file:<50.50s}"
-    echo(
-        fmt.format_map(
-            {
-                "job": job,
-                "file": file
-            }
-        )
+    col_file = Column("File Name", footer="1")
+    table = Table(
+        Column("Job Name", footer="Total:"),
+        col_file
     )
-    while True:
-        resp_list = tps.csv.list()
-        if resp_list.error != GeoComCode.OK or resp_list.params is None:
-            break
+    table.add_row(job, file)
+    with Live(table):
+        while True:
+            resp_list = tps.csv.list()
+            if resp_list.error != GeoComCode.OK or resp_list.params is None:
+                logger.info
+                break
 
-        job, file, _, _, _ = resp_list.params
-        echo(
-            fmt.format_map(
-                {
-                    "job": job,
-                    "file": file
-                }
-            )
-        )
-        count += 1
+            count += 1
+            job, file, _, _, _ = resp_list.params
+            table.add_row(job, file)
+            col_file.footer = str(count)
 
-    echo("-" * 90)
-    echo(f"total: {count} files")
 
 
 def main_list(
