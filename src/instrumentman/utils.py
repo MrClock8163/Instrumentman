@@ -1,13 +1,16 @@
 from logging import (
     DEBUG,
-    ERROR,
     INFO,
     WARNING,
+    ERROR,
+    CRITICAL,
     NOTSET,
     Logger,
     StreamHandler,
+    NullHandler,
     basicConfig,
-    Handler
+    Handler,
+    LogRecord
 )
 from sys import stdout, stderr
 from logging.handlers import RotatingFileHandler
@@ -133,6 +136,10 @@ def logging_option_group() -> Callable[[F], F]:
         "Logging options",
         "Options related to the logging functionalities.",
         option(
+            "--protocol",
+            is_flag=True
+        ),
+        option(
             "--debug",
             is_flag=True
         ),
@@ -146,6 +153,10 @@ def logging_option_group() -> Callable[[F], F]:
         ),
         option(
             "--error",
+            is_flag=True
+        ),
+        option(
+            "--critical",
             is_flag=True
         ),
         option(
@@ -192,20 +203,30 @@ def logging_option_group() -> Callable[[F], F]:
 def logging_levels_constraint() -> Callable[[F], F]:
     return constraint(
         mutually_exclusive,
-        ["debug", "info", "warning", "error"]
+        ["protocol", "debug", "info", "warning", "error", "critical"]
     )
 
 
 def logging_output_constraint() -> Callable[[F], F]:
     return constraint(
         If(AnySet("file", "stdout", "stderr"), require_one),
-        ["debug", "info", "warning", "error"]
+        ["protocol", "debug", "info", "warning", "error", "critical"]
     )
 
 
 def logging_target_constraint() -> Callable[[F], F]:
     return constraint(
-        If(AnySet("debug", "info", "warning", "error"), require_one),
+        If(
+            AnySet(
+                "protocol",
+                "debug",
+                "info",
+                "warning",
+                "error",
+                "critical"
+            ),
+            require_one
+        ),
         ["file", "stdout", "stderr"]
     )
 
@@ -293,11 +314,25 @@ def make_directory(filepath: str) -> None:
     os.makedirs(dirname, exist_ok=True)
 
 
+class ProtocolFilter:
+    def filter(self, record: LogRecord) -> bool:
+        message = record.getMessage()
+        if (
+            message.startswith("GeoComResponse")
+            or message.startswith("GsiOnlineResponse")
+        ):
+            return False
+
+        return True
+
+
 def configure_logging(
+    protocol: bool = False,
     debug: bool = False,
     info: bool = False,
     warning: bool = False,
     error: bool = False,
+    critical: bool = False,
     to_path: Path | None = None,
     to_stdout: bool = False,
     to_stderr: bool = False,
@@ -305,11 +340,11 @@ def configure_logging(
     dateformat: str = "%Y-%m-%d %H:%M:%S",
     rotate: tuple[int, int] | None = None
 ) -> None:
-    if not any((debug, info, warning, error)):
+    if not any((protocol, debug, info, warning, error, critical)):
         return
 
     level = NOTSET
-    if debug:
+    if debug or protocol:
         level = DEBUG
     elif info:
         level = INFO
@@ -317,6 +352,8 @@ def configure_logging(
         level = WARNING
     elif error:
         level = ERROR
+    elif critical:
+        level = CRITICAL
 
     handlers: list[Handler] = []
     if to_path is not None:
@@ -339,6 +376,14 @@ def configure_logging(
 
     if to_stderr:
         handlers.append(StreamHandler(stderr))
+
+    if not protocol:
+        flt = ProtocolFilter()
+        for h in handlers:
+            h.addFilter(flt)
+
+    if len(handlers) == 0:
+        handlers = [NullHandler()]
 
     basicConfig(
         format=format,

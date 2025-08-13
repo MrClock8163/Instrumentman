@@ -36,10 +36,12 @@ from . import settings
 @logging_target_constraint()
 @logging_rotation_constraint()
 def cli(
+    protocol: bool = False,
     debug: bool = False,
     info: bool = False,
     warning: bool = False,
     error: bool = False,
+    critical: bool = False,
     file: Path | None = None,
     stdout: bool = False,
     stderr: bool = False,
@@ -50,10 +52,12 @@ def cli(
     """Automated measurement programs and related utilities for surveying
     instruments."""
     configure_logging(
+        protocol,
         debug,
         info,
         warning,
         error,
+        critical,
         file,
         stderr,
         stdout,
