@@ -41,7 +41,7 @@ from ..utils import (
     default=True
 )
 @option(
-    "--inclide-eof/--no-include-eof",
+    "--include-eof/--no-include-eof",
     help=(
         "wether the EOF marker is part of the output format "
         "(or just sent by the instrument regardless of the format in question)"
