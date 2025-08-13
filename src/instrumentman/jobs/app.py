@@ -1,4 +1,5 @@
-from click_extra import echo
+from logging import Logger, getLogger
+
 from rich.live import Live
 from rich.table import Table, Column
 from geocompy.communication import open_serial
@@ -8,20 +9,29 @@ from geocompy.geo.gctypes import GeoComCode
 from ..utils import echo_red, echo_yellow
 
 
-def run_listing(tps: GeoCom) -> None:
+def run_listing(
+    tps: GeoCom,
+    logger: Logger
+) -> None:
+    logger.info("Starting job listing")
     resp_setup = tps.csv.setup_listing()
     if resp_setup.error != GeoComCode.OK:
-        echo_red(f"Could not set up job listing ({resp_setup.error.name})")
+        echo_red("Could not set up listing")
+        logger.critical(
+            f"Could not set up listing ({resp_setup})"
+        )
         return
 
     resp_list = tps.csv.list()
     if resp_list.error != GeoComCode.OK or resp_list.params is None:
-        echo_red(f"Could not start listing ({resp_list.error.name})")
+        echo_red("Could not start listing")
+        logger.critical(f"Could not start listing ({resp_list})")
         return
 
     job, file, _, _, _ = resp_list.params
     if job == "" or file == "":
         echo_yellow("No jobs were found")
+        logger.info("No jobs were found")
         return
 
     count = 1
@@ -43,6 +53,7 @@ def run_listing(tps: GeoCom) -> None:
             table.add_row(job, file)
             col_file.footer = str(count)
 
+    logger.info("Listing complete")
 
 
 def main_list(
@@ -52,6 +63,12 @@ def main_list(
     retry: int = 1,
     sync_after_timeout: bool = False
 ) -> None:
+    logger = getLogger("iman.jobs.list")
+    logger.info(f"Opening connection on {port}")
+    logger.debug(
+        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
+        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
+    )
     with open_serial(
         port=port,
         speed=baud,
@@ -59,5 +76,7 @@ def main_list(
         retry=retry,
         sync_after_timeout=sync_after_timeout
     ) as com:
-        tps = GeoCom(com)
-        run_listing(tps)
+        tps = GeoCom(com, logger.getChild("instrument"))
+        run_listing(tps, logger)
+
+    logger.info(f"Closed connection on {port}")
