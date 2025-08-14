@@ -47,8 +47,8 @@ def download_settings_geocom(
         {
             "subsystem": "csv",
             "options": {
-                "laserlot": True,
-                "laserlot_intensity": 100,
+                "laserplummet": True,
+                "laserplummet_intensity": 100,
                 "charging": False,
                 "preferred_powersource": "INTERNAL"
             }
@@ -125,7 +125,13 @@ def download_settings_geocom(
             method: Callable[
                 [],
                 GeoComResponse[Any]
-            ] = getattr(subsystem, name)
+            ] | None = getattr(subsystem, name, None)
+            if method is None:
+                if defaults:
+                    settings["options"][option] = default
+                else:
+                    settings["options"][option] = None
+                continue
 
             response = method()
             value = response.params
@@ -200,7 +206,14 @@ def download_settings_gsidna(
         method: Callable[
             [],
             GsiOnlineResponse[Any]
-        ] = getattr(dna.settings, name)
+        ] | None = getattr(dna.settings, name, None)
+        if method is None:
+            if defaults:
+                settings["options"][option] = default
+            else:
+                settings["options"][option] = None
+
+            continue
 
         response = method()
         value = response.value

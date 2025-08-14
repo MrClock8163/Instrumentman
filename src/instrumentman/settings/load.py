@@ -92,7 +92,6 @@ def upload_settings_geocom(
 
             set_setting_geocom(logger, subsystem, option, value)
 
-    echo_green(f"Settings loaded from {settings}")
     logger.info("Settings uploaded")
 
 
@@ -117,7 +116,6 @@ def upload_settings_gsidna(
 
             set_setting_gsidna(logger, subsystem, option, value)
 
-    echo_green(f"Settings loaded from {settings}")
     logger.info("Settings uploaded")
 
 
@@ -157,4 +155,5 @@ def main(
                 dna = GsiOnlineDNA(com, logger.getChild("instrument"))
                 upload_settings_gsidna(dna, logger, data)
 
+    echo_green(f"Settings loaded from {settings}")
     logger.info(f"Closed connection on {port}")
