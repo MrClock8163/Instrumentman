@@ -5,7 +5,6 @@ from logging import (
     ERROR,
     CRITICAL,
     NOTSET,
-    Logger,
     StreamHandler,
     NullHandler,
     basicConfig,
@@ -15,7 +14,7 @@ from logging import (
 from sys import stdout, stderr
 from logging.handlers import RotatingFileHandler
 import os
-from typing import Any, Callable, cast, TypeVar
+from typing import Any, Callable, TypeVar
 from re import compile
 from pathlib import Path
 
@@ -389,58 +388,3 @@ def configure_logging(
         level=level,
         handlers=handlers
     )
-
-
-def make_logger(
-    name: str,
-    debug: bool = False,
-    info: bool = False,
-    warning: bool = False,
-    error: bool = False
-) -> Logger:
-    from geocompy.communication import get_logger
-
-    if debug:
-        loglevel = DEBUG
-    elif info:
-        loglevel = INFO
-    elif warning:
-        loglevel = WARNING
-    elif error:
-        loglevel = ERROR
-    else:
-        return get_logger(name)
-
-    return get_logger(name, "stdout", loglevel)
-
-
-def run_cli_app(
-    name: str,
-    runner: Callable[..., Any],
-    *args: Any
-) -> None:
-    logger = make_logger("APP", info=True)
-    try:
-        logger.info(f"Starting '{name}' application")
-        runner(args)
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt...")
-        exit(2)
-    except SystemExit as ex:
-        if ex.code == 0:
-            logger.info(f"Application '{name}' exited without error")
-            raise ex
-
-        logger.error(
-            f"Application exited with {ex.code} "
-            f"({EXIT_CODE_DESCRIPTIONS.get(cast(int, ex.code), 'Unknown')})"
-        )
-        raise ex
-    except Exception:
-        logger.exception(
-            f"Application '{name}' exited due to an unhandled exception"
-        )
-        exit(1)
-
-    logger.info(f"Application '{name}' finished without error")
-    exit(0)
