@@ -1,4 +1,7 @@
-from click_extra import echo
+from logging import Logger, getLogger
+
+from rich.live import Live
+from rich.table import Table, Column
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
@@ -6,52 +9,53 @@ from geocompy.geo.gctypes import GeoComCode
 from ..utils import echo_red, echo_yellow
 
 
-def run_listing(tps: GeoCom) -> None:
+def run_listing(
+    tps: GeoCom,
+    logger: Logger
+) -> None:
+    logger.info("Starting job listing")
     resp_setup = tps.csv.setup_listing()
     if resp_setup.error != GeoComCode.OK:
-        echo_red(f"Could not set up job listing ({resp_setup.error.name})")
+        echo_red("Could not set up listing")
+        logger.critical(
+            f"Could not set up listing ({resp_setup})"
+        )
         return
 
     resp_list = tps.csv.list()
     if resp_list.error != GeoComCode.OK or resp_list.params is None:
-        echo_red(f"Could not start listing ({resp_list.error.name})")
+        echo_red("Could not start listing")
+        logger.critical(f"Could not start listing ({resp_list})")
         return
 
     job, file, _, _, _ = resp_list.params
     if job == "" or file == "":
         echo_yellow("No jobs were found")
+        logger.info("No jobs were found")
         return
 
     count = 1
-    echo(f"{'job name':<50.50s}{'file name':<50.50s}")
-    echo(f"{'--------':<50.50s}{'---------':<50.50s}")
-    fmt = "{job:<50.50s}{file:<50.50s}"
-    echo(
-        fmt.format_map(
-            {
-                "job": job,
-                "file": file
-            }
-        )
+    col_file = Column("File Name", footer="1")
+    table = Table(
+        Column("Job Name", footer="Total:"),
+        col_file
     )
-    while True:
-        resp_list = tps.csv.list()
-        if resp_list.error != GeoComCode.OK or resp_list.params is None:
-            break
+    table.add_row(job, file)
+    with Live(table):
+        while True:
+            resp_list = tps.csv.list()
+            if resp_list.error != GeoComCode.OK or resp_list.params is None:
+                break
 
-        job, file, _, _, _ = resp_list.params
-        echo(
-            fmt.format_map(
-                {
-                    "job": job,
-                    "file": file
-                }
-            )
-        )
-        count += 1
+            job, file, _, _, _ = resp_list.params
+            if job == "" or file == "":
+                break
 
-    echo("-" * 90)
-    echo(f"total: {count} files")
+            count += 1
+            table.add_row(job, file)
+            col_file.footer = str(count)
+
+    logger.info("Listing complete")
 
 
 def main_list(
@@ -61,12 +65,17 @@ def main_list(
     retry: int = 1,
     sync_after_timeout: bool = False
 ) -> None:
+    logger = getLogger("iman.jobs.list")
     with open_serial(
         port=port,
         speed=baud,
         timeout=timeout,
         retry=retry,
-        sync_after_timeout=sync_after_timeout
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com)
-        run_listing(tps)
+        tps = GeoCom(com, logger.getChild("instrument"))
+        try:
+            run_listing(tps, logger)
+        finally:
+            tps.csv.abort_listing()

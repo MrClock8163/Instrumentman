@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Callable, Any
 from enum import Enum
+from logging import Logger, getLogger
 
 from geocompy.data import Angle
 from geocompy.communication import open_serial
@@ -9,12 +10,13 @@ from geocompy.geo.gctypes import GeoComResponse, GeoComSubsystem, GeoComCode
 from geocompy.gsi.dna import GsiOnlineDNA
 from geocompy.gsi.gsitypes import GsiOnlineResponse
 
-from ..utils import echo_red, echo_green
+from ..utils import echo_green
 from .io import write_settings, SettingsDict, SubsystemSettingsDict
 
 
 def download_settings_geocom(
     tps: GeoCom,
+    logger: Logger,
     defaults: bool = False
 ) -> SettingsDict:
     options: list[SubsystemSettingsDict] = [
@@ -45,8 +47,8 @@ def download_settings_geocom(
         {
             "subsystem": "csv",
             "options": {
-                "laserlot": True,
-                "laserlot_intensity": 100,
+                "laserplummet": True,
+                "laserplummet_intensity": 100,
                 "charging": False,
                 "preferred_powersource": "INTERNAL"
             }
@@ -109,13 +111,10 @@ def download_settings_geocom(
             "options": {}
         }
 
-        subsystem: GeoComSubsystem | None = getattr(
+        subsystem: GeoComSubsystem = getattr(
             tps,
-            group["subsystem"],
-            None
+            group["subsystem"]
         )
-        if subsystem is None:
-            continue
 
         for option, default in group["options"].items():
             if isinstance(default, bool):
@@ -128,13 +127,25 @@ def download_settings_geocom(
                 GeoComResponse[Any]
             ] | None = getattr(subsystem, name, None)
             if method is None:
-                settings["options"][option] = default if defaults else None
+                if defaults:
+                    settings["options"][option] = default
+                else:
+                    settings["options"][option] = None
                 continue
 
             response = method()
             value = response.params
             if response.error != GeoComCode.OK or value is None:
-                settings["options"][option] = default if defaults else None
+                if defaults:
+                    logger.debug(
+                        f"Could not get value of {option}, "
+                        "falling back to default"
+                    )
+                    settings["options"][option] = default
+                else:
+                    logger.debug(f"Could not get value of {option}")
+                    settings["options"][option] = None
+
                 continue
 
             if isinstance(value, tuple):
@@ -162,6 +173,7 @@ def download_settings_geocom(
 
 def download_settings_gsidna(
     dna: GsiOnlineDNA,
+    logger: Logger,
     defaults: bool = False
 ) -> SettingsDict:
     settings: SubsystemSettingsDict = {
@@ -196,13 +208,26 @@ def download_settings_gsidna(
             GsiOnlineResponse[Any]
         ] | None = getattr(dna.settings, name, None)
         if method is None:
-            settings["options"][option] = default if defaults else None
+            if defaults:
+                settings["options"][option] = default
+            else:
+                settings["options"][option] = None
+
             continue
 
         response = method()
         value = response.value
         if value is None:
-            settings["options"][option] = default if defaults else None
+            if defaults:
+                logger.debug(
+                    f"Could not get value of {option}, "
+                    "falling back to default"
+                )
+                settings["options"][option] = default
+            else:
+                logger.debug(f"Could not get value of {option}")
+                settings["options"][option] = None
+
             continue
 
         if isinstance(value, Enum):
@@ -244,25 +269,26 @@ def main(
     format: str = "auto",
     defaults: bool = False
 ) -> None:
+    logger = getLogger("iman.settings.save")
     with open_serial(
         port,
         retry=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
         match protocol:
             case "geocom":
-                tps = GeoCom(com)
-                data = download_settings_geocom(tps, defaults)
+                tps = GeoCom(com, logger.getChild("instrument"))
+                data = download_settings_geocom(tps, logger, defaults)
             case "gsidna":
-                dna = GsiOnlineDNA(com)
-                data = download_settings_gsidna(dna, defaults)
-            case _:
-                echo_red(f"Unknown protocol: '{protocol}'")
-                exit(1)
+                dna = GsiOnlineDNA(com, logger.getChild("instrument"))
+                data = download_settings_gsidna(dna, logger, defaults)
 
     data = clean_settings(data)
+    logger.info("Removed empty options")
 
     write_settings(data, file, format)
-    echo_green(f"Settings saved at {file}")
+    echo_green(f"Saved settings to {file}")
+    logger.info(f"Saved settings to {file}")

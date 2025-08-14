@@ -51,11 +51,6 @@ Examples
 --------
 
 .. code-block:: shell
-    :caption: Logging to file
-
-    iman measure sets --debug COM3 targets.json results >> tps.log 2>&1
-
-.. code-block:: shell
     :caption: Enabling connection retries and timeout recovery attempts (might be useful with bluetooth connections)
 
     iman measure sets -r 3 --sync-after-timeout COM3 targets.json results

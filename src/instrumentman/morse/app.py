@@ -1,5 +1,6 @@
 from time import sleep
 from typing import Callable, Any
+from logging import Logger, getLogger
 
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn
 
@@ -73,7 +74,7 @@ def encode_message(
     message: str
 ) -> str:
     words: list[str] = []
-    for word in message.lower().split(" "):
+    for word in message.casefold().split(" "):
         w: list[str] = []
         for letter in word:
             w.append("|".join(MORSE_TABLE.get(letter, "")))
@@ -84,12 +85,16 @@ def encode_message(
 
 
 def relay_message(
+    logger: Logger,
     beepstart: Callable[[], Any],
     beepstop: Callable[[], Any],
     message: str,
     unittime: float
 ) -> None:
+    logger.info(f"Starting morse message: '{message}'")
     encoded = encode_message(message)
+    logger.info("Message encoded")
+    logger.info("Relaying message...")
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
@@ -116,6 +121,9 @@ def relay_message(
                         f"Invalid morse stream character: '{char}'"
                     )
 
+    echo_green("Message complete")
+    logger.info("Message complete")
+
 
 def main(
     port: str,
@@ -129,11 +137,13 @@ def main(
     unittime: int = 50,
     compatibility: str = "none",
 ) -> None:
+    logger = getLogger("iman.morse")
     if not ignore_non_ascii:
         try:
             message.casefold().encode("ascii")
         except UnicodeEncodeError:
             echo_red("The message contains non-ASCII characters.")
+            logger.critical("Message contains non-ASCII characters.")
             exit(1)
 
     with open_serial(
@@ -141,22 +151,24 @@ def main(
         speed=baud,
         timeout=timeout,
         retry=retry,
-        sync_after_timeout=sync_after_timeout
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com)
+        tps = GeoCom(com, logger.getChild("instrument"))
         beepstart = tps.bmm.beep_start
         beepstop = tps.bmm.beep_stop
         match compatibility.lower():
             case "tps1000":
+                logger.debug(f"Running with '{compatibility}' compatibility")
                 beepstart = tps.bmm.beep_on
                 beepstop = tps.bmm.beep_off
             case "none":
                 pass
 
         relay_message(
+            logger,
             lambda: beepstart(intensity),
             beepstop,
             message,
             unittime * 1e-3
         )
-        echo_green("Message complete.")

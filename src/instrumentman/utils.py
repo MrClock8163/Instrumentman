@@ -1,7 +1,22 @@
-from logging import DEBUG, ERROR, INFO, WARNING, Logger
+from logging import (
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR,
+    CRITICAL,
+    NOTSET,
+    StreamHandler,
+    NullHandler,
+    basicConfig,
+    Handler,
+    LogRecord
+)
+from sys import stdout, stderr
+from logging.handlers import RotatingFileHandler
 import os
-from typing import Any, Callable, cast, TypeVar
+from typing import Any, Callable, TypeVar
 from re import compile
+from pathlib import Path
 
 from click_extra import (
     Color,
@@ -12,11 +27,20 @@ from click_extra import (
     argument,
     Choice,
     IntRange,
+    file_path,
     ParamType,
     Context,
     Parameter
 )
-from cloup.constraints import mutually_exclusive
+from cloup.constraints import (
+    ErrorFmt,
+    constraint,
+    mutually_exclusive,
+    require_one,
+    require_all,
+    If,
+    AnySet
+)
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -111,22 +135,120 @@ def logging_option_group() -> Callable[[F], F]:
         "Logging options",
         "Options related to the logging functionalities.",
         option(
+            "--protocol",
+            help=(
+                "log debug level messages and above, "
+                "including protocol messages"
+            ),
+            is_flag=True
+        ),
+        option(
             "--debug",
+            help="log debug level messages and above",
             is_flag=True
         ),
         option(
             "--info",
+            help="log information level messages and above",
             is_flag=True
         ),
         option(
             "--warning",
+            help="log warning level messages and above",
             is_flag=True
         ),
         option(
             "--error",
+            help="log error level messages and above",
             is_flag=True
         ),
-        constraint=mutually_exclusive
+        option(
+            "--critical",
+            help="log critical error level messages",
+            is_flag=True
+        ),
+        option(
+            "--file",
+            help="log to file",
+            type=file_path(readable=False)
+        ),
+        option(
+            "--stdout",
+            help="log to standard output",
+            is_flag=True
+        ),
+        option(
+            "--stderr",
+            help="log to standard error",
+            is_flag=True
+        ),
+        option(
+            "--format",
+            help=(
+                "logging format string (as accepted by the `logging` package "
+                "in '{' style)"
+            ),
+            type=str,
+            default="{asctime} <{name}> [{levelname}] {message}"
+        ),
+        option(
+            "--dateformat",
+            help="date-time format spec (as accepted by `strftime`)",
+            type=str,
+            default="%Y-%m-%d %H:%M:%S"
+        ),
+        option(
+            "--rotate",
+            help=(
+                "number of backup log files to rotate, and maximum size "
+                "(in bytes) of a log file before rotation"
+            ),
+            type=(IntRange(1), IntRange(1))
+        )
+    )
+
+
+def logging_levels_constraint() -> Callable[[F], F]:
+    return constraint(
+        mutually_exclusive,
+        ["protocol", "debug", "info", "warning", "error", "critical"]
+    )
+
+
+def logging_output_constraint() -> Callable[[F], F]:
+    return constraint(
+        If(AnySet("file", "stdout", "stderr"), require_one),
+        ["protocol", "debug", "info", "warning", "error", "critical"]
+    )
+
+
+def logging_target_constraint() -> Callable[[F], F]:
+    return constraint(
+        If(
+            AnySet(
+                "protocol",
+                "debug",
+                "info",
+                "warning",
+                "error",
+                "critical"
+            ),
+            require_one
+        ),
+        ["file", "stdout", "stderr"]
+    )
+
+
+def logging_rotation_constraint() -> Callable[[F], F]:
+    return constraint(
+        If("rotate", require_all).rephrased(
+            help="required if --rotate is set",
+            error=(
+                "when --rotate is set, the following parameter must also be "
+                f"set:\n{ErrorFmt.param_list}"
+            )
+        ),
+        ["file"]
     )
 
 
@@ -200,56 +322,78 @@ def make_directory(filepath: str) -> None:
     os.makedirs(dirname, exist_ok=True)
 
 
-def make_logger(
-    name: str,
+class ProtocolFilter:
+    def filter(self, record: LogRecord) -> bool:
+        message = record.getMessage()
+        if (
+            message.startswith("GeoComResponse")
+            or message.startswith("GsiOnlineResponse")
+        ):
+            return False
+
+        return True
+
+
+def configure_logging(
+    protocol: bool = False,
     debug: bool = False,
     info: bool = False,
     warning: bool = False,
-    error: bool = False
-) -> Logger:
-    from geocompy.communication import get_logger
-
-    if debug:
-        loglevel = DEBUG
-    elif info:
-        loglevel = INFO
-    elif warning:
-        loglevel = WARNING
-    elif error:
-        loglevel = ERROR
-    else:
-        return get_logger(name)
-
-    return get_logger(name, "stdout", loglevel)
-
-
-def run_cli_app(
-    name: str,
-    runner: Callable[..., Any],
-    *args: Any
+    error: bool = False,
+    critical: bool = False,
+    to_path: Path | None = None,
+    to_stdout: bool = False,
+    to_stderr: bool = False,
+    format: str = "{message}",
+    dateformat: str = "%Y-%m-%d %H:%M:%S",
+    rotate: tuple[int, int] | None = None
 ) -> None:
-    logger = make_logger("APP", info=True)
-    try:
-        logger.info(f"Starting '{name}' application")
-        runner(args)
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt...")
-        exit(2)
-    except SystemExit as ex:
-        if ex.code == 0:
-            logger.info(f"Application '{name}' exited without error")
-            raise ex
+    level = NOTSET
+    if debug or protocol:
+        level = DEBUG
+    elif info:
+        level = INFO
+    elif warning:
+        level = WARNING
+    elif error:
+        level = ERROR
+    elif critical:
+        level = CRITICAL
 
-        logger.error(
-            f"Application exited with {ex.code} "
-            f"({EXIT_CODE_DESCRIPTIONS.get(cast(int, ex.code), 'Unknown')})"
-        )
-        raise ex
-    except Exception:
-        logger.exception(
-            f"Application '{name}' exited due to an unhandled exception"
-        )
-        exit(1)
+    handlers: list[Handler] = []
+    if to_path is not None:
+        max_size = 0
+        backups = 0
+        if rotate is not None:
+            backups, max_size = rotate
 
-    logger.info(f"Application '{name}' finished without error")
-    exit(0)
+        handlers.append(
+            RotatingFileHandler(
+                to_path,
+                encoding="utf8",
+                maxBytes=max_size,
+                backupCount=backups
+            )
+        )
+
+    if to_stdout:
+        handlers.append(StreamHandler(stdout))
+
+    if to_stderr:
+        handlers.append(StreamHandler(stderr))
+
+    if not protocol:
+        flt = ProtocolFilter()
+        for h in handlers:
+            h.addFilter(flt)
+
+    if len(handlers) == 0:
+        handlers = [NullHandler()]
+
+    basicConfig(
+        format=format,
+        datefmt=dateformat,
+        style="{",
+        level=level,
+        handlers=handlers
+    )

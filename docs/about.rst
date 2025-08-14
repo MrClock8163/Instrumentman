@@ -1,6 +1,14 @@
 Information
 ===========
 
+Documentation
+-------------
+
+The different commands are documented in their application groups to give
+a better overview of the processes. Every page shows the actual command to
+invoke the program, some additional context and optional examples, and an
+automatically generated view of the ``--help`` page of the command.
+
 Command Structure
 -----------------
 
@@ -21,10 +29,19 @@ commands:
     iman validate sets -h
     iman calc sets -h
 
-Documentation
--------------
+Logging
+-------
 
-The different commands are documented in their application groups to give
-a better overview of the processes. Every page shows the actual command to
-invoke the program, some additional context and optional examples, and an
-automatically generated view of the ``--help`` page of the command.
+Various commands (primarily the measurement programs) support logging. The
+logging can be set up through the logging options of the root command ``iman``.
+These have to be set before specifying the command groups.
+
+.. code-block:: shell
+
+    iman --info --file iman.log measure ...
+
+Usage
+-----
+
+.. click:: instrumentman:cli
+    :prog: iman

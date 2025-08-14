@@ -14,7 +14,6 @@ from cloup.constraints import all_or_none
 
 from ..utils import (
     com_option_group,
-    logging_option_group,
     com_port_argument,
     Angle
 )
@@ -77,7 +76,6 @@ from ..utils import (
     ),
     default=""
 )
-@logging_option_group()
 def cli_measure(**kwargs: Any) -> None:
     """Run sets of measurements to predefined targets."""
     from .measure import main

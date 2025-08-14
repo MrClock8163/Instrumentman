@@ -1,17 +1,23 @@
 import os
 from datetime import datetime
-from logging import getLogger
+from logging import Logger, getLogger
 from typing import Iterator, Literal
 from itertools import chain
 import pathlib
 
+from rich.progress import (
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+    BarColumn,
+    TaskProgressColumn
+)
 from geocompy.data import Angle, Coordinate
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
 from geocompy.geo.gcdata import Face
 
-from ..utils import make_logger
 from ..targets import (
     TargetPoint,
     TargetList,
@@ -57,38 +63,56 @@ def iter_targets(
 
 def measure_set(
     tps: GeoCom,
+    logger: Logger,
     filepath: str,
     order_spec: Literal['AaBb', 'AabB', 'ABab', 'ABba', 'ABCD'],
     count: int = 1,
     pointnames: str = ""
 ) -> Session:
-    applog = getLogger("APP")
+    logger.info("Starting set measurements")
     points = load_targets_from_json(filepath)
     if pointnames != "":
         use_points = set(pointnames.split(","))
         loaded_points = set(points.get_target_names())
         excluded_points = loaded_points - use_points
-        applog.debug(f"Excluding points: {excluded_points}")
+        logger.debug(f"Excluding points: {excluded_points}")
         for pt in excluded_points:
             points.pop_target(pt)
 
+    progress = Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        TextColumn("{task.fields[label]}")
+    )
+    progress.start()
+    labelformat = "Cycle {}, target {} in {}"
+    task = progress.add_task(
+        "Measuring set",
+        total=count * len(points) * (1 if order_spec == 'ABCD' else 2),
+        label=""
+    )
+
+    logger.info("Measuring inclination, temperature and battery level")
     tps.aut.turn_to(0, Angle(180, 'deg'))
     incline = tps.tmc.get_angle_inclination('MEASURE').params
     temp = tps.csv.get_internal_temperature().params
     battery = tps.csv.check_power().params
+    logger.info("Retrieving station setup")
     resp_station = tps.tmc.get_station().params
     if resp_station is None:
         station = Coordinate(0, 0, 0)
         iheight = 0.0
-        applog.warning(
-            "Could not retrieve station and instrument height, using default"
+        logger.error(
+            "Could not retrieve station and instrument height, defaulting to 0"
         )
     else:
         station, iheight = resp_station
 
     session = Session(station, iheight)
     for i in range(count):
-        applog.info(f"Starting set cycle {i + 1}")
+        logger.info(f"Starting set cycle {i + 1}")
         output = Cycle(
             datetime.now(),
             battery[0] if battery is not None else None,
@@ -97,7 +121,11 @@ def measure_set(
         )
 
         for f, t in iter_targets(points, order_spec):
-            applog.info(f"Measuring {t.name} ({f.name})")
+            progress.update(
+                task,
+                label=labelformat.format(i + 1, t.name, f.name)
+            )
+            logger.info(f"Measuring {t.name} ({f.name})")
             rel_coords = (
                 (t.coords + Coordinate(0, 0, t.height))
                 - (station + Coordinate(0, 0, iheight))
@@ -110,20 +138,22 @@ def measure_set(
             tps.aut.turn_to(hz, v)
             resp_atr = tps.aut.fine_adjust(0.5, 0.5)
             if resp_atr.error != GeoComCode.OK:
-                applog.error(
+                logger.error(
                     f"ATR fine adjustment failed ({resp_atr.error.name}), "
                     "skipping point"
                 )
+                progress.update(task, advance=1)
                 continue
 
             tps.bap.set_prism_type(t.prism)
             tps.tmc.do_measurement()
             resp_angle = tps.tmc.get_simple_measurement(10)
             if resp_angle.params is None:
-                applog.error(
+                logger.error(
                     f"Error during measurement ({resp_angle.error.name}), "
                     "skipping point"
                 )
+                progress.update(task, advance=1)
                 continue
 
             output.add_measurement(
@@ -132,10 +162,13 @@ def measure_set(
                 t.height,
                 resp_angle.params
             )
-            applog.info("Done")
+            progress.update(task, advance=1)
 
         session.cycles.append(output)
 
+    logger.info("Finished set measurements")
+    progress.stop()
+    logger.info("Returning to face-down position")
     tps.aut.turn_to(0, Angle(180, 'deg'))
 
     return session
@@ -153,36 +186,30 @@ def main(
     cycles: int = 1,
     order: Literal['AaBb', 'AabB', 'ABab', 'ABba', 'ABCD'] = "ABba",
     sync_time: bool = True,
-    points: str = "",
-    debug: bool = False,
-    info: bool = False,
-    warning: bool = False,
-    error: bool = False,
+    points: str = ""
 ) -> None:
-    log = make_logger("TPS", debug, info, warning, error)
-    applog = make_logger("APP", debug, info, warning, error)
-    applog.info("Starting measurement session")
-
+    logger = getLogger("iman.sets.measure")
     with open_serial(
         port,
         retry=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, log)
+        tps = GeoCom(com, logger.getChild("instrument"))
         if sync_time:
             tps.csv.set_datetime(datetime.now())
+            logger.info("Synced instrument date-time to computer")
 
         session = measure_set(
             tps,
+            logger,
             str(targets),
             order,
             cycles,
             points
         )
-
-    applog.info("Finished measurement session")
 
     timestamp = session.cycles[0].time.strftime("%Y%m%d_%H%M%S")
     filename = os.path.join(
@@ -190,4 +217,4 @@ def main(
         format.format(time=timestamp, order=order, cycle=cycles)
     )
     session.export_to_json(filename)
-    applog.info(f"Saved measurement results at '{filename}'")
+    logger.info(f"Saved measurement results to '{filename}'")
