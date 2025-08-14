@@ -68,13 +68,13 @@ from ..utils import (
 )
 @option(
     "-p",
-    "--points",
+    "--point",
+    "points",
     type=str,
     help=(
-        "targets to use from loaded target definition "
-        "(comma separated list, empty to use all)"
-    ),
-    default=""
+        "target to use from loaded target definition "
+        "(set multiple times to use specific points, leave unset to use all)"
+    )
 )
 def cli_measure(**kwargs: Any) -> None:
     """Run sets of measurements to predefined targets."""

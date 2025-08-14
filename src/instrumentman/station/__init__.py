@@ -40,8 +40,13 @@ from ..utils import (
     type=file_path(readable=False)
 )
 @option(
-    "--points",
-    help="target points to use as references",
+    "-p",
+    "--point",
+    "points",
+    help=(
+        "target to use as reference from loaded target definition "
+        "(set multiple times to use specific points, leave unset to use all)"
+    ),
     type=str
 )
 @option(

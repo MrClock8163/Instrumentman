@@ -67,12 +67,12 @@ def measure_set(
     filepath: str,
     order_spec: Literal['AaBb', 'AabB', 'ABab', 'ABba', 'ABCD'],
     count: int = 1,
-    pointnames: str = ""
+    pointnames: tuple[str, ...] = ()
 ) -> Session:
     logger.info("Starting set measurements")
     points = load_targets_from_json(filepath)
-    if pointnames != "":
-        use_points = set(pointnames.split(","))
+    if len(pointnames) > 0:
+        use_points = set(pointnames)
         loaded_points = set(points.get_target_names())
         excluded_points = loaded_points - use_points
         logger.debug(f"Excluding points: {excluded_points}")
@@ -186,7 +186,7 @@ def main(
     cycles: int = 1,
     order: Literal['AaBb', 'AabB', 'ABab', 'ABba', 'ABCD'] = "ABba",
     sync_time: bool = True,
-    points: str = ""
+    points: tuple[str, ...] = ()
 ) -> None:
     logger = getLogger("iman.sets.measure")
     with open_serial(

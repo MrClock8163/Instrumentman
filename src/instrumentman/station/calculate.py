@@ -18,7 +18,7 @@ def main(
     measurements: Path,
     targets: Path,
     output: Path,
-    points: str | None = None,
+    points: tuple[str, ...] = (),
     height: float = 0
 ) -> None:
     with measurements.open("rt", encoding="utf8") as file:
@@ -43,8 +43,8 @@ def main(
         exit(4)
 
     target_names = targetlist.get_target_names()
-    if points is not None:
-        target_names = list(set(target_names).intersection(points.split(",")))
+    if len(points) > 0:
+        target_names = list(set(target_names).intersection(points))
 
     actual_targets: list[str] = []
     references: list[Coordinate] = []

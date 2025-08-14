@@ -58,7 +58,7 @@ Examples
 .. code-block:: shell
     :caption: Measuring to just a subset of the targets
 
-    iman measure sets -p "P1,P2,P8" COM3 targets.json results
+    iman measure sets -p P1 -p P2 -p P8 COM3 targets.json results
 
 .. code-block:: shell
     :caption: Measuring in face 1 only
