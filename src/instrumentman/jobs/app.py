@@ -45,11 +45,13 @@ def run_listing(
         while True:
             resp_list = tps.csv.list()
             if resp_list.error != GeoComCode.OK or resp_list.params is None:
-                logger.info
+                break
+
+            job, file, _, _, _ = resp_list.params
+            if job == "" or file == "":
                 break
 
             count += 1
-            job, file, _, _, _ = resp_list.params
             table.add_row(job, file)
             col_file.footer = str(count)
 
@@ -77,6 +79,9 @@ def main_list(
         sync_after_timeout=sync_after_timeout
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
-        run_listing(tps, logger)
+        try:
+            run_listing(tps, logger)
+        finally:
+            tps.csv.abort_listing()
 
     logger.info(f"Closed connection on {port}")
