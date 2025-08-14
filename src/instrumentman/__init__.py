@@ -28,7 +28,11 @@ from . import datatransfer
 from . import settings
 
 
-@extra_group("iman", params=None)  # type: ignore[misc]
+@extra_group(
+    "iman",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
 @version_option()
 @logging_option_group()
 @logging_levels_constraint()

@@ -136,26 +136,35 @@ def logging_option_group() -> Callable[[F], F]:
         "Options related to the logging functionalities.",
         option(
             "--protocol",
+            help=(
+                "log debug level messages and above, "
+                "including protocol messages"
+            ),
             is_flag=True
         ),
         option(
             "--debug",
+            help="log debug level messages and above",
             is_flag=True
         ),
         option(
             "--info",
+            help="log information level messages and above",
             is_flag=True
         ),
         option(
             "--warning",
+            help="log warning level messages and above",
             is_flag=True
         ),
         option(
             "--error",
+            help="log error level messages and above",
             is_flag=True
         ),
         option(
             "--critical",
+            help="log critical error level messages",
             is_flag=True
         ),
         option(
