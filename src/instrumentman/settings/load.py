@@ -135,17 +135,13 @@ def main(
         logger.critical("Settings file does not follow schema")
         exit(1)
 
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port,
         retry=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
         match data["protocol"]:
             case "geocom":
@@ -156,4 +152,3 @@ def main(
                 upload_settings_gsidna(dna, logger, data)
 
     echo_green(f"Settings loaded from {settings}")
-    logger.info(f"Closed connection on {port}")

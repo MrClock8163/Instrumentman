@@ -168,8 +168,8 @@ def measure_set(
 
     logger.info("Finished set measurements")
     progress.stop()
-    tps.aut.turn_to(0, Angle(180, 'deg'))
     logger.info("Returning to face-down position")
+    tps.aut.turn_to(0, Angle(180, 'deg'))
 
     return session
 
@@ -189,17 +189,13 @@ def main(
     points: str = ""
 ) -> None:
     logger = getLogger("iman.sets.measure")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port,
         retry=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         if sync_time:
@@ -214,8 +210,6 @@ def main(
             cycles,
             points
         )
-
-    logger.info(f"Closed connection on {port}")
 
     timestamp = session.cycles[0].time.strftime("%Y%m%d_%H%M%S")
     filename = os.path.join(

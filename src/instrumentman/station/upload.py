@@ -20,17 +20,13 @@ def main(
     azimuth: str | None = None
 ) -> None:
     logger = getLogger("iman.station.upload")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port=port,
         speed=baud,
         timeout=timeout,
         retry=retry,
-        sync_after_timeout=sync_after_timeout
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         if coordinates is not None and instrumentheight is not None:
@@ -74,5 +70,3 @@ def main(
 
         echo_green("Orientation/azimuth set")
         logger.info("Orientation/azimuth set")
-
-    logger.info(f"Closed connection on {port}")

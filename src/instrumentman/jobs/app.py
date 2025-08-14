@@ -66,22 +66,16 @@ def main_list(
     sync_after_timeout: bool = False
 ) -> None:
     logger = getLogger("iman.jobs.list")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port=port,
         speed=baud,
         timeout=timeout,
         retry=retry,
-        sync_after_timeout=sync_after_timeout
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         try:
             run_listing(tps, logger)
         finally:
             tps.csv.abort_listing()
-
-    logger.info(f"Closed connection on {port}")

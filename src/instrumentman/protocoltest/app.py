@@ -153,18 +153,14 @@ def main(
     sync_after_timeout: bool = False
 ) -> None:
     logger = getLogger("iman.protocoltest")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     try:
         with open_serial(
             port,
             speed=baud,
             timeout=timeout,
             retry=retry,
-            sync_after_timeout=sync_after_timeout
+            sync_after_timeout=sync_after_timeout,
+            logger=logger.getChild("com")
         ) as com:
             try:
                 if protocol == "geocom":
@@ -182,5 +178,3 @@ def main(
     except (SerialException, ConnectionError) as e:
         echo_red(f"Connection was not successful ({e})")
         logger.exception("Connection was not successful")
-
-    logger.info(f"Closed connection on {port}")

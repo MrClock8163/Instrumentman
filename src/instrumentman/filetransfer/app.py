@@ -202,6 +202,7 @@ def run_listing_tree(
     filetype: str | None,
     depth: int = 1
 ) -> None:
+    filetype = filetype or "unknown"
     console = Console(width=120)
     logger.info(
         f"Starting content listing of '{directory}' from '{dev}' device"
@@ -310,17 +311,13 @@ def main_download(
     large: bool = False
 ) -> None:
     logger = getLogger("iman.files.download")
-    logger.info(f"Starting connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port=port,
         speed=baud,
         timeout=timeout,
         retry=retry,
-        sync_after_timeout=sync_after_timeout
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         try:
@@ -337,8 +334,6 @@ def main_download(
         finally:
             tps.ftr.abort_download()
 
-    logger.info(f"Closed connection on {port}")
-
 
 def main_list(
     port: str,
@@ -352,17 +347,13 @@ def main_list(
     depth: int = 1
 ) -> None:
     logger = getLogger("iman.files.list")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port=port,
         speed=baud,
         timeout=timeout,
         retry=retry,
-        sync_after_timeout=sync_after_timeout
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         try:
@@ -376,5 +367,3 @@ def main_list(
             )
         finally:
             tps.ftr.abort_listing()
-
-    logger.info(f"Closed connection on {port}")

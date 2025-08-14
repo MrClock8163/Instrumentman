@@ -146,17 +146,13 @@ def main(
             logger.critical("Message contains non-ASCII characters.")
             exit(1)
 
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port,
         speed=baud,
         timeout=timeout,
         retry=retry,
-        sync_after_timeout=sync_after_timeout
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         beepstart = tps.bmm.beep_start
@@ -176,5 +172,3 @@ def main(
             message,
             unittime * 1e-3
         )
-
-    logger.info(f"Closed connection on {port}")

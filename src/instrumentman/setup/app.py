@@ -166,17 +166,13 @@ def main_measure(
     sync_after_timeout: bool = False
 ) -> None:
     logger = getLogger("iman.targets.measure")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port,
         retry=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         targets = measure_targets(tps, logger, output)
@@ -184,8 +180,6 @@ def main_measure(
             echo_red("Program was cancelled or no targets were recorded")
             logger.info("Program was cancelled or no targets were recorded")
             exit(0)
-
-    logger.info(f"Closed connection on {port}")
 
     if targets is not None:
         export_targets_to_json(output, targets)

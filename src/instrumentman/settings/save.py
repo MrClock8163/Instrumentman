@@ -270,17 +270,13 @@ def main(
     defaults: bool = False
 ) -> None:
     logger = getLogger("iman.settings.save")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port,
         retry=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
         match protocol:
             case "geocom":
@@ -289,8 +285,6 @@ def main(
             case "gsidna":
                 dna = GsiOnlineDNA(com, logger.getChild("instrument"))
                 data = download_settings_gsidna(dna, logger, defaults)
-
-    logger.info(f"Closed connection on {port}")
 
     data = clean_settings(data)
     logger.info("Removed empty options")

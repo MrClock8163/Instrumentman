@@ -20,12 +20,11 @@ def main_download(
 ) -> None:
     eof_bytes = eof.encode("ascii")
     logger = getLogger("iman.data.download")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(f"Connection parameters: baud={baud:d}, timeout={timeout:d}")
     with open_serial(
         port,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
         eol_bytes = com.eombytes
         started = False
@@ -65,8 +64,6 @@ def main_download(
                 logger.exception("Download interrupted by error")
                 break
 
-    logger.info(f"Closed connection on {port}")
-
 
 def main_upload(
     port: str,
@@ -76,12 +73,11 @@ def main_upload(
     skip: int = 0
 ) -> None:
     logger = getLogger("iman.data.upload")
-    logger.info(f"Opening connection on {port}")
-    logger.debug(f"Connection parameters: baud={baud:d}, timeout={timeout:d}")
     with open_serial(
         port,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
         try:
             logger.info("Starting data upload")
@@ -104,5 +100,4 @@ def main_upload(
             logger.exception("Upload interrupted by error")
         else:
             echo_green("Upload finished")
-
-    logger.info(f"Closed connection on {port}")
+            logger.info("Upload finished")

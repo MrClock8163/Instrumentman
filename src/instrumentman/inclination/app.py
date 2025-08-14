@@ -114,16 +114,13 @@ def main_measure(
 ) -> None:
     logger = getLogger("iman.inclination.measure")
     logger.info(f"Opening connection on {port}")
-    logger.debug(
-        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
-        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
-    )
     with open_serial(
         port,
         retry=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
-        timeout=timeout
+        timeout=timeout,
+        logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         run_measure(
@@ -134,8 +131,6 @@ def main_measure(
             zero,
             cycles
         )
-
-    logger.info(f"Closed connection on {port}")
 
 
 def main_merge(
