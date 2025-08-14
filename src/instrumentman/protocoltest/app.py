@@ -27,7 +27,7 @@ def _test_geocom_mot(tps: GeoCom) -> GeoComResponse[Any]:
 def _test_geocom_ftr(tps: GeoCom) -> GeoComResponse[Any]:
     for device in Device:
         response = tps.ftr.setup_listing(device)
-        tps.ftr.abort_list()
+        tps.ftr.abort_listing()
         if response.error == GeoComCode.OK:
             return response
 

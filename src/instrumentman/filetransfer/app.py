@@ -79,12 +79,12 @@ def get_directory_items(
     resp_list = tps.ftr.list()
     if resp_list.error != GeoComCode.OK or resp_list.params is None:
         logger.error(f"Could not start indexing ({resp_list})")
-        tps.ftr.abort_list()
+        tps.ftr.abort_listing()
         return []
 
     last, name, size, lastmodified = resp_list.params
     if name == "":
-        tps.ftr.abort_list()
+        tps.ftr.abort_listing()
         return []
 
     output: list[FileTreeItem] = []
@@ -104,7 +104,7 @@ def get_directory_items(
         resp_list = tps.ftr.list(True)
         if resp_list.error != GeoComCode.OK or resp_list.params is None:
             logger.error(f"Stopped indexing due to an error ({resp_list})")
-            tps.ftr.abort_list()
+            tps.ftr.abort_listing()
             return []
 
         last, name, size, lastmodified = resp_list.params
@@ -121,7 +121,7 @@ def get_directory_items(
             }
         )
 
-    tps.ftr.abort_list()
+    tps.ftr.abort_listing()
     for item in output:
         item["children"] = get_directory_items(
             updater,
@@ -375,6 +375,6 @@ def main_list(
                 depth
             )
         finally:
-            tps.ftr.abort_list()
+            tps.ftr.abort_listing()
 
     logger.info(f"Closed connection on {port}")
