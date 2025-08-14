@@ -14,11 +14,31 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   measurements
 - Added station uploading (`upload station`) to set station coordinates and
   orientation
+- Added logging options to `iman` root command
+- Added logging to instrument connected commands
 
 ### Changed
 
+- `geocompy` dependency minimum version was bumped to `v0.11.0`
 - Updated file listing to display results in a tree view
 - Reworked file listing to be able to run recursively to build full tree view
+- Protocol tests now display results in a table
+- Inclination measurement now displays results in table
+- Job listing now displays results in table
+- Added progress indicator to more commands
+- `points` option in set measurement and station calculation is now a multi
+  option, instead of a comma separated string list
+
+### Fixed
+
+- Job listing could only be done once as the finializer command was so far
+  missing from GeoComPy (the listing was left unclosed, and could not be
+  set up again, only after an instrument restart)
+- Target measurement would indefinitely halt on confirmation prompt
+
+### Removed
+
+- Removed logging options from set measurement
 
 ## v0.3.0 (2025-08-01)
 
