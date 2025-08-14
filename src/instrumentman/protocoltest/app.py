@@ -10,6 +10,7 @@ from rich.table import Table, Column
 from serial import SerialException
 from geocompy.data import Angle
 from geocompy.geo import GeoCom
+from geocompy.geo.gcdata import Device
 from geocompy.geo.gctypes import GeoComCode, GeoComResponse
 from geocompy.gsi.dna import GsiOnlineDNA
 from geocompy.gsi.gsitypes import GsiOnlineResponse
@@ -21,6 +22,16 @@ from ..utils import echo_red
 def _test_geocom_mot(tps: GeoCom) -> GeoComResponse[Any]:
     tps.mot.stop_controller()
     return tps.mot.start_controller()
+
+
+def _test_geocom_ftr(tps: GeoCom) -> GeoComResponse[Any]:
+    for device in Device:
+        response = tps.ftr.setup_listing(device)
+        tps.ftr.abort_list()
+        if response.error == GeoComCode.OK:
+            return response
+
+    return response
 
 
 def tests_geocom(
@@ -56,7 +67,7 @@ def tests_geocom(
             tps.edm.switch_laserpointer,
             (False,)
         ),
-        ("File Transfer", tps.ftr.setup_listing, ()),
+        ("File Transfer", _test_geocom_ftr, (tps,)),
         ("Imaging", tps.img.get_telescopic_configuration, ()),
         ("Keyboard Display Unit", tps.kdm.get_display_power_status, ()),
         ("Motorization", _test_geocom_mot, (tps,)),
@@ -77,9 +88,9 @@ def tests_geocom(
             response = cmd(*params)
             if response.error == GeoComCode.OK:
                 result = ":white_check_mark:"
-                logger.error(f"{subsystem} unavailable ({response})")
             else:
                 result = ":x:"
+                logger.error(f"{subsystem} unavailable ({response})")
 
             table.add_row(subsystem, result)
 
