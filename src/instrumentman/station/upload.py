@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from geocompy.data import Angle, Coordinate
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
@@ -17,6 +19,12 @@ def main(
     orientation: str | None = None,
     azimuth: str | None = None
 ) -> None:
+    logger = getLogger("iman.station.upload")
+    logger.info(f"Opening connection on {port}")
+    logger.debug(
+        f"Connection parameters: baud={baud:d}, timeout={timeout:d}, "
+        f"tries={retry:d}, sync-after-timeout={str(sync_after_timeout)}"
+    )
     with open_serial(
         port=port,
         speed=baud,
@@ -24,7 +32,7 @@ def main(
         retry=retry,
         sync_after_timeout=sync_after_timeout
     ) as com:
-        tps = GeoCom(com)
+        tps = GeoCom(com, logger.getChild("instrument"))
         if coordinates is not None and instrumentheight is not None:
             resp_stn = tps.tmc.set_station(
                 Coordinate(*coordinates),
@@ -32,16 +40,23 @@ def main(
             )
             if resp_stn.error != GeoComCode.OK:
                 echo_red("Cannot set station")
+                logger.critical(f"Cannot set station ({resp_stn})")
                 exit(1)
             else:
                 echo_green("Station set")
+                logger.info(f"Station set to {coordinates}")
 
         if azimuth is not None:
             hz = Angle.from_dms(azimuth)
+            logger.info(f"Setting azimuth to {azimuth}")
         elif orientation is not None:
+            logger.info(f"Setting orientation to {orientation}")
             resp_angle = tps.tmc.get_angle()
             if resp_angle.error != GeoComCode.OK or resp_angle.params is None:
-                echo_red("Could not set orientation")
+                echo_red("Could not get current orientation")
+                logger.critical(
+                    f"Could not get current orientation ({resp_angle})"
+                )
                 exit(1)
 
             hz = (
@@ -54,6 +69,10 @@ def main(
         resp_ori = tps.tmc.set_azimuth(hz)
         if resp_ori.error != GeoComCode.OK:
             echo_red("Could not set orientation/azimuth")
+            logger.critical(f"Could not set orientation/azimuth ({resp_ori})")
             exit(1)
 
         echo_green("Orientation/azimuth set")
+        logger.info("Orientation/azimuth set")
+
+    logger.info(f"Closed connection on {port}")
