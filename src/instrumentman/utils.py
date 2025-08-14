@@ -340,9 +340,6 @@ def configure_logging(
     dateformat: str = "%Y-%m-%d %H:%M:%S",
     rotate: tuple[int, int] | None = None
 ) -> None:
-    if not any((protocol, debug, info, warning, error, critical)):
-        return
-
     level = NOTSET
     if debug or protocol:
         level = DEBUG
