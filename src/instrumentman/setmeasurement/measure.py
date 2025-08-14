@@ -79,6 +79,21 @@ def measure_set(
         for pt in excluded_points:
             points.pop_target(pt)
 
+    progress = Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        TextColumn("{task.fields[label]}")
+    )
+    progress.start()
+    labelformat = "Cycle {}, target {} in {}"
+    task = progress.add_task(
+        "Measuring set",
+        total=count * len(points) * (1 if order_spec == 'ABCD' else 2),
+        label=""
+    )
+
     logger.info("Measuring inclination, temperature and battery level")
     tps.aut.turn_to(0, Angle(180, 'deg'))
     incline = tps.tmc.get_angle_inclination('MEASURE').params
@@ -95,20 +110,6 @@ def measure_set(
     else:
         station, iheight = resp_station
 
-    progress = Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeElapsedColumn(),
-        TextColumn("{task.fields[label]}")
-    )
-    progress.start()
-    task = progress.add_task(
-        "Measuring set",
-        total=count * len(points) * (1 if order_spec == 'ABCD' else 2),
-        label=""
-    )
-    labelformat = "Cycle {}, target {} in {}"
     session = Session(station, iheight)
     for i in range(count):
         logger.info(f"Starting set cycle {i + 1}")
@@ -122,7 +123,6 @@ def measure_set(
         for f, t in iter_targets(points, order_spec):
             progress.update(
                 task,
-                advance=1,
                 label=labelformat.format(i + 1, t.name, f.name)
             )
             logger.info(f"Measuring {t.name} ({f.name})")
@@ -142,6 +142,7 @@ def measure_set(
                     f"ATR fine adjustment failed ({resp_atr.error.name}), "
                     "skipping point"
                 )
+                progress.update(task, advance=1)
                 continue
 
             tps.bap.set_prism_type(t.prism)
@@ -152,6 +153,7 @@ def measure_set(
                     f"Error during measurement ({resp_angle.error.name}), "
                     "skipping point"
                 )
+                progress.update(task, advance=1)
                 continue
 
             output.add_measurement(
@@ -160,13 +162,14 @@ def measure_set(
                 t.height,
                 resp_angle.params
             )
-            logger.info("Done")
+            progress.update(task, advance=1)
 
         session.cycles.append(output)
 
+    logger.info("Finished set measurements")
     progress.stop()
     tps.aut.turn_to(0, Angle(180, 'deg'))
-    logger.info("Finished set measurements")
+    logger.info("Returning to face-down position")
 
     return session
 
