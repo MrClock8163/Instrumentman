@@ -5,6 +5,13 @@ from typing import Iterator, Literal
 from itertools import chain
 import pathlib
 
+from rich.progress import (
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+    BarColumn,
+    TaskProgressColumn
+)
 from geocompy.data import Angle, Coordinate
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
@@ -88,6 +95,20 @@ def measure_set(
     else:
         station, iheight = resp_station
 
+    progress = Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        TextColumn("{task.fields[label]}")
+    )
+    progress.start()
+    task = progress.add_task(
+        "Measuring set",
+        total=count * len(points) * (1 if order_spec == 'ABCD' else 2),
+        label=""
+    )
+    labelformat = "Cycle {}, target {} in {}"
     session = Session(station, iheight)
     for i in range(count):
         logger.info(f"Starting set cycle {i + 1}")
@@ -99,6 +120,11 @@ def measure_set(
         )
 
         for f, t in iter_targets(points, order_spec):
+            progress.update(
+                task,
+                advance=1,
+                label=labelformat.format(i + 1, t.name, f.name)
+            )
             logger.info(f"Measuring {t.name} ({f.name})")
             rel_coords = (
                 (t.coords + Coordinate(0, 0, t.height))
@@ -138,6 +164,7 @@ def measure_set(
 
         session.cycles.append(output)
 
+    progress.stop()
     tps.aut.turn_to(0, Angle(180, 'deg'))
     logger.info("Finished set measurements")
 
