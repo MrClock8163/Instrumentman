@@ -250,7 +250,7 @@ def run_download(
     file: BufferedWriter,
     device: str = "internal",
     filetype: str = "unknown",
-    chunk: int = 450,
+    chunk: int = 225,
     large: bool = False
 ) -> None:
     setup = tps.ftr.setup_download
@@ -266,7 +266,7 @@ def run_download(
     logger.debug(f"Download setup: large={str(large)}, chunk={chunk:d}")
     resp_setup = setup(
         filename,
-        chunk,
+        chunk * 2,  # chunk size is in bytes, but command expects in hex chars
         _DEVICE[device],
         _FILE[filetype]
     )
@@ -307,7 +307,7 @@ def main_download(
     sync_after_timeout: bool = False,
     device: str = "internal",
     filetype: str = "unknown",
-    chunk: int = 450,
+    chunk: int = 225,
     large: bool = False
 ) -> None:
     logger = getLogger("iman.files.download")
