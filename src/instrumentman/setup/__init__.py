@@ -23,23 +23,24 @@ from ..utils import (
 @argument(
     "output",
     help=(
-        "path to save the JSON containing the recorded targets "
+        "Path to save the JSON containing the recorded targets "
         "(if the file already exists, the new targets can be appended)"
     ),
     type=str
 )
 @com_option_group()
 def cli_measure(**kwargs: Any) -> None:
-    """Measure target points.
+    """
+    Record new target points for automated measurements.
 
-    The program gives instructions in the terminal at each step.
+    The program can be used to record target point definitions for use in
+    automated measurements. The process is interactive, and instructions are
+    given at every step.
 
-    .. caution::
-        :class: warning
-
-        The appropriate prism type needs to be set on the instrument before
-        recording each target point. The program will automatically request
-        the type from the instrument after the point is measured.
+    The appropriate prism type and target height needs to be set on the
+    instrument before recording each target point. The program will
+    automatically request the information from the instrument and prompt for
+    confirmation (they can be corrected in the prompt if necessary).
     """
     from .app import main_measure
 
@@ -117,9 +118,13 @@ def cli_import(**kwargs: Any) -> None:
     column type.
 
     - ``P``: point ID
+
     - ``E``: easting
+
     - ``N``: northing
+
     - ``Z``: up/height
+
     - ``_``: ignore/skip column
 
     Every column spec must specify the ``PENZ`` fields in the appropriate
@@ -128,7 +133,9 @@ def cli_import(**kwargs: Any) -> None:
     Examples:
 
     - ``PENZ``: standard column order
+
     - ``P_ENZ``: skipping 2nd column containing point codes
+
     - ``EN_Z_P``: mixed column order and skipping
     """
     from .app import main_import
