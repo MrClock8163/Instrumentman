@@ -47,7 +47,8 @@ from ..utils import (
         "target to use as reference from loaded target definition "
         "(set multiple times to use specific points, leave unset to use all)"
     ),
-    type=str
+    type=str,
+    multiple=True
 )
 @option(
     "--height",

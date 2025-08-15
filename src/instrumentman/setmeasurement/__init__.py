@@ -33,7 +33,7 @@ from ..utils import (
 @argument(
     "directory",
     type=dir_path(),
-    help="directory to save measurement output to"
+    help="Directory to save measurement output to"
 )
 @com_option_group()
 @option(
@@ -42,7 +42,7 @@ from ..utils import (
     type=str,
     default="setmeasurement_{time}.json",
     help=(
-        "session output file name format with placeholders "
+        "Session output file name format with placeholders "
         "(`{time}`: timestamp, `{order}`: order, `{cycle}`: cycles)"
     )
 )
@@ -51,19 +51,19 @@ from ..utils import (
     "--cycles",
     type=IntRange(min=1),
     default=1,
-    help="number of measurement cycles"
+    help="Number of measurement cycles"
 )
 @option(
     "-o",
     "--order",
-    help="measurement order (capital letter: face 1, lower case: face 2)",
+    help="Measurement order (capital letter: face 1, lower case: face 2)",
     type=Choice(["AaBb", "AabB", "ABab", "ABba", "ABCD"]),
     default="ABba"
 )
 @option(
     "-s",
     "--sync-time",
-    help="synchronize instrument time and date with the computer",
+    help="Synchronize instrument time and date with the computer",
     is_flag=True
 )
 @option(
@@ -71,13 +71,25 @@ from ..utils import (
     "--point",
     "points",
     type=str,
+    multiple=True,
     help=(
-        "target to use from loaded target definition "
+        "Target to use from loaded target definition "
         "(set multiple times to use specific points, leave unset to use all)"
     )
 )
 def cli_measure(**kwargs: Any) -> None:
-    """Run sets of measurements to predefined targets."""
+    """
+    Run sets of measurements to predefined targets.
+
+    The target coordinates are loaded from the specified target definition
+    file. The total station aims at the target coordinates (fine adjusting
+    with ATR) and takes polar measurements in the given order.
+
+    The measurement results are saved in a JSON format for later processing.
+
+    This command requires a GeoCom capable robotic total station, that has
+    ATR.
+    """
     from .measure import main
 
     main(**kwargs)
@@ -90,31 +102,31 @@ def cli_measure(**kwargs: Any) -> None:
 )  # type: ignore[misc]
 @argument(
     "output",
-    help="output file",
+    help="Output file",
     type=file_path()
 )
 @argument(
     "inputs",
-    help="set measurement session JSON files (glob notation)",
+    help="Set measurement session JSON files (glob notation)",
     type=file_path(exists=True),
     nargs=-1,
     required=True
 )
 @option(
     "--allow-oneface",
-    help="accept points with face 1 measurements only as well",
+    help="Accept points with face 1 measurements only as well",
     is_flag=True
 )
 def cli_merge(**kwargs: Any) -> None:
-    """Merge the output of multiple set measurement sessions.
+    """
+    Merge the output of multiple set measurement sessions.
 
     The results of every set measurement session are saved to a separate file.
     When multiple sessions are measured using the same targets from the same
     station, the data files need to be merged to process them together.
 
-    .. note::
-        The merge will be refused if the station information, or the target
-        points do not match between the targeted sessions.
+    The merge will be refused if the station information, or the target
+    points do not match between the targeted sessions.
     """
     from .process import main_merge
 
@@ -128,7 +140,7 @@ def cli_merge(**kwargs: Any) -> None:
 )  # type: ignore[misc]
 @argument(
     "inputs",
-    help="set measurement session JSON files (glob notation)",
+    help="Set measurement session JSON files (glob notation)",
     nargs=-1,
     required=True,
     type=file_path(exists=True)
@@ -136,16 +148,17 @@ def cli_merge(**kwargs: Any) -> None:
 @option(
     "-s",
     "--schema-only",
-    help="only validate the JSON schema",
+    help="Only validate the JSON schema",
     is_flag=True
 )
 @option(
     "--allow-oneface",
-    help="accept points with face 1 measurements only as well",
+    help="Accept points with face 1 measurements only as well",
     is_flag=True
 )
 def cli_validate(**kwargs: Any) -> None:
-    """Validate session output files.
+    """
+    Validate session output files.
 
     After the measurement sessions are finished, it might be useful to
     validate, that each session succeeded, no points were skipped.
@@ -162,52 +175,52 @@ def cli_validate(**kwargs: Any) -> None:
 )  # type: ignore[misc]
 @argument(
     "input",
-    help="input session file to process",
+    help="Input session file to process",
     type=file_path(exists=True)
 )
 @argument(
     "output",
-    help="output CSV file",
+    help="Output CSV file",
     type=file_path(readable=False)
 )
 @option(
     "--header",
-    help="write column headers",
+    help="Write column headers",
     is_flag=True
 )
 @option(
     "-d",
     "--delimiter",
-    help="column delimiter character",
+    help="Column delimiter character",
     type=str,
     default=","
 )
 @option(
     "-p",
     "--precision",
-    help="decimal precision",
+    help="Decimal precision",
     type=IntRange(min=0),
     default=4
 )
 @option(
     "--allow-oneface",
-    help="accept points with face 1 measurements only as well",
+    help="Accept points with face 1 measurements only as well",
     is_flag=True
 )
 @option(
     "--station",
-    help="override the recorded station coordinates",
+    help="Override the recorded station coordinates",
     type=(float, float, float)
 )
 @option(
     "--instrumentheight",
     "--iheight",
-    help="override instrument height",
+    help="Override instrument height",
     type=float
 )
 @option(
     "--orientation",
-    help="override instrument orientation",
+    help="Override instrument orientation",
     type=Angle()
 )
 @constraint(
