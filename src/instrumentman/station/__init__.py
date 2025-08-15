@@ -26,7 +26,7 @@ from ..utils import (
 )  # type: ignore[misc]
 @argument(
     "measurements",
-    help="input session file to process",
+    help="Input session file to process",
     type=file_path(exists=True)
 )
 @argument(
@@ -36,7 +36,7 @@ from ..utils import (
 )
 @argument(
     "output",
-    help="output JSON file",
+    help="Output JSON file",
     type=file_path(readable=False)
 )
 @option(
@@ -44,7 +44,7 @@ from ..utils import (
     "--point",
     "points",
     help=(
-        "target to use as reference from loaded target definition "
+        "Target to use as reference from loaded target definition "
         "(set multiple times to use specific points, leave unset to use all)"
     ),
     type=str,
@@ -52,12 +52,18 @@ from ..utils import (
 )
 @option(
     "--height",
-    help="instrument height",
+    help="Instrument height",
     type=float,
     default=0
 )
 def cli_calc(**kwargs: Any) -> None:
-    """Calculate station coordinates from set measurements by resection."""
+    """
+    Calculate station coordinates from set measurements by resection.
+
+    The resection is computed in separate horizontal and vertical calculations.
+    Station coordinates and the orientation are displayed once done, as well as
+    their deviations from the adjustment.
+    """
     from .calculate import main
 
     main(**kwargs)
@@ -73,7 +79,7 @@ def cli_calc(**kwargs: Any) -> None:
 @option(
     "-c",
     "--coordinates",
-    help="station coordinates",
+    help="Station coordinates",
     type=(float, float, float),
     is_flag=False,
     flag_value=(0, 0, 0)
@@ -82,7 +88,7 @@ def cli_calc(**kwargs: Any) -> None:
     "-i",
     "--instrumentheight",
     "--iheight",
-    help="instrument height",
+    help="Instrument height",
     type=float,
     is_flag=False,
     flag_value=0
@@ -90,13 +96,13 @@ def cli_calc(**kwargs: Any) -> None:
 @option(
     "-o",
     "--orientation",
-    help="instrument orientation correction",
+    help="Instrument orientation correction",
     type=Angle()
 )
 @option(
     "-a",
     "--azimuth",
-    help="current azimuth",
+    help="Current azimuth",
     type=Angle(),
     is_flag=False,
     flag_value="0-00-00"
@@ -110,7 +116,14 @@ def cli_calc(**kwargs: Any) -> None:
     ["coordinates", "instrumentheight"]
 )
 def cli_upload(**kwargs: Any) -> None:
-    """Upload station setup to instrument."""
+    """
+    Upload station setup to instrument.
+
+    This program cen be used to update the station coordinates and height,
+    and/or the orientation or azimuth.
+
+    This command requires a GeoCom capable total station.
+    """
     from .upload import main
 
     main(**kwargs)
