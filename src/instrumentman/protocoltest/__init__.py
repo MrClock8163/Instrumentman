@@ -16,8 +16,17 @@ from ..utils import (
 @com_port_argument()
 @com_option_group()
 def cli_geocom(**kwargs: Any) -> None:
-    """Test the availability of various GeoCom protocol functions on an
-    instrument."""
+    """
+    Test the availability of various GeoCom protocol functions on an
+    instrument.
+
+    From each GeoCom subsystem, a single command is run to test the
+    responsiveness of the instrument. Some of the commands might change
+    instrument settings.
+
+    The results are displayed in a table, listing all subsystems and their
+    success/failure.
+    """
     from .app import main
 
     kwargs["protocol"] = "geocom"
@@ -32,8 +41,17 @@ def cli_geocom(**kwargs: Any) -> None:
 @com_port_argument()
 @com_option_group()
 def cli_gsidna(**kwargs: Any) -> None:
-    """Test the availability of various GSI Online DNA functions on an
-    instrument."""
+    """
+    Test the availability of various GSI Online DNA functions on an
+    instrument.
+
+    From both the settings and the measurement systems, a single "get" and a
+    "set" type command is executed to test the responsiveness. Some
+    instrument settings might get changed.
+
+    The results are displayed in a table, listing all commands and their
+    success/failure.
+    """
     from .app import main
 
     kwargs["protocol"] = "gsidna"
