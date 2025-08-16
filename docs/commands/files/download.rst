@@ -1,8 +1,8 @@
 Downloading
 ===========
 
-A useful file management feature is the ability to download a file from the
-instrument. The download command can be used to download a file identified
+A useful file management feature that gives the ability to download a file from
+the instrument. The download command can be used to download a file identified
 by either a file name and type, or a full file path.
 
 .. caution::

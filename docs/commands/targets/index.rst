@@ -5,7 +5,7 @@ Targets
 
 To run a point measurement program, the targets first must be defined. This is
 done in JSON format, providing the point IDs, prism types and their 3D
-coordinates in an arbitrary coordinate system. This application provdes ways
+coordinates in an arbitrary coordinate system. This application provides ways
 to create such a definition.
 
 .. note::
