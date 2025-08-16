@@ -22,7 +22,8 @@ from ..utils import (
 @extra_command(
     "sets",
     params=None,
-    context_settings={"auto_envvar_prefix": None}
+    context_settings={"auto_envvar_prefix": None},
+    aliases=["set"]
 )  # type: ignore[misc]
 @com_port_argument()
 @argument(
@@ -98,7 +99,8 @@ def cli_measure(**kwargs: Any) -> None:
 @extra_command(
     "sets",
     params=None,
-    context_settings={"auto_envvar_prefix": None}
+    context_settings={"auto_envvar_prefix": None},
+    aliases=["set"]
 )  # type: ignore[misc]
 @argument(
     "output",
@@ -136,7 +138,8 @@ def cli_merge(**kwargs: Any) -> None:
 @extra_command(
     "sets",
     params=None,
-    context_settings={"auto_envvar_prefix": None}
+    context_settings={"auto_envvar_prefix": None},
+    aliases=["set"]
 )  # type: ignore[misc]
 @argument(
     "inputs",
@@ -171,7 +174,8 @@ def cli_validate(**kwargs: Any) -> None:
 @extra_command(
     "sets",
     params=None,
-    context_settings={"auto_envvar_prefix": None}
+    context_settings={"auto_envvar_prefix": None},
+    aliases=["set"]
 )  # type: ignore[misc]
 @argument(
     "input",
