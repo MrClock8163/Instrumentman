@@ -116,17 +116,17 @@ def cli_import() -> None:
     """Import external data and convert it for use with other commands."""
 
 
-@cli.group("calc")  # type: ignore[misc]
+@cli.group("calculate", aliases=["calc"])  # type: ignore[misc]
 def cli_calc() -> None:
     """Preform calculations from measurement results."""
 
 
-@cli.group("merge")  # type: ignore[misc]
+@cli.group("merge", aliases=["join", "concat"])  # type: ignore[misc]
 def cli_merge() -> None:
     """Merge various output files."""
 
 
-@cli.group("validate")  # type: ignore[misc]
+@cli.group("validate", aliases=["check"])  # type: ignore[misc]
 def cli_validate() -> None:
     """Validate intermediate files."""
 
@@ -136,17 +136,17 @@ def cli_test() -> None:
     """Test protocol responsiveness."""
 
 
-@cli.group("list")  # type: ignore[misc]
+@cli.group("list", aliases=["ls"])  # type: ignore[misc]
 def cli_list() -> None:
     """List various data stored on the instrument."""
 
 
-@cli.group("download")  # type: ignore[misc]
+@cli.group("download", aliases=["dl", "save"])  # type: ignore[misc]
 def cli_download() -> None:
     """Download data from the instrument."""
 
 
-@cli.group("upload")  # type: ignore[misc]
+@cli.group("upload", aliases=["ul", "load"])  # type: ignore[misc]
 def cli_upload() -> None:
     """Upload data to the instrument."""
 
