@@ -37,6 +37,7 @@ from cloup.constraints import (
     constraint,
     mutually_exclusive,
     require_one,
+    require_any,
     require_all,
     If,
     AnySet
@@ -231,7 +232,7 @@ def logging_target_constraint() -> Callable[[F], F]:
                 "error",
                 "critical"
             ),
-            require_one
+            require_any
         ),
         ["file", "stdout", "stderr"]
     )
