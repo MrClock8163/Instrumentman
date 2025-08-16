@@ -22,40 +22,44 @@ from ..utils import (
 @com_port_argument()
 @argument(
     "message",
-    help="message to relay as a string of ASCII characters",
+    help="Message to relay as a string of ASCII characters",
     type=str
 )
 @option(
     "-i",
     "--intensity",
-    help="beeping intensity",
+    help="Beeping intensity",
     type=IntRange(0, 100),
     default=100
 )
 @option(
     "-u",
     "--unittime",
-    help="beep unit time in milliseconds [ms]",
+    help="Beep unit time in milliseconds [ms]",
     type=IntRange(min=50),
     default=50
 )
 @option(
     "-c",
     "--compatibility",
-    help="instrument compatibility",
+    help="Instrument compatibility",
     type=Choice(["none", "TPS1000"], case_sensitive=False),
     default="none"
 )
 @option(
     "--ignore-non-ascii",
-    help="suppress encoding errors and skip non-ASCII characters",
+    help="Suppress encoding errors and skip non-ASCII characters",
     is_flag=True
 )
 @com_option_group()
 def cli(**kwargs: Any) -> None:
-    """Play a Morse encoded ASCII message through the beep signals
-        of a GeoCom capable total station.
-        """
+    """
+    Play a Morse encoded ASCII message through the beep signals.
+
+    This command requires a GeoCom capable total station, that supports
+    the required audio signal types (TPS1000 to TPS1200+, VivaTPS seem to have
+    changed the commands, and they are not documented).
+    """
 
     from .app import main
 

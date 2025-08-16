@@ -53,8 +53,43 @@ def cli(
     dateformat: str = "%Y-%m-%d %H:%M:%S",
     rotate: tuple[int, int] | None = None
 ) -> None:
-    """Automated measurement programs and related utilities for surveying
-    instruments."""
+    """
+    \b
+    +--------------------------------------------------------------------+
+    |                                                                    |
+    |       .---------.                                                  |
+    |      / +-------+ \\                                                 |
+    |     .__| +---+ |__.                                                |
+    |     |  | |   | |  |    ___                                         |
+    |     |  |=| @ |=|  |   |_ _|          _ __ ___     __ _   _ __      |
+    |     |  | |   | |  |    | |   _____  | '_ ` _ \\   / _` | | '_ \\     |
+    |     |  | +---+ |  |    | |  |_____| | | | | | | | (_| | | | | |    |
+    |    .+--+-------+--+.  |___|         |_| |_| |_|  \\__,_| |_| |_|    |
+    |    | .----.   123  |                                               |
+    |    | |____|   456  |                                               |
+    |    '_______________'                                               |
+    |                                                                    |
+    +--------------------------------------------------------------------+
+
+    Instrumentman (or I-man for short) is a collection of command line programs
+    related to the automation of surveying instruments (primarily robotic total
+    stations) through serial line command protocols (mainly Leica GeoCom).
+
+    The individual commands are available through their respective action
+    based command groups. The help page for each command can be accessed
+    through the -h/--help option. Logging can be set up with options of this
+    root command.
+
+    Examples:
+
+    iman download file -h
+
+    iman --debug --file log.log measure inclination -o incline.csv -p 3 COM1
+
+    iman calc sets merged.json results.csv
+
+    iman terminal
+    """
     configure_logging(
         protocol,
         debug,

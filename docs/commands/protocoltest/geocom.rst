@@ -6,7 +6,7 @@ see what part of the protocol might be usable on the instrument.
 
 .. note::
 
-    The commands only does surface level testing by executing one command
+    The command only does surface level testing by executing one command
     from each subsystem. The results are only informative, they might not be
     completely accurate. It might happen, that an instrument responds to the
     command used for testing, but does not actually respond to the other

@@ -28,6 +28,8 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added progress indicator to more commands
 - `points` option in set measurement and station calculation is now a multi
   option, instead of a comma separated string list
+- `chunk` option of file download now expects size in bytes, instead of
+  encoded hex characters
 
 ### Fixed
 

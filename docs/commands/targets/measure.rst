@@ -12,9 +12,8 @@ aimed at.
 .. caution::
     :class: warning
 
-    The appropriate prism type needs to be set on the instrument before
-    recording each target point. The program will automatically request
-    the type from the instrument after the point is measured.
+    The appropriate prism type and target height needs to be set on the
+    instrument before recording each target point.
 
     This is needed, because the automated measurement programs support target
     series with mixed reflector types. The prism types are set according to

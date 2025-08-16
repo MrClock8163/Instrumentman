@@ -37,6 +37,7 @@ from cloup.constraints import (
     constraint,
     mutually_exclusive,
     require_one,
+    require_any,
     require_all,
     If,
     AnySet
@@ -63,7 +64,7 @@ def com_port_argument() -> Callable[[F], F]:
     return argument(
         "port",
         help=(
-            "serial port that the instrument is connected to (must be a valid "
+            "Serial port that the instrument is connected to (must be a valid "
             "identifier like COM1 or /dev/usbtty0)"
         ),
         type=str
@@ -76,7 +77,7 @@ def com_timeout_option(
     return option(
         "-t",
         "--timeout",
-        help="serial timeout",
+        help="Serial timeout",
         type=IntRange(min=0),
         default=default
     )
@@ -88,7 +89,7 @@ def com_baud_option(
     return option(
         "-b",
         "--baud",
-        help="serial speed",
+        help="Serial speed",
         type=Choice(
             [
                 "1200",
@@ -112,19 +113,18 @@ def com_baud_option(
 def com_option_group() -> Callable[[F], F]:
     return option_group(
         "Connection options",
-        "Options related to the serial connection",
         com_baud_option(),
         com_timeout_option(),
         option(
             "-r",
             "--retry",
-            help="number of connection retry attempts",
+            help="Number of connection retry attempts",
             type=IntRange(min=0, max=10),
             default=1
         ),
         option(
             "--sync-after-timeout",
-            help="attempt to synchronize message que after a timeout",
+            help="Attempt to synchronize message que after a timeout",
             is_flag=True
         )
     )
@@ -133,59 +133,58 @@ def com_option_group() -> Callable[[F], F]:
 def logging_option_group() -> Callable[[F], F]:
     return option_group(
         "Logging options",
-        "Options related to the logging functionalities.",
         option(
             "--protocol",
             help=(
-                "log debug level messages and above, "
+                "Log debug level messages and above, "
                 "including protocol messages"
             ),
             is_flag=True
         ),
         option(
             "--debug",
-            help="log debug level messages and above",
+            help="Log debug level messages and above",
             is_flag=True
         ),
         option(
             "--info",
-            help="log information level messages and above",
+            help="Log information level messages and above",
             is_flag=True
         ),
         option(
             "--warning",
-            help="log warning level messages and above",
+            help="Log warning level messages and above",
             is_flag=True
         ),
         option(
             "--error",
-            help="log error level messages and above",
+            help="Log error level messages and above",
             is_flag=True
         ),
         option(
             "--critical",
-            help="log critical error level messages",
+            help="Log critical error level messages",
             is_flag=True
         ),
         option(
             "--file",
-            help="log to file",
+            help="Log to file",
             type=file_path(readable=False)
         ),
         option(
             "--stdout",
-            help="log to standard output",
+            help="Log to standard output",
             is_flag=True
         ),
         option(
             "--stderr",
-            help="log to standard error",
+            help="Log to standard error",
             is_flag=True
         ),
         option(
             "--format",
             help=(
-                "logging format string (as accepted by the `logging` package "
+                "Logging format string (as accepted by the `logging` package "
                 "in '{' style)"
             ),
             type=str,
@@ -193,14 +192,14 @@ def logging_option_group() -> Callable[[F], F]:
         ),
         option(
             "--dateformat",
-            help="date-time format spec (as accepted by `strftime`)",
+            help="Date-time format spec (as accepted by `strftime`)",
             type=str,
             default="%Y-%m-%d %H:%M:%S"
         ),
         option(
             "--rotate",
             help=(
-                "number of backup log files to rotate, and maximum size "
+                "Number of backup log files to rotate, and maximum size "
                 "(in bytes) of a log file before rotation"
             ),
             type=(IntRange(1), IntRange(1))
@@ -233,7 +232,7 @@ def logging_target_constraint() -> Callable[[F], F]:
                 "error",
                 "critical"
             ),
-            require_one
+            require_any
         ),
         ["file", "stdout", "stderr"]
     )
