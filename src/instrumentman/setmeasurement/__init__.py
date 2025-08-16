@@ -7,8 +7,7 @@ from click_extra import (
     constraint,
     Choice,
     IntRange,
-    file_path,
-    dir_path
+    file_path
 )
 from cloup.constraints import all_or_none
 
@@ -32,20 +31,25 @@ from ..utils import (
     help="JSON file containing target definitions"
 )
 @argument(
-    "directory",
-    type=dir_path(),
-    help="Directory to save measurement output to"
+    "output",
+    type=str,
+    help=(
+        "Output file path or path template with placeholders "
+        "('{date}', '{time}', '{order}', '{cycles}')"
+    )
 )
 @com_option_group()
 @option(
-    "-f",
-    "--format",
+    "--dateformat",
     type=str,
-    default="setmeasurement_{time}.json",
-    help=(
-        "Session output file name format with placeholders "
-        "(`{time}`: timestamp, `{order}`: order, `{cycle}`: cycles)"
-    )
+    default="%Y%m%d",
+    help="Date format as accepted by strftime"
+)
+@option(
+    "--timeformat",
+    type=str,
+    default="%H%M%S",
+    help="Time format as accepted by strftime"
 )
 @option(
     "-c",
