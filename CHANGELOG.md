@@ -16,10 +16,12 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   orientation
 - Added logging options to `iman` root command
 - Added logging to instrument connected commands
+- Added aliases to multiple commands and command groups
 
 ### Changed
 
 - `geocompy` dependency minimum version was bumped to `v0.11.0`
+- Updated descriptions in command helps
 - Updated file listing to display results in a tree view
 - Reworked file listing to be able to run recursively to build full tree view
 - Protocol tests now display results in a table
