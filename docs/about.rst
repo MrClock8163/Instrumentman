@@ -40,8 +40,10 @@ These have to be set before specifying the command groups.
 
     iman --info --file iman.log measure ...
 
-Usage
------
+.. tip::
 
-.. click:: instrumentman:cli
-    :prog: iman
+    See the command help for all logging options.
+
+    .. code-block:: shell
+
+        iman -h
