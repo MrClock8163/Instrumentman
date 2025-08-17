@@ -5,7 +5,8 @@ from click_extra import (
     argument,
     option,
     IntRange,
-    Choice
+    Choice,
+    File
 )
 
 from ..utils import (
@@ -45,6 +46,130 @@ def cli_measure(**kwargs: Any) -> None:
     from .app import main_measure
 
     main_measure(**kwargs)
+
+
+@extra_command(
+    "csv-targets",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
+@argument(
+    "input",
+    help="Source file to convert",
+    type=File("r", encoding="utf8")
+)
+@argument(
+    "output",
+    help="Target file to save result to",
+    type=File("wt", encoding="utf8", lazy=True)
+)
+@option(
+    "-c",
+    "--column",
+    "columns",
+    help="Data column (pt, e, n and z are mandatory to specify)",
+    type=Choice(
+        ["ignore", "pt", "e", "n", "z", "prism", "ht"]
+    ),
+    multiple=True,
+    default=()
+)
+@option(
+    "--skip",
+    help="Number of header rows to skip",
+    type=IntRange(0),
+    default=0
+)
+@option(
+    "-d",
+    "--delimiter",
+    help="Column delimiter character",
+    type=str,
+    default=","
+)
+@option(
+    "--reflector",
+    help="Reflector at the targets (set only if CSV has no prism column)",
+    type=Choice(
+        (
+            'ROUND',
+            'MINI',
+            'TAPE',
+            'THREESIXTY',
+            'USER1',
+            'USER2',
+            'USER3',
+            'MINI360',
+            'MINIZERO',
+            'NDSTAPE',
+            'GRZ121',
+            'MPR122'
+        )
+    )
+)
+@option(
+    "--height",
+    help="Target height",
+    type=float
+)
+def cli_convert_csv_to_targets(**kwargs: Any) -> None:
+    """Convert a CSV file containing coordinates to a target definition."""
+    from .convert import main_csv_to_targets
+
+    main_csv_to_targets(**kwargs)
+
+
+@extra_command(
+    "targets-csv",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
+@argument(
+    "input",
+    help="Source file to convert",
+    type=File("r", encoding="utf8")
+)
+@argument(
+    "output",
+    help="Target file to save result to",
+    type=File("wt", encoding="utf8", lazy=True)
+)
+@option(
+    "-c",
+    "--column",
+    "columns",
+    help="Data column to output",
+    type=Choice(
+        ["pt", "e", "n", "z", "prism", "ht"]
+    ),
+    multiple=True,
+    default=(),
+    required=True
+)
+@option(
+    "--header/--no-header",
+    help="Write header row",
+    type=bool,
+    default=True
+)
+@option(
+    "-d",
+    "--delimiter",
+    help="Column delimiter character",
+    type=str,
+    default=","
+)
+@option(
+    "-p",
+    "--precision",
+    help="Number of decimals to output",
+    type=IntRange(0)
+)
+def cli_convert_targets_to_csv(**kwargs: Any) -> None:
+    """"""
+    from .convert import main_targets_to_csv
+
+    main_targets_to_csv(**kwargs)
 
 
 @extra_command(
