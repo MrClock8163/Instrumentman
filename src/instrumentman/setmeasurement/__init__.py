@@ -75,7 +75,8 @@ from ..utils import (
     help=(
         "Target to use from loaded target definition "
         "(set multiple times to use specific points, leave unset to use all)"
-    )
+    ),
+    default=()
 )
 def cli_measure(**kwargs: Any) -> None:
     """
