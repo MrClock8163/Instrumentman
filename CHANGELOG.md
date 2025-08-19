@@ -17,6 +17,8 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added logging options to `iman` root command
 - Added logging to instrument connected commands
 - Added aliases to multiple commands and command groups
+- Added `dateformat` option to set measurement
+- Added `timeformat` option to set measurement
 
 ### Changed
 
@@ -32,6 +34,8 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   option, instead of a comma separated string list
 - `chunk` option of file download now expects size in bytes, instead of
   encoded hex characters
+- Second argument (`output`) of set measurement now expects a file path or file
+  path template instead of a directory
 
 ### Fixed
 
@@ -43,6 +47,7 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 - Removed logging options from set measurement
+- Removed `format` option from set measurement
 
 ## v0.3.0 (2025-08-01)
 
