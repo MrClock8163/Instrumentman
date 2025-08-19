@@ -37,7 +37,7 @@ def main_csv_to_targets(
             return columns.index(name)
         except ValueError:
             if mandatory:
-                echo_red(f"Mandatory '{name}' was not specified")
+                echo_red(f"Mandatory '{name}' column was not specified")
                 exit(1)
 
             return None
