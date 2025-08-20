@@ -16,6 +16,24 @@ from ..utils import (
 )
 
 
+_PRISMCHOICE = Choice(
+    (
+        'ROUND',
+        'MINI',
+        'TAPE',
+        'THREESIXTY',
+        'USER1',
+        'USER2',
+        'USER3',
+        'MINI360',
+        'MINIZERO',
+        'NDSTAPE',
+        'GRZ121',
+        'MPR122'
+    )
+)
+
+
 @extra_command(
     "targets",
     params=None,
@@ -70,9 +88,10 @@ def cli_measure(**kwargs: Any) -> None:
     "columns",
     help="Data column (pt, e, n and z are mandatory to specify)",
     type=Choice(
-        ["ignore", "pt", "e", "n", "z", "prism", "ht"]
+        ["ignore", "pt", "e", "n", "h", "prism", "ht"]
     ),
     multiple=True,
+    required=True,
     default=()
 )
 @option(
@@ -90,31 +109,26 @@ def cli_measure(**kwargs: Any) -> None:
 )
 @option(
     "--reflector",
-    help="Reflector at the targets (set only if CSV has no prism column)",
-    type=Choice(
-        (
-            'ROUND',
-            'MINI',
-            'TAPE',
-            'THREESIXTY',
-            'USER1',
-            'USER2',
-            'USER3',
-            'MINI360',
-            'MINIZERO',
-            'NDSTAPE',
-            'GRZ121',
-            'MPR122'
-        )
-    )
+    help="Reflector at the targets (set only if CSV has no 'prism' column)",
+    type=_PRISMCHOICE
 )
 @option(
     "--height",
-    help="Target height",
+    help="Target height (set only if CSV has no 'ht' column)",
     type=float
 )
 def cli_convert_csv_to_targets(**kwargs: Any) -> None:
-    """Convert a CSV file containing coordinates to a target definition."""
+    """
+    Convert a CSV file containing coordinates to a target definition.
+
+    The order and data of columns can be given by specifying the column
+    option multiple times. For a successful import the point name (pt),
+    easting (e), northing (n) and height (h) must be specified.
+
+    If the CSV does not contain a prism column and the prism option was not
+    set, the value will be prompted for at every point. Same applies to the
+    target height.
+    """
     from .convert import main_csv_to_targets
 
     main_csv_to_targets(**kwargs)
@@ -141,7 +155,7 @@ def cli_convert_csv_to_targets(**kwargs: Any) -> None:
     "columns",
     help="Data column to output",
     type=Choice(
-        ["pt", "e", "n", "z", "prism", "ht"]
+        ["pt", "e", "n", "h", "prism", "ht"]
     ),
     multiple=True,
     default=(),
@@ -167,7 +181,13 @@ def cli_convert_csv_to_targets(**kwargs: Any) -> None:
     type=IntRange(0)
 )
 def cli_convert_targets_to_csv(**kwargs: Any) -> None:
-    """Convert target definition to CSV coordinate list."""
+    """
+    Convert target definition to CSV coordinate list.
+
+    The columns of the CSV can be defined by setting the column option
+    multiple times. The output can show the name, easting, northing and height
+    of each point, as well as the reflector type and height.
+    """
     from .convert import main_targets_to_csv
 
     main_targets_to_csv(**kwargs)
@@ -190,27 +210,15 @@ def cli_convert_targets_to_csv(**kwargs: Any) -> None:
 )
 @option(
     "--reflector",
-    help="Reflector at the targets",
-    type=Choice(
-        (
-            'ROUND',
-            'MINI',
-            'TAPE',
-            'THREESIXTY',
-            'USER1',
-            'USER2',
-            'USER3',
-            'MINI360',
-            'MINIZERO',
-            'NDSTAPE',
-            'GRZ121',
-            'MPR122'
-        )
-    )
+    help=(
+        "Reflector at the targets "
+        "(value is prompted for every point when not set)"
+    ),
+    type=_PRISMCHOICE
 )
 @option(
     "--height",
-    help="Target height",
+    help="Target height (value is prompted for every point when not set)",
     type=float
 )
 @option(
@@ -233,7 +241,21 @@ def cli_convert_targets_to_csv(**kwargs: Any) -> None:
     ["station", "instrumentheight"]
 )
 def cli_convert_gsi_to_targets(**kwargs: Any) -> None:
-    """Convert GSI (polar or cartesian) to target definition."""
+    """
+    Convert GSI (polar or cartesian) to target definition.
+
+    The conversion can use both cartesian and polar measurement files, but
+    the coordinates can only be calculated from polar data, if the station
+    coordinates and instrument height are specified.
+
+    If both cartesian and polar data is present in the file, the cartesian
+    values are used.
+
+    If the reflector and height options are not set, the values are prompted
+    for at every point.
+
+    Both GSI8 and GSI16 formats are accepted.
+    """
     from .convert import main_gsi_to_targets
 
     main_gsi_to_targets(**kwargs)
@@ -279,7 +301,16 @@ def cli_convert_gsi_to_targets(**kwargs: Any) -> None:
     default="mm"
 )
 def cli_convert_targets_to_gsi(**kwargs: Any) -> None:
-    """Convert target definition to GSI coordinate format."""
+    """
+    Convert target definition to GSI coordinate format.
+
+    The program writes the point names and coordinates into a GSI measurement
+    file. If the coordinates are known to be large, the format can be set to
+    GSI16.
+
+    The output only supports meter unit, but the precision can be set as
+    appropriate.
+    """
     from .convert import main_targets_to_gsi
 
     main_targets_to_gsi(**kwargs)

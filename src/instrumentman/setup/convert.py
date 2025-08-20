@@ -115,14 +115,14 @@ def main_csv_to_targets(
     idx_pt = cast(int, get_column_index(columns, "pt"))
     idx_e = cast(int, get_column_index(columns, "e", True))
     idx_n = cast(int, get_column_index(columns, "n", True))
-    idx_z = cast(int, get_column_index(columns, "z", True))
+    idx_h = cast(int, get_column_index(columns, "h", True))
     idx_prism = get_column_index(columns, "prism")
     idx_height = get_column_index(columns, "ht")
     for row in csv.reader(input, delimiter=delimiter, lineterminator="\n"):
         name = row[idx_pt]
         east = float(row[idx_e])
         north = float(row[idx_n])
-        up = float(row[idx_z])
+        up = float(row[idx_h])
         prism = get_prism(name, row, idx_prism, reflector)
         ht = get_height(name, row, idx_height, height)
         try:
@@ -177,7 +177,7 @@ def main_targets_to_csv(
             "pt": t.name,
             "e": formatter(t.coords.e),
             "n": formatter(t.coords.n),
-            "z": formatter(t.coords.z),
+            "h": formatter(t.coords.z),
             "ht": formatter(t.height),
             "prism": t.prism.name
         }
@@ -334,10 +334,6 @@ def main_targets_to_gsi(
                 ),
                 GsiHeightWord(
                     t.coords.h,
-                    GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
-                ),
-                GsiTargetHeightWord(
-                    t.height,
                     GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
                 )
             )
