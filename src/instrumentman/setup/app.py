@@ -22,8 +22,7 @@ from ..targets import (
     TargetList,
     TargetPoint,
     load_targets_from_json,
-    export_targets_to_json,
-    import_targets_from_csv
+    export_targets_to_json
 )
 
 
@@ -185,77 +184,3 @@ def main_measure(
         export_targets_to_json(output, targets)
         echo_green(f"Saved target results to '{output}'")
         logger.info(f"Saved target results to '{output}'")
-
-
-def main_import(
-    reflector: str,
-    input: str,
-    output: str,
-    delimiter: str = ",",
-    columns: str = "PENZ",
-    skip: int = 0
-) -> None:
-
-    if os.path.exists(output):
-        action: str = prompt(
-            f"{output} already exists. Action",
-            type=Choice(["cancel", "replace", "append"]),
-            default="cancel"
-        )
-        match action:
-            case "cancel":
-                exit(0)
-            case "append":
-                points = load_targets_from_json(output)
-                echo(
-                    f"Loaded targets: {', '.join(points.get_target_names())}"
-                )
-            case _:
-                points = TargetList()
-    else:
-        points = TargetList()
-
-    try:
-        imported_points = import_targets_from_csv(
-            input,
-            delimiter,
-            columns,
-            Prism[reflector],
-            skip
-        )
-    except FileNotFoundError as fe:
-        echo_red("Could not find CSV file (file does not exist)")
-        echo_red(fe)
-        exit(1103)
-    except OSError as oe:
-        echo_red(
-            "Cannot import CSV data due to a file operation error "
-            "(no access or other error)"
-        )
-        echo_red(oe)
-        exit(1102)
-    except Exception as e:
-        echo_red(
-            "Cannot import CSV data due to an error "
-            "(duplicated points, the header was not skipped, malformed data "
-            "or incorrect column spec)"
-        )
-        echo_red(e)
-        exit(1100)
-
-    conflicts = set(
-        points.get_target_names()
-    ).intersection(imported_points.get_target_names())
-
-    if len(conflicts) > 0:
-        echo(f"Duplicates: {', '.join(sorted(list(conflicts)))}")
-        echo_red("Found duplicate targets between CSV and existing JSON")
-        exit(1101)
-
-    echo(f"Imported targets: {', '.join(imported_points.get_target_names())}",)
-
-    for t in imported_points:
-        points.add_target(t)
-
-    export_targets_to_json(output, points)
-    echo_green(f"Saved import results at '{os.path.abspath(output)}'")

@@ -18,4 +18,3 @@ to create such a definition.
     :maxdepth: 1
 
     measure
-    import
