@@ -6,13 +6,43 @@ from click_extra import prompt, Choice
 from jsonschema import ValidationError
 from geocompy.data import Coordinate
 from geocompy.geo.gcdata import Prism
+from geocompy.gsi.gsiformat import (
+    GsiBlock,
+    GsiInputMode,
+    GsiUnit,
+    GsiEastingWord,
+    GsiNorthingWord,
+    GsiHeightWord,
+    GsiHorizontalAngleWord,
+    GsiVerticalAngleWord,
+    GsiSlopeDistanceWord,
+    GsiTargetHeightWord
+)
 
-from ..utils import echo_red
+from ..utils import echo_red, echo_yellow, echo_green
 from ..targets import (
     TargetList,
     TargetPoint,
     load_targets_from_json,
     export_targets_to_json
+)
+
+
+_PRISMCHOICES = Choice(
+    (
+        'ROUND',
+        'MINI',
+        'TAPE',
+        'THREESIXTY',
+        'USER1',
+        'USER2',
+        'USER3',
+        'MINI360',
+        'MINIZERO',
+        'NDSTAPE',
+        'GRZ121',
+        'MPR122'
+    )
 )
 
 
@@ -57,22 +87,7 @@ def main_csv_to_targets(
         return Prism[
             prompt(
                 f"Reflector type of {pt}",
-                type=Choice(
-                    (
-                        'ROUND',
-                        'MINI',
-                        'TAPE',
-                        'THREESIXTY',
-                        'USER1',
-                        'USER2',
-                        'USER3',
-                        'MINI360',
-                        'MINIZERO',
-                        'NDSTAPE',
-                        'GRZ121',
-                        'MPR122'
-                    )
-                )
+                type=_PRISMCHOICES
             )
         ]
 
@@ -167,3 +182,165 @@ def main_targets_to_csv(
             "prism": t.prism.name
         }
         writer.writerow((fields[c] for c in columns))
+
+
+def main_gsi_to_targets(
+    input: TextIOWrapper,
+    output: TextIOWrapper,
+    reflector: str | None = None,
+    height: float | None = None,
+    station: tuple[float, float, float] | None = None,
+    instrumentheight: float | None = None
+) -> None:
+    targets = TargetList()
+    wi_east = GsiEastingWord.wi()
+    wi_north = GsiNorthingWord.wi()
+    wi_height = GsiHeightWord.wi()
+    wi_hz = GsiHorizontalAngleWord.wi()
+    wi_v = GsiVerticalAngleWord.wi()
+    wi_s = GsiSlopeDistanceWord.wi()
+    wi_ht = GsiTargetHeightWord.wi()
+    coord_words = {wi_east, wi_north, wi_height}
+    polar_words = {wi_hz, wi_v, wi_s}
+    station_coords: Coordinate | None = None
+    if station is not None and instrumentheight is not None:
+        x, y, z = station
+        station_coords = Coordinate(
+            x,
+            y,
+            z + instrumentheight
+        )
+
+    ht: float = 0.0
+    prism: Prism = Prism.MINI
+    for i, line in enumerate(input):
+        if not line.strip():
+            continue
+
+        try:
+            block = GsiBlock.parse(line.strip("\n"))
+        except Exception:
+            echo_yellow(f"Could not parse line {i + 1}")
+            continue
+
+        if block.type != "measurement":
+            continue
+
+        point = block.name
+
+        mapping = block.words_map()
+        polar = False
+        if len(coord_words.intersection(mapping)) == 3:
+            eastword = cast(GsiEastingWord, mapping[wi_east])
+            northword = cast(GsiNorthingWord, mapping[wi_north])
+            heightword = cast(GsiHeightWord, mapping[wi_height])
+            coord = Coordinate(
+                eastword.value,
+                northword.value,
+                heightword.value
+            )
+            polar = False
+        elif (
+            len(polar_words.intersection(mapping)) == 3
+            and station_coords is not None
+        ):
+            hzword = cast(GsiHorizontalAngleWord, mapping[wi_hz])
+            vword = cast(GsiVerticalAngleWord, mapping[wi_v])
+            sword = cast(GsiSlopeDistanceWord, mapping[wi_s])
+            coord = Coordinate.from_polar(
+                hzword.value,
+                vword.value,
+                sword.value
+            ) + station_coords
+
+            polar = True
+        else:
+            continue
+
+        if wi_ht in mapping:
+            ht = cast(GsiTargetHeightWord, mapping[wi_ht]).value
+        elif height is not None:
+            ht = height
+        else:
+            ht = prompt(
+                f"Target height of {point}",
+                type=float,
+                default=ht
+            )
+
+        if polar:
+            coord = coord - Coordinate(0, 0, ht)
+
+        if reflector is not None:
+            prism = Prism[reflector]
+        else:
+            answer: str = prompt(
+                f"Reflector type of {point}",
+                type=_PRISMCHOICES,
+                default=prism.name
+            )
+            prism = Prism[answer]
+
+        targets.add_target(
+            TargetPoint(
+                point,
+                prism,
+                ht,
+                coord
+            )
+        )
+
+    if len(targets) == 0:
+        echo_red("Could not import any targets")
+        exit(1)
+
+    export_targets_to_json(output, targets)
+    echo_green(f"Imported {len(targets)} target(s)")
+
+
+def main_targets_to_gsi(
+    input: TextIOWrapper,
+    output: TextIOWrapper,
+    gsi16: bool = False,
+    precision: str = "mm"
+) -> None:
+    try:
+        targets = load_targets_from_json(input)
+    except ValidationError:
+        echo_red("Target definition file is not valid")
+        exit(1)
+
+    match precision:
+        case "mm":
+            unit = GsiUnit.MILLI
+        case "dmm":
+            unit = GsiUnit.DECIMILLI
+        case "cmm":
+            unit = GsiUnit.CENTIMILLI
+        case _:
+            raise ValueError(f"Unknown precision '{precision}'")
+
+    for i, t in enumerate(targets):
+        block = GsiBlock(t.name, "measurement", i + 1)
+        block.words.extend(
+            (
+                GsiEastingWord(
+                    t.coords.e,
+                    GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                ),
+                GsiNorthingWord(
+                    t.coords.n,
+                    GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                ),
+                GsiHeightWord(
+                    t.coords.h,
+                    GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                ),
+                GsiTargetHeightWord(
+                    t.height,
+                    GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                )
+            )
+        )
+
+        output.write(block.serialize(gsi16, distunit=unit))

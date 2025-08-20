@@ -8,6 +8,7 @@ from click_extra import (
     Choice,
     File
 )
+from cloup.constraints import constraint, all_or_none
 
 from ..utils import (
     com_option_group,
@@ -166,10 +167,122 @@ def cli_convert_csv_to_targets(**kwargs: Any) -> None:
     type=IntRange(0)
 )
 def cli_convert_targets_to_csv(**kwargs: Any) -> None:
-    """"""
+    """Convert target definition to CSV coordinate list."""
     from .convert import main_targets_to_csv
 
     main_targets_to_csv(**kwargs)
+
+
+@extra_command(
+    "gsi-targets",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
+@argument(
+    "input",
+    help="Source file to convert",
+    type=File("r", encoding="utf8")
+)
+@argument(
+    "output",
+    help="Target file to save result to",
+    type=File("wt", encoding="utf8", lazy=True)
+)
+@option(
+    "--reflector",
+    help="Reflector at the targets",
+    type=Choice(
+        (
+            'ROUND',
+            'MINI',
+            'TAPE',
+            'THREESIXTY',
+            'USER1',
+            'USER2',
+            'USER3',
+            'MINI360',
+            'MINIZERO',
+            'NDSTAPE',
+            'GRZ121',
+            'MPR122'
+        )
+    )
+)
+@option(
+    "--height",
+    help="Target height",
+    type=float
+)
+@option(
+    "--station",
+    help=(
+        "Station coordinates "
+        "(polar measurements cannot be imported without a station)"
+    ),
+    type=(float, float, float)
+)
+@option(
+    "--iheight",
+    "--instrumentheight",
+    "instrumentheight",
+    help="Instrument height at station",
+    type=float
+)
+@constraint(
+    all_or_none,
+    ["station", "instrumentheight"]
+)
+def cli_convert_gsi_to_targets(**kwargs: Any) -> None:
+    """Convert GSI (polar or cartesian) to target definition."""
+    from .convert import main_gsi_to_targets
+
+    main_gsi_to_targets(**kwargs)
+
+
+@extra_command(
+    "targets-gsi",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
+@argument(
+    "input",
+    help="Source file to convert",
+    type=File("r", encoding="utf8")
+)
+@argument(
+    "output",
+    help="Target file to save result to",
+    type=File("wt", encoding="utf8", lazy=True)
+)
+@option(
+    "-l",
+    "--gsi16",
+    help="Export to GSI16 format (instead of GSI8)",
+    is_flag=True
+)
+@option(
+    "-p",
+    "--precision",
+    help=(
+        "Coordinate precision to output"
+        "(millimeter: 0.001m, decimillimeter: 0.0001m, "
+        "centimillimeter: 0.00001m)"
+    ),
+    type=Choice(
+        (
+            "mm",
+            "dmm",
+            "cmm"
+        ),
+        case_sensitive=False
+    ),
+    default="mm"
+)
+def cli_convert_targets_to_gsi(**kwargs: Any) -> None:
+    """Convert target definition to GSI coordinate format."""
+    from .convert import main_targets_to_gsi
+
+    main_targets_to_gsi(**kwargs)
 
 
 @extra_command(
