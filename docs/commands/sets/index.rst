@@ -13,3 +13,4 @@ measurements to predefined target points.
     validate
     merge
     calc
+    to_gsi

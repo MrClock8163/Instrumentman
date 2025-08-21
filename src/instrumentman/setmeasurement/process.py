@@ -3,10 +3,25 @@ import json
 import math
 from typing import Sequence
 import pathlib
+from io import TextIOWrapper
 
 from jmespath import search
 from jsonschema import validate, ValidationError
 from geocompy.data import Angle, Coordinate
+from geocompy.gsi.gsiformat import (
+    GsiBlock,
+    GsiUnit,
+    GsiInputMode,
+    GsiEastingWord,
+    GsiNorthingWord,
+    GsiHeightWord,
+    GsiHorizontalAngleWord,
+    GsiVerticalAngleWord,
+    GsiSlopeDistanceWord,
+    GsiTargetHeightWord,
+    GsiInfo1Word,
+    GsiInstrumentHeightWord
+)
 
 from .sessions import SessionDict
 from ..utils import (
@@ -311,3 +326,125 @@ def main_calc(
             file.write(
                 delimiter.join(fields) + "\n"
             )
+
+
+_UNIT_MAPPING = {
+    "mm": GsiUnit.MILLI,
+    "mft": GsiUnit.MILLIFEET,
+    "dmm": GsiUnit.DECIMILLI,
+    "dmft": GsiUnit.DECIMILLIFEET,
+    "cmm": GsiUnit.CENTIMILLI,
+    "deg": GsiUnit.DEG,
+    "gon": GsiUnit.GON,
+    "dms": GsiUnit.DMS,
+    "mil": GsiUnit.MIL
+}
+
+
+def main_convert_set_to_gsi(
+    input: TextIOWrapper,
+    output: TextIOWrapper,
+    gsi16: bool = False,
+    length_unit: str = "dmm",
+    angle_unit: str = "deg"
+) -> None:
+    data: SessionDict = json.load(input)
+
+    angleunit = _UNIT_MAPPING[angle_unit]
+    distunit = _UNIT_MAPPING[length_unit]
+
+    validator = SessionValidator(False)
+    try:
+        validator.validate(data)
+    except ValidationError as ve:
+        echo_red("Input data does not follow the required schema")
+        echo_red(ve)
+        exit(4)
+    except ValueError as e:
+        echo_red("The input data did not pass validation")
+        echo_red(e)
+        exit(4)
+
+    stn_e, stn_n, stn_h = data["station"]
+    block = GsiBlock("STN", "measurement", 1)
+    block.words.extend(
+        (
+            GsiEastingWord(
+                stn_e,
+                GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+            ),
+            GsiNorthingWord(
+                stn_n,
+                GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+            ),
+            GsiHeightWord(
+                stn_h,
+                GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+            )
+        )
+    )
+    output.write(block.serialize(gsi16, True, angleunit, distunit))
+
+    block = GsiBlock("2", "code", 2)
+    block.words.extend(
+        (
+            GsiInfo1Word("STN"),
+            GsiInstrumentHeightWord(
+                data["instrumentheight"],
+                GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+            )
+        )
+    )
+    output.write(block.serialize(gsi16, True, angleunit, distunit))
+
+    measurementsource = (
+        GsiInputMode.TPS_MEASURED_HZCORR_ON_DNA_MEASURED_CURVCORR_ON
+    )
+    address = 3
+    for cycle in data["cycles"]:
+        for point in cycle["points"]:
+            block = GsiBlock(point["name"], "measurement", address)
+            block.words.extend(
+                (
+                    GsiHorizontalAngleWord(
+                        Angle(point["face1"][0]),
+                        source=measurementsource
+                    ),
+                    GsiVerticalAngleWord(
+                        Angle(point["face1"][1]),
+                        source=measurementsource
+                    ),
+                    GsiSlopeDistanceWord(
+                        point["face1"][2],
+                        source=measurementsource
+                    ),
+                    GsiTargetHeightWord(point["height"])
+                )
+            )
+            output.write(block.serialize(gsi16, True, angleunit, distunit))
+            address += 1
+
+            face2 = point.get("face2")
+            if face2 is None:
+                continue
+
+            block = GsiBlock(point["name"], "measurement", address)
+            block.words.extend(
+                (
+                    GsiHorizontalAngleWord(
+                        Angle(face2[0]),
+                        source=measurementsource
+                    ),
+                    GsiVerticalAngleWord(
+                        Angle(face2[1]),
+                        source=measurementsource
+                    ),
+                    GsiSlopeDistanceWord(
+                        face2[2],
+                        source=measurementsource
+                    ),
+                    GsiTargetHeightWord(point["height"])
+                )
+            )
+            output.write(block.serialize(gsi16, True, angleunit, distunit))
+            address += 1
