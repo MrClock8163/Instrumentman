@@ -16,6 +16,10 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   orientation
 - Added logging options to `iman` root command
 - Added logging to instrument connected commands
+- Added CSV to targets JSON conversion (`convert csv-targets`)
+- Added targets JSON to CSV conversion (`convert targets-csv`)
+- Added GSI to targets JSON conversion (`convert gsi-targets`)
+- Added targets JSON to GSI conversion (`convert targets-gsi`)
 
 ### Changed
 
@@ -41,6 +45,7 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Removed
 
 - Removed logging options from set measurement
+- Removed importer command group and subcommands (`import`)
 
 ## v0.3.0 (2025-08-01)
 
