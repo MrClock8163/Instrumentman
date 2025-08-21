@@ -11,7 +11,7 @@ from geocompy.data import Angle, Coordinate
 from geocompy.gsi.gsiformat import (
     GsiBlock,
     GsiUnit,
-    GsiInputMode,
+    GsiValueType,
     GsiEastingWord,
     GsiNorthingWord,
     GsiHeightWord,
@@ -20,7 +20,8 @@ from geocompy.gsi.gsiformat import (
     GsiSlopeDistanceWord,
     GsiTargetHeightWord,
     GsiInfo1Word,
-    GsiInstrumentHeightWord
+    GsiInstrumentHeightWord,
+    write_gsi_blocks_to_file
 )
 
 from .sessions import SessionDict
@@ -366,85 +367,89 @@ def main_convert_set_to_gsi(
         exit(4)
 
     stn_e, stn_n, stn_h = data["station"]
-    block = GsiBlock("STN", "measurement", 1)
-    block.words.extend(
-        (
+    blocks: list[GsiBlock] = []
+    blocks.append(
+        GsiBlock(
+            "STN",
+            "measurement",
             GsiEastingWord(
                 stn_e,
-                GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                GsiValueType.TYPE1
             ),
             GsiNorthingWord(
                 stn_n,
-                GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                GsiValueType.TYPE1
             ),
             GsiHeightWord(
                 stn_h,
-                GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                GsiValueType.TYPE1
             )
         )
     )
-    output.write(block.serialize(gsi16, True, angleunit, distunit))
 
-    block = GsiBlock("2", "code", 2)
-    block.words.extend(
-        (
+    blocks.append(
+        GsiBlock(
+            "2",
+            "code",
             GsiInfo1Word("STN"),
             GsiInstrumentHeightWord(
                 data["instrumentheight"],
-                GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                GsiValueType.TYPE1,
             )
         )
     )
-    output.write(block.serialize(gsi16, True, angleunit, distunit))
 
-    measurementsource = (
-        GsiInputMode.TPS_MEASURED_HZCORR_ON_DNA_MEASURED_CURVCORR_ON
-    )
-    address = 3
     for cycle in data["cycles"]:
         for point in cycle["points"]:
-            block = GsiBlock(point["name"], "measurement", address)
-            block.words.extend(
-                (
+            blocks.append(
+                GsiBlock(
+                    point["name"],
+                    "measurement",
                     GsiHorizontalAngleWord(
                         Angle(point["face1"][0]),
-                        source=measurementsource
+                        source=GsiValueType.TYPE0
                     ),
                     GsiVerticalAngleWord(
                         Angle(point["face1"][1]),
-                        source=measurementsource
+                        source=GsiValueType.TYPE0
                     ),
                     GsiSlopeDistanceWord(
                         point["face1"][2],
-                        source=measurementsource
+                        source=GsiValueType.TYPE0
                     ),
                     GsiTargetHeightWord(point["height"])
                 )
             )
-            output.write(block.serialize(gsi16, True, angleunit, distunit))
-            address += 1
 
             face2 = point.get("face2")
             if face2 is None:
                 continue
 
-            block = GsiBlock(point["name"], "measurement", address)
-            block.words.extend(
-                (
+            blocks.append(
+                GsiBlock(
+                    point["name"],
+                    "measurement",
                     GsiHorizontalAngleWord(
                         Angle(face2[0]),
-                        source=measurementsource
+                        source=GsiValueType.TYPE0
                     ),
                     GsiVerticalAngleWord(
                         Angle(face2[1]),
-                        source=measurementsource
+                        source=GsiValueType.TYPE0
                     ),
                     GsiSlopeDistanceWord(
                         face2[2],
-                        source=measurementsource
+                        source=GsiValueType.TYPE0
                     ),
                     GsiTargetHeightWord(point["height"])
                 )
             )
-            output.write(block.serialize(gsi16, True, angleunit, distunit))
-            address += 1
+
+    write_gsi_blocks_to_file(
+        blocks,
+        output,
+        gsi16,
+        angleunit,
+        distunit,
+        1
+    )

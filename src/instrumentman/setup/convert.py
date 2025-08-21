@@ -8,7 +8,7 @@ from geocompy.data import Coordinate
 from geocompy.geo.gcdata import Prism
 from geocompy.gsi.gsiformat import (
     GsiBlock,
-    GsiInputMode,
+    GsiValueType,
     GsiUnit,
     GsiEastingWord,
     GsiNorthingWord,
@@ -16,7 +16,8 @@ from geocompy.gsi.gsiformat import (
     GsiHorizontalAngleWord,
     GsiVerticalAngleWord,
     GsiSlopeDistanceWord,
-    GsiTargetHeightWord
+    GsiTargetHeightWord,
+    write_gsi_blocks_to_file
 )
 
 from ..utils import echo_red, echo_yellow, echo_green
@@ -193,15 +194,6 @@ def main_gsi_to_targets(
     instrumentheight: float | None = None
 ) -> None:
     targets = TargetList()
-    wi_east = GsiEastingWord.wi()
-    wi_north = GsiNorthingWord.wi()
-    wi_height = GsiHeightWord.wi()
-    wi_hz = GsiHorizontalAngleWord.wi()
-    wi_v = GsiVerticalAngleWord.wi()
-    wi_s = GsiSlopeDistanceWord.wi()
-    wi_ht = GsiTargetHeightWord.wi()
-    coord_words = {wi_east, wi_north, wi_height}
-    polar_words = {wi_hz, wi_v, wi_s}
     station_coords: Coordinate | None = None
     if station is not None and instrumentheight is not None:
         x, y, z = station
@@ -218,47 +210,54 @@ def main_gsi_to_targets(
             continue
 
         try:
-            block = GsiBlock.parse(line.strip("\n"))
+            block = GsiBlock.parse(line.strip("\n"), keep_unknowns=False)
         except Exception:
             echo_yellow(f"Could not parse line {i + 1}")
             continue
 
-        if block.type != "measurement":
+        if block.blocktype != "measurement":
             continue
 
-        point = block.name
+        point = block.value
 
-        mapping = block.words_map()
-        polar = False
-        if len(coord_words.intersection(mapping)) == 3:
-            eastword = cast(GsiEastingWord, mapping[wi_east])
-            northword = cast(GsiNorthingWord, mapping[wi_north])
-            heightword = cast(GsiHeightWord, mapping[wi_height])
+        eastingword = block.get_word(GsiEastingWord)
+        northingword = block.get_word(GsiNorthingWord)
+        heightword = block.get_word(GsiHeightWord)
+        if (
+            eastingword is not None
+            and northingword is not None
+            and heightword is not None
+        ):
             coord = Coordinate(
-                eastword.value,
-                northword.value,
+                eastingword.value,
+                northingword.value,
                 heightword.value
             )
             polar = False
-        elif (
-            len(polar_words.intersection(mapping)) == 3
-            and station_coords is not None
-        ):
-            hzword = cast(GsiHorizontalAngleWord, mapping[wi_hz])
-            vword = cast(GsiVerticalAngleWord, mapping[wi_v])
-            sword = cast(GsiSlopeDistanceWord, mapping[wi_s])
-            coord = Coordinate.from_polar(
-                hzword.value,
-                vword.value,
-                sword.value
-            ) + station_coords
+        elif station_coords is not None:
+            hzword = block.get_word(GsiHorizontalAngleWord)
+            vword = block.get_word(GsiVerticalAngleWord)
+            sword = block.get_word(GsiSlopeDistanceWord)
 
-            polar = True
+            if (
+                hzword is not None
+                and vword is not None
+                and sword is not None
+            ):
+                coord = Coordinate.from_polar(
+                    hzword.value,
+                    vword.value,
+                    sword.value
+                ) + station_coords
+                polar = True
+            else:
+                continue
         else:
             continue
 
-        if wi_ht in mapping:
-            ht = cast(GsiTargetHeightWord, mapping[wi_ht]).value
+        htword = block.get_word(GsiTargetHeightWord)
+        if htword is not None:
+            ht = htword.value
         elif height is not None:
             ht = height
         else:
@@ -298,11 +297,20 @@ def main_gsi_to_targets(
     echo_green(f"Imported {len(targets)} target(s)")
 
 
+_UNIT_MAPPING = {
+    "mm": GsiUnit.MILLI,
+    "mft": GsiUnit.MILLIFEET,
+    "dmm": GsiUnit.DECIMILLI,
+    "dmft": GsiUnit.DECIMILLIFEET,
+    "cmm": GsiUnit.CENTIMILLI
+}
+
+
 def main_targets_to_gsi(
     input: TextIOWrapper,
     output: TextIOWrapper,
     gsi16: bool = False,
-    precision: str = "mm"
+    length_unit: str = "dmm"
 ) -> None:
     try:
         targets = load_targets_from_json(input)
@@ -310,33 +318,33 @@ def main_targets_to_gsi(
         echo_red("Target definition file is not valid")
         exit(1)
 
-    match precision:
-        case "mm":
-            unit = GsiUnit.MILLI
-        case "dmm":
-            unit = GsiUnit.DECIMILLI
-        case "cmm":
-            unit = GsiUnit.CENTIMILLI
-        case _:
-            raise ValueError(f"Unknown precision '{precision}'")
+    unit = _UNIT_MAPPING[length_unit]
 
-    for i, t in enumerate(targets):
-        block = GsiBlock(t.name, "measurement", i + 1)
-        block.words.extend(
-            (
+    blocks: list[GsiBlock] = []
+    for t in targets:
+        blocks.append(
+            GsiBlock(
+                t.name,
+                "measurement",
                 GsiEastingWord(
                     t.coords.e,
-                    GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                    GsiValueType.TYPE1
                 ),
                 GsiNorthingWord(
                     t.coords.n,
-                    GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                    GsiValueType.TYPE1
                 ),
                 GsiHeightWord(
                     t.coords.h,
-                    GsiInputMode.TPS_MANUAL_DNA_MANUAL_CURVCORR_OFF
+                    GsiValueType.TYPE1
                 )
             )
         )
 
-        output.write(block.serialize(gsi16, distunit=unit))
+    write_gsi_blocks_to_file(
+        blocks,
+        output,
+        gsi16,
+        distunit=unit,
+        address=1
+    )

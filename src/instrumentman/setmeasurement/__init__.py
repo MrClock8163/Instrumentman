@@ -266,7 +266,7 @@ def cli_calc(**kwargs: Any) -> None:
     "-p",
     "--length-unit",
     help=(
-        "Length unit and precision"
+        "Length unit and precision "
         "(millimeter, millifeet, decimillimeter, decimillifeet, "
         "centimillimeter)"
     ),

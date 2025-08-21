@@ -284,21 +284,23 @@ def cli_convert_gsi_to_targets(**kwargs: Any) -> None:
 )
 @option(
     "-p",
-    "--precision",
+    "--length-unit",
     help=(
-        "Coordinate precision to output"
-        "(millimeter: 0.001m, decimillimeter: 0.0001m, "
-        "centimillimeter: 0.00001m)"
+        "Length unit and precision "
+        "(millimeter, millifeet, decimillimeter, decimillifeet, "
+        "centimillimeter)"
     ),
     type=Choice(
         (
             "mm",
+            "mft",
             "dmm",
+            "dmft",
             "cmm"
         ),
         case_sensitive=False
     ),
-    default="mm"
+    default="dmm"
 )
 def cli_convert_targets_to_gsi(**kwargs: Any) -> None:
     """
