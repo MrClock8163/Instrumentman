@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from logging import Logger, getLogger
 from typing import Iterator, Literal
@@ -177,12 +176,13 @@ def measure_set(
 def main(
     port: str,
     targets: pathlib.Path,
-    directory: pathlib.Path,
+    output: str,
     baud: int = 9600,
     timeout: int = 15,
     retry: int = 1,
     sync_after_timeout: bool = False,
-    format: str = "setmeasurement_{time}.json",
+    dateformat: str = "%Y%m%d",
+    timeformat: str = "%H%M%S",
     cycles: int = 1,
     order: Literal['AaBb', 'AabB', 'ABab', 'ABba', 'ABCD'] = "ABba",
     sync_time: bool = True,
@@ -211,10 +211,14 @@ def main(
             points
         )
 
-    timestamp = session.cycles[0].time.strftime("%Y%m%d_%H%M%S")
-    filename = os.path.join(
-        directory,
-        format.format(time=timestamp, order=order, cycle=cycles)
+    epoch = session.cycles[0].time
+    date = epoch.strftime(dateformat)
+    time = epoch.strftime(timeformat)
+    filename = output.format(
+        date=date,
+        time=time,
+        order=order,
+        cycles=cycles
     )
     session.export_to_json(filename)
     logger.info(f"Saved measurement results to '{filename}'")
