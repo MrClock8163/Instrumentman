@@ -15,9 +15,9 @@ def run_panorama(
     tps: GeoCom,
     file: TextIO,
     zoom: Zoom,
+    overlap: tuple[int, int],
     logger: Logger
 ) -> None:
-
     pause("Aim the instrument at the starting corner, then press any key...")
     resp_start = tps.tmc.get_angle()
     if resp_start.error != GeoComCode.OK or resp_start.params is None:
@@ -50,12 +50,14 @@ def run_panorama(
         exit(1)
 
     fov_hz, fov_v = resp_fov.params
+    reduced_fov_hz = float(fov_hz) * (1 - overlap[0] / 100)
+    reduced_fov_v = float(fov_hz) * (1 - overlap[1] / 100)
 
     delta_hz = to_hz.relative_to(from_hz)
     delta_v = to_v.relative_to(from_v)
 
-    cols = math.ceil(abs(float(delta_hz)) / float(fov_hz)) + 1
-    rows = math.ceil(abs(float(delta_v)) / float(fov_v)) + 1
+    cols = math.ceil(abs(float(delta_hz)) / reduced_fov_hz) + 1
+    rows = math.ceil(abs(float(delta_v)) / reduced_fov_v) + 1
 
     print(
         "image",
@@ -123,7 +125,8 @@ def main(
     timeout: int = 15,
     retry: int = 1,
     sync_after_timeout: bool = False,
-    zoom: str = "x1"
+    zoom: str = "x1",
+    overlap: tuple[int, int] = (30, 30)
 ) -> None:
     logger = getLogger("iman.panorama.measure")
     with open_serial(
@@ -135,4 +138,4 @@ def main(
         logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
-        run_panorama(tps, metadata, Zoom[zoom.upper()], logger)
+        run_panorama(tps, metadata, Zoom[zoom.upper()], overlap, logger)

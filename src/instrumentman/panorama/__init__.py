@@ -36,6 +36,12 @@ from ..utils import (
     type=Choice(("x1", "x2", "x4", "x8"), case_sensitive=False),
     default="x1"
 )
+@option(
+    "--overlap",
+    help="Minimum horizontal and vertical overlap between images (percentage)",
+    type=(IntRange(5, 95), IntRange(5, 95)),
+    default=(30, 30)
+)
 def cli_measure(**kwargs: Any) -> None:
     """
     Take pictures with the instrument camera for later panormaic stitching
