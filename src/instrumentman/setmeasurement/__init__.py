@@ -7,6 +7,7 @@ from click_extra import (
     constraint,
     Choice,
     IntRange,
+    File,
     file_path
 )
 from cloup.constraints import all_or_none
@@ -247,3 +248,73 @@ def cli_calc(**kwargs: Any) -> None:
     from .process import main_calc
 
     main_calc(**kwargs)
+
+
+@extra_command(
+    "set-gsi",
+    params=None,
+    context_settings={"auto_envvar_prefix": None}
+)  # type: ignore[misc]
+@argument(
+    "input",
+    help="Source file to convert",
+    type=File("r", encoding="utf8")
+)
+@argument(
+    "output",
+    help="Target file to save result to",
+    type=File("wt", encoding="utf8", lazy=True)
+)
+@option(
+    "-l",
+    "--gsi16",
+    help="Export to GSI16 format (instead of GSI8)",
+    is_flag=True
+)
+@option(
+    "-p",
+    "--length-unit",
+    help=(
+        "Length unit and precision "
+        "(millimeter, millifeet, decimillimeter, decimillifeet, "
+        "centimillimeter)"
+    ),
+    type=Choice(
+        (
+            "mm",
+            "mft",
+            "dmm",
+            "dmft",
+            "cmm"
+        ),
+        case_sensitive=False
+    ),
+    default="dmm"
+)
+@option(
+    "--angle-unit",
+    help="Angular unit to use",
+    type=Choice(
+        (
+            "gon",
+            "deg",
+            "dms",
+            "mil"
+        ),
+        case_sensitive=False
+    ),
+    default="deg"
+)
+def cli_convert_set_to_gsi(**kwargs: Any) -> None:
+    """
+    Convert set measurements to GSI format for further processing.
+
+    To process the measurements in external software, the set measurement
+    results can be converted into the well established Leica GSI format.
+
+    The values can be exported in any of the units supported by GSI. For
+    large values, GSI16 can be enabled.
+    """
+    from .process import main_convert_set_to_gsi
+
+    main_convert_set_to_gsi(**kwargs)

@@ -111,9 +111,9 @@ def cli_measure() -> None:
     """Conduct measurements."""
 
 
-@cli.group("import")  # type: ignore[misc]
-def cli_import() -> None:
-    """Import external data and convert it for use with other commands."""
+@cli.group("convert")  # type: ignore[misc]
+def cli_convert() -> None:
+    """Convert between various file formats."""
 
 
 @cli.group("calculate", aliases=["calc"])  # type: ignore[misc]
@@ -165,7 +165,6 @@ cli_merge.add_command(setmeasurement.cli_merge)
 cli_merge.add_command(inclination.cli_merge)
 cli_validate.add_command(setmeasurement.cli_validate)
 cli_validate.add_command(settings.cli_validate)
-cli_import.add_command(setup.cli_import)
 cli_list.add_command(filetransfer.cli_list)
 cli_list.add_command(jobs.cli_list)
 cli_download.add_command(filetransfer.cli_download)
@@ -174,3 +173,8 @@ cli_download.add_command(settings.cli_download)
 cli_upload.add_command(datatransfer.cli_upload)
 cli_upload.add_command(settings.cli_upload)
 cli_upload.add_command(station.cli_upload)
+cli_convert.add_command(setup.cli_convert_csv_to_targets)
+cli_convert.add_command(setup.cli_convert_targets_to_csv)
+cli_convert.add_command(setup.cli_convert_gsi_to_targets)
+cli_convert.add_command(setup.cli_convert_targets_to_gsi)
+cli_convert.add_command(setmeasurement.cli_convert_set_to_gsi)

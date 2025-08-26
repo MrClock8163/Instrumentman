@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 import json
 import re
-from typing import TypedDict, Iterator, Any
+from typing import TypedDict, Iterator, Any, overload
+from io import TextIOWrapper
 
 from jsonschema import validate
 from geocompy.data import Coordinate
@@ -110,25 +111,63 @@ class TargetList:
         return list(self._targets_lookup.keys())
 
 
-def export_targets_to_json(filepath: str, targets: TargetList) -> None:
-    make_directory(filepath)
-    with open(filepath, "wt", encoding="utf8") as file:
+@overload
+def export_targets_to_json(
+    file: TextIOWrapper,
+    targets: TargetList
+) -> None: ...
+
+
+@overload
+def export_targets_to_json(
+    file: str,
+    targets: TargetList
+) -> None: ...
+
+
+def export_targets_to_json(
+    file: str | TextIOWrapper,
+    targets: TargetList
+) -> None:
+    if not isinstance(file, str):
         json.dump(targets.to_dict(), file, indent=4)
+        return
+
+    make_directory(file)
+    with open(file, "wt", encoding="utf8") as jsonfile:
+        json.dump(targets.to_dict(), jsonfile, indent=4)
 
 
-def load_targets_from_json(filepath: str) -> TargetList:
-    with (
-        open(filepath, "rt", encoding="utf8") as file,
-        open(
-            os.path.join(
-                os.path.dirname(__file__),
-                "schema_targets.json"
-            ),
-            "rt",
-            encoding="utf8"
-        ) as file_schema
-    ):
-        data: TargetListDict = json.load(file)
+@overload
+def load_targets_from_json(
+    file: str
+) -> TargetList: ...
+
+
+@overload
+def load_targets_from_json(
+    file: TextIOWrapper
+) -> TargetList: ...
+
+
+def load_targets_from_json(
+    file: str | TextIOWrapper
+) -> TargetList:
+    data: TargetListDict
+    if isinstance(file, str):
+        with open(file, "rt", encoding="utf8") as jsonfile:
+            data = json.load(jsonfile)
+    else:
+        data = json.load(file)
+
+    with open(
+        os.path.join(
+            os.path.dirname(__file__),
+            "schema_targets.json"
+        ),
+        "rt",
+        encoding="utf8"
+    ) as file_schema:
         schema: dict[str, Any] = json.load(file_schema)
 
     validate(data, schema)

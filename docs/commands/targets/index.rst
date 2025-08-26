@@ -18,4 +18,7 @@ to create such a definition.
     :maxdepth: 1
 
     measure
-    import
+    from_csv
+    to_csv
+    from_gsi
+    to_gsi

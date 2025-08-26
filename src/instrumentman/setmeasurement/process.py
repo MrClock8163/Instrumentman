@@ -3,10 +3,26 @@ import json
 import math
 from typing import Sequence
 import pathlib
+from io import TextIOWrapper
 
 from jmespath import search
 from jsonschema import validate, ValidationError
 from geocompy.data import Angle, Coordinate
+from geocompy.gsi.gsiformat import (
+    GsiBlock,
+    GsiUnit,
+    GsiValueType,
+    GsiEastingWord,
+    GsiNorthingWord,
+    GsiHeightWord,
+    GsiHorizontalAngleWord,
+    GsiVerticalAngleWord,
+    GsiSlopeDistanceWord,
+    GsiTargetHeightWord,
+    GsiInfo1Word,
+    GsiInstrumentHeightWord,
+    write_gsi_blocks_to_file
+)
 
 from .sessions import SessionDict
 from ..utils import (
@@ -311,3 +327,129 @@ def main_calc(
             file.write(
                 delimiter.join(fields) + "\n"
             )
+
+
+_UNIT_MAPPING = {
+    "mm": GsiUnit.MILLI,
+    "mft": GsiUnit.MILLIFEET,
+    "dmm": GsiUnit.DECIMILLI,
+    "dmft": GsiUnit.DECIMILLIFEET,
+    "cmm": GsiUnit.CENTIMILLI,
+    "deg": GsiUnit.DEG,
+    "gon": GsiUnit.GON,
+    "dms": GsiUnit.DMS,
+    "mil": GsiUnit.MIL
+}
+
+
+def main_convert_set_to_gsi(
+    input: TextIOWrapper,
+    output: TextIOWrapper,
+    gsi16: bool = False,
+    length_unit: str = "dmm",
+    angle_unit: str = "deg"
+) -> None:
+    data: SessionDict = json.load(input)
+
+    angleunit = _UNIT_MAPPING[angle_unit]
+    distunit = _UNIT_MAPPING[length_unit]
+
+    validator = SessionValidator(False)
+    try:
+        validator.validate(data)
+    except ValidationError as ve:
+        echo_red("Input data does not follow the required schema")
+        echo_red(ve)
+        exit(4)
+    except ValueError as e:
+        echo_red("The input data did not pass validation")
+        echo_red(e)
+        exit(4)
+
+    stn_e, stn_n, stn_h = data["station"]
+    blocks: list[GsiBlock] = []
+    blocks.append(
+        GsiBlock(
+            "STN",
+            "measurement",
+            GsiEastingWord(
+                stn_e,
+                GsiValueType.TYPE1
+            ),
+            GsiNorthingWord(
+                stn_n,
+                GsiValueType.TYPE1
+            ),
+            GsiHeightWord(
+                stn_h,
+                GsiValueType.TYPE1
+            )
+        )
+    )
+
+    blocks.append(
+        GsiBlock(
+            "2",
+            "code",
+            GsiInfo1Word("STN"),
+            GsiInstrumentHeightWord(
+                data["instrumentheight"],
+                GsiValueType.TYPE1,
+            )
+        )
+    )
+
+    for cycle in data["cycles"]:
+        for point in cycle["points"]:
+            blocks.append(
+                GsiBlock(
+                    point["name"],
+                    "measurement",
+                    GsiHorizontalAngleWord(
+                        Angle(point["face1"][0]),
+                        inputtype=GsiValueType.TYPE0
+                    ),
+                    GsiVerticalAngleWord(
+                        Angle(point["face1"][1]),
+                        inputtype=GsiValueType.TYPE0
+                    ),
+                    GsiSlopeDistanceWord(
+                        point["face1"][2],
+                        inputtype=GsiValueType.TYPE0
+                    ),
+                    GsiTargetHeightWord(point["height"])
+                )
+            )
+
+            face2 = point.get("face2")
+            if face2 is None:
+                continue
+
+            blocks.append(
+                GsiBlock(
+                    point["name"],
+                    "measurement",
+                    GsiHorizontalAngleWord(
+                        Angle(face2[0]),
+                        inputtype=GsiValueType.TYPE0
+                    ),
+                    GsiVerticalAngleWord(
+                        Angle(face2[1]),
+                        inputtype=GsiValueType.TYPE0
+                    ),
+                    GsiSlopeDistanceWord(
+                        face2[2],
+                        inputtype=GsiValueType.TYPE0
+                    ),
+                    GsiTargetHeightWord(point["height"])
+                )
+            )
+
+    write_gsi_blocks_to_file(
+        blocks,
+        output,
+        gsi16,
+        angleunit,
+        distunit,
+        1
+    )

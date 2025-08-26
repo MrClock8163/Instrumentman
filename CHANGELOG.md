@@ -9,14 +9,18 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added aliases to multiple commands and command groups
 - Added resection calculation logic
 - Added station calculation (`calc station`) using resection from set
   measurements
 - Added station uploading (`upload station`) to set station coordinates and
   orientation
+- Added CSV to targets JSON conversion (`convert csv-targets`)
+- Added targets JSON to CSV conversion (`convert targets-csv`)
+- Added GSI to targets JSON conversion (`convert gsi-targets`)
+- Added targets JSON to GSI conversion (`convert targets-gsi`)
 - Added logging options to `iman` root command
 - Added logging to instrument connected commands
-- Added aliases to multiple commands and command groups
 - Added `dateformat` option to set measurement
 - Added `timeformat` option to set measurement
 
@@ -46,6 +50,7 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- Removed importer command group and subcommands (`import`)
 - Removed logging options from set measurement
 - Removed `format` option from set measurement
 
