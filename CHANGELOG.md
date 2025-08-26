@@ -5,7 +5,7 @@ file.
 
 The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## v0.4.0 (2025-08-26)
 
 ### Added
 
@@ -19,6 +19,7 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added targets JSON to CSV conversion (`convert targets-csv`)
 - Added GSI to targets JSON conversion (`convert gsi-targets`)
 - Added targets JSON to GSI conversion (`convert targets-gsi`)
+- Added set measurement JSON to GSI conversion (`convert set-gsi`)
 - Added logging options to `iman` root command
 - Added logging to instrument connected commands
 - Added `dateformat` option to set measurement
@@ -26,7 +27,7 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- `geocompy` dependency minimum version was bumped to `v0.11.0`
+- `geocompy` dependency minimum version was bumped to `v0.12.0`
 - Updated descriptions in command helps
 - Updated file listing to display results in a tree view
 - Reworked file listing to be able to run recursively to build full tree view
