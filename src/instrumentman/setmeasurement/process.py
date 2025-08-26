@@ -407,15 +407,15 @@ def main_convert_set_to_gsi(
                     "measurement",
                     GsiHorizontalAngleWord(
                         Angle(point["face1"][0]),
-                        source=GsiValueType.TYPE0
+                        inputtype=GsiValueType.TYPE0
                     ),
                     GsiVerticalAngleWord(
                         Angle(point["face1"][1]),
-                        source=GsiValueType.TYPE0
+                        inputtype=GsiValueType.TYPE0
                     ),
                     GsiSlopeDistanceWord(
                         point["face1"][2],
-                        source=GsiValueType.TYPE0
+                        inputtype=GsiValueType.TYPE0
                     ),
                     GsiTargetHeightWord(point["height"])
                 )
@@ -431,15 +431,15 @@ def main_convert_set_to_gsi(
                     "measurement",
                     GsiHorizontalAngleWord(
                         Angle(face2[0]),
-                        source=GsiValueType.TYPE0
+                        inputtype=GsiValueType.TYPE0
                     ),
                     GsiVerticalAngleWord(
                         Angle(face2[1]),
-                        source=GsiValueType.TYPE0
+                        inputtype=GsiValueType.TYPE0
                     ),
                     GsiSlopeDistanceWord(
                         face2[2],
-                        source=GsiValueType.TYPE0
+                        inputtype=GsiValueType.TYPE0
                     ),
                     GsiTargetHeightWord(point["height"])
                 )
