@@ -22,6 +22,7 @@ from . import setmeasurement
 from . import station
 from . import protocoltest
 from . import inclination
+from . import panorama
 from . import filetransfer
 from . import jobs
 from . import datatransfer
@@ -173,6 +174,7 @@ cli.add_command(terminal.cli)
 cli_measure.add_command(setmeasurement.cli_measure)
 cli_measure.add_command(setup.cli_measure)
 cli_measure.add_command(inclination.cli_measure)
+cli_measure.add_command(panorama.cli_measure)
 cli_calc.add_command(setmeasurement.cli_calc)
 cli_calc.add_command(inclination.cli_calc)
 cli_calc.add_command(station.cli_calc)
