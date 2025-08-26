@@ -9,21 +9,25 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added aliases to multiple commands and command groups
 - Added resection calculation logic
 - Added station calculation (`calc station`) using resection from set
   measurements
 - Added station uploading (`upload station`) to set station coordinates and
   orientation
-- Added logging options to `iman` root command
-- Added logging to instrument connected commands
 - Added CSV to targets JSON conversion (`convert csv-targets`)
 - Added targets JSON to CSV conversion (`convert targets-csv`)
 - Added GSI to targets JSON conversion (`convert gsi-targets`)
 - Added targets JSON to GSI conversion (`convert targets-gsi`)
+- Added logging options to `iman` root command
+- Added logging to instrument connected commands
+- Added `dateformat` option to set measurement
+- Added `timeformat` option to set measurement
 
 ### Changed
 
 - `geocompy` dependency minimum version was bumped to `v0.11.0`
+- Updated descriptions in command helps
 - Updated file listing to display results in a tree view
 - Reworked file listing to be able to run recursively to build full tree view
 - Protocol tests now display results in a table
@@ -34,6 +38,8 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   option, instead of a comma separated string list
 - `chunk` option of file download now expects size in bytes, instead of
   encoded hex characters
+- Second argument (`output`) of set measurement now expects a file path or file
+  path template instead of a directory
 
 ### Fixed
 
@@ -44,8 +50,9 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
-- Removed logging options from set measurement
 - Removed importer command group and subcommands (`import`)
+- Removed logging options from set measurement
+- Removed `format` option from set measurement
 
 ## v0.3.0 (2025-08-01)
 

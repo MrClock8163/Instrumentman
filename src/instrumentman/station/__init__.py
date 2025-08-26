@@ -48,7 +48,8 @@ from ..utils import (
         "(set multiple times to use specific points, leave unset to use all)"
     ),
     type=str,
-    multiple=True
+    multiple=True,
+    default=()
 )
 @option(
     "--height",

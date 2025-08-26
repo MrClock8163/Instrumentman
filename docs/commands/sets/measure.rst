@@ -53,20 +53,25 @@ Examples
 .. code-block:: shell
     :caption: Enabling connection retries and timeout recovery attempts (might be useful with bluetooth connections)
 
-    iman measure sets -r 3 --sync-after-timeout COM3 targets.json results
+    iman measure set -r 3 --sync-after-timeout COM3 targets.json set.json
 
 .. code-block:: shell
     :caption: Measuring to just a subset of the targets
 
-    iman measure sets -p P1 -p P2 -p P8 COM3 targets.json results
+    iman measure set -p P1 -p P2 -p P8 COM3 targets.json set.json
 
 .. code-block:: shell
     :caption: Measuring in face 1 only
 
-    iman measure sets -o ABCD COM3 targets.json results
+    iman measure set -o ABCD COM3 targets.json set.json
+
+.. code-block:: shell
+    :caption: Saving results with file name template (useful for scheduled measurements)
+
+    iman measure set COM3 targets.json "set_{date}_{time}.json"
 
 Usage
 -----
 
 .. click:: instrumentman.setmeasurement:cli_measure
-    :prog: iman measure sets
+    :prog: iman measure set
