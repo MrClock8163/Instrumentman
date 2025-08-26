@@ -8,8 +8,7 @@ from click_extra import (
     Choice,
     IntRange,
     File,
-    file_path,
-    dir_path
+    file_path
 )
 from cloup.constraints import all_or_none
 
