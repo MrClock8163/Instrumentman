@@ -51,8 +51,8 @@ def run_panorama(
 
     fov_hz, fov_v = resp_fov.params
 
-    delta_hz = to_hz - from_hz
-    delta_v = to_v - from_v
+    delta_hz = to_hz.relative_to(from_hz)
+    delta_v = to_v.relative_to(from_v)
 
     cols = math.ceil(abs(float(delta_hz)) / float(fov_hz)) + 1
     rows = math.ceil(abs(float(delta_v)) / float(fov_v)) + 1
@@ -75,8 +75,8 @@ def run_panorama(
     for i in range(rows):
         for j in range(cols):
             tps.aut.turn_to(
-                (from_hz + delta_hz * j / cols).normalized(),
-                (from_v + delta_v * i / rows).normalized()
+                (from_hz + delta_hz * j / (cols - 1)).normalized(),
+                (from_v + delta_v * i / (rows - 1)).normalized()
             )
             tps.cam.set_actual_image_name(
                 "panorama",
@@ -91,7 +91,7 @@ def run_panorama(
 
             pos = resp_cam_pos.params
 
-            resp_cam_dir = tps.cam.get_camera_direction(100)
+            resp_cam_dir = tps.cam.get_camera_direction(1)
             if resp_cam_dir.params is None:
                 echo_red("Could not retrieve camera direction")
                 logger.critical("Could not retrieve camera direction")
