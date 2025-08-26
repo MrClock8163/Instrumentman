@@ -3,7 +3,7 @@ import math
 from typing import Callable
 
 from PIL import Image, ImageDraw, ImageFont
-from geocompy.data import Coordinate, Angle, Vector
+from geocompy.data import Coordinate, Angle
 
 
 def read_points(
@@ -34,8 +34,8 @@ def read_points(
 
 def read_metadata(
     path: Path
-) -> dict[str, tuple[Angle, Angle, Coordinate, Vector]]:
-    pictures: dict[str, tuple[Angle, Angle, Coordinate, Vector]] = {}
+) -> dict[str, tuple[Angle, Angle, Coordinate, Coordinate]]:
+    pictures: dict[str, tuple[Angle, Angle, Coordinate, Coordinate]] = {}
     with path.open("rt", encoding="utf8") as file:
         next(file)
         for line in file:
@@ -59,7 +59,7 @@ def read_metadata(
                     float(pos_y),
                     float(pos_z)
                 ),
-                Vector(
+                Coordinate(
                     float(dir_x),
                     float(dir_y),
                     float(dir_z)
@@ -123,7 +123,7 @@ def draw_marker_cross(
 
 def annotate_image(
     imgpath: Path,
-    info: tuple[Angle, Angle, Coordinate, Vector],
+    info: tuple[Angle, Angle, Coordinate, Coordinate],
     points: list[tuple[str, Coordinate]],
     markerdrawer: Callable[[ImageDraw.ImageDraw, float, float, str], None]
 ) -> None:
@@ -135,7 +135,7 @@ def annotate_image(
     half_fov_hz = fov_hz / 2
     half_fov_v = fov_v / 2
 
-    img_hz, img_v, _ = (Coordinate.from_vector(vec) - pos).to_polar()
+    img_hz, img_v, _ = (vec - pos).to_polar()
 
     for pt, coord in points:
         pt_hz, pt_v, _ = (coord - pos).to_polar()
@@ -157,7 +157,7 @@ def annotate_image(
 
 
 def run_annotate(
-    meta: dict[str, tuple[Angle, Angle, Coordinate, Vector]],
+    meta: dict[str, tuple[Angle, Angle, Coordinate, Coordinate]],
     images: tuple[Path],
     points: list[tuple[str, Coordinate]],
     rgb: tuple[int, int, int] = (0, 0, 0),
