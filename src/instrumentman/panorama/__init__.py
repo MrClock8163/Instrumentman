@@ -42,6 +42,12 @@ from ..utils import (
     type=(IntRange(5, 95), IntRange(5, 95)),
     default=(30, 30)
 )
+@option(
+    "--prefix",
+    help="Image prefix before number",
+    type=str,
+    default="panorama_"
+)
 def cli_measure(**kwargs: Any) -> None:
     """
     Take pictures with the instrument camera for later panormaic stitching

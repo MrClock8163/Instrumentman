@@ -5,6 +5,8 @@ from typing import Callable
 from PIL import Image, ImageDraw, ImageFont
 from geocompy.data import Coordinate, Angle
 
+from ..utils import echo_yellow
+
 
 def read_points(
     path: Path,
@@ -122,38 +124,36 @@ def draw_marker_cross(
 
 
 def annotate_image(
-    imgpath: Path,
+    image: Image.Image,
     info: tuple[Angle, Angle, Coordinate, Coordinate],
     points: list[tuple[str, Coordinate]],
     markerdrawer: Callable[[ImageDraw.ImageDraw, float, float, str], None]
 ) -> None:
-    image = Image.open(imgpath)
-    draw = ImageDraw.Draw(image)
     fov_hz, fov_v, pos, vec = info
     half_width = image.width / 2
     half_height = image.height / 2
-    half_fov_hz = fov_hz / 2
-    half_fov_v = fov_v / 2
+    half_fov_hz = float(fov_hz / 2)
+    half_fov_v = float(fov_v / 2)
 
-    img_hz, img_v, _ = (vec - pos).to_polar()
+    img_hz, img_v, _ = vec.to_polar()
+    coef_hz = half_width / math.tan(half_fov_hz)
+    coef_v = half_height / math.tan(half_fov_v)
 
+    draw = ImageDraw.Draw(image)
     for pt, coord in points:
         pt_hz, pt_v, _ = (coord - pos).to_polar()
-        alpha = pt_hz.relative_to(img_hz)
-        beta = pt_v.relative_to(img_v)
+        alpha = float(pt_hz.relative_to(img_hz))
+        beta = float(pt_v.relative_to(img_v))
 
-        x = round(half_width + math.tan(alpha) *
-                  half_width / math.tan(half_fov_hz))
-        y = round(half_height + math.tan(beta) *
-                  half_height / math.tan(half_fov_v))
+        if (
+            abs(alpha) > half_fov_hz
+            or abs(beta) > half_fov_v
+        ):
+            continue
 
+        x = (half_width + math.tan(alpha) * coef_hz)
+        y = (half_height + math.tan(beta) * coef_v)
         markerdrawer(draw, x, y, pt)
-
-    image.save(
-        imgpath.parent.joinpath(
-            imgpath.stem + "_annotated" + imgpath.suffix
-        )
-    )
 
 
 def run_annotate(
@@ -163,7 +163,8 @@ def run_annotate(
     rgb: tuple[int, int, int] = (0, 0, 0),
     fontsize: int = 50,
     marker: str = "cross",
-    markersize: int = 50
+    markersize: int = 50,
+    prefix: str = "annotated_"
 ) -> None:
     font = ImageFont.truetype("arial.ttf", fontsize)
     match marker:
@@ -177,8 +178,14 @@ def run_annotate(
         if info is None:
             continue
 
+        try:
+            image = Image.open(path)
+        except Exception:
+            echo_yellow(f"Could not open '{path}'")
+            continue
+
         annotate_image(
-            path,
+            image,
             info,
             points,
             lambda draw, x, y, text: markerdrawer(
@@ -192,6 +199,10 @@ def run_annotate(
             )
         )
 
+        image.save(
+            path.with_stem(prefix + path.stem)
+        )
+
 
 def main(
     metadata: Path,
@@ -203,7 +214,8 @@ def main(
     rgb: tuple[int, int, int] = (0, 0, 0),
     fontsize: int = 50,
     marker: str = "cross",
-    markersize: int = 50
+    markersize: int = 50,
+    prefix: str = "annotated_"
 ) -> None:
     meta = read_metadata(metadata)
     match action:
@@ -216,7 +228,8 @@ def main(
                 rgb,
                 fontsize,
                 marker,
-                markersize
+                markersize,
+                prefix
             )
         case _:
             raise ValueError(f"Unknown action '{action}'")
