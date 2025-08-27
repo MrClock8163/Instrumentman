@@ -119,6 +119,12 @@ def cli_measure(**kwargs: Any) -> None:
         help="Point marker size in pixels",
         type=IntRange(1),
         default=50
+    ),
+    option(
+        "--prefix",
+        help="Prefix to add to the annotated files names",
+        type=str,
+        default="annotated_"
     )
 )
 @constraint(

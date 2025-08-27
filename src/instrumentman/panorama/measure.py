@@ -1,14 +1,48 @@
-from typing import TextIO
+from typing import TextIO, Generator
 import math
 from logging import getLogger, Logger
 
-from click_extra import pause
+from rich.console import Console
+from rich.progress import (
+    Progress,
+    TextColumn,
+    BarColumn,
+    TimeRemainingColumn,
+    TimeElapsedColumn,
+    MofNCompleteColumn
+)
+from click_extra import pause, confirm
+from geocompy.data import Coordinate, Angle
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gcdata import Zoom
 from geocompy.geo.gctypes import GeoComCode
 
-from ..utils import echo_red
+from ..utils import echo_red, echo_yellow
+
+
+def image_positions(
+    from_hz: Angle,
+    from_v: Angle,
+    delta_hz: Angle,
+    delta_v: Angle,
+    cols: int,
+    rows: int
+) -> Generator[tuple[int, Angle, Angle], None, None]:
+    counter = 0
+    to_hz = from_hz + delta_hz
+    for i in range(rows):
+        for j in range(cols):
+            counter += 1
+            yield (
+                counter,
+                (
+                    (from_hz + delta_hz * j / (cols - 1))
+                    if i % 2 == 0
+                    else (to_hz - delta_hz * j / (cols - 1))
+                ).normalized(),
+                (from_v + delta_v * i / (rows - 1)).normalized()
+            )
 
 
 def run_panorama(
@@ -16,16 +50,21 @@ def run_panorama(
     file: TextIO,
     zoom: Zoom,
     overlap: tuple[int, int],
+    prefix: str,
     logger: Logger
 ) -> None:
-    pause("Aim the instrument at the starting corner, then press any key...")
+    pause(
+        "Aim the instrument at the left starting corner, then press any key..."
+    )
     resp_start = tps.tmc.get_angle()
     if resp_start.error != GeoComCode.OK or resp_start.params is None:
         echo_red("Could not retrieve starting corner angles")
         logger.critical("Could not retrieve starting corner angles")
         exit(1)
 
-    pause("Aim the instrument at the finishing corner, then press any key...")
+    pause(
+        "Aim the instrument at the right finish corner, then press any key..."
+    )
     resp_end = tps.tmc.get_angle()
     if resp_end.error != GeoComCode.OK or resp_end.params is None:
         echo_red("Could not retrieve finishing corner angles")
@@ -49,15 +88,31 @@ def run_panorama(
         logger.critical("Could not retrieve camera FOV")
         exit(1)
 
+    resp_station = tps.tmc.get_station()
+    if resp_station.error != GeoComCode.OK or resp_station.params is None:
+        echo_red("Could not retrieve station coordinates")
+        logger.critical("Could not retrieve station coordinates")
+        exit(1)
+
+    station, hi = resp_station.params
+    center = station + Coordinate(0, 0, hi)
+
     fov_hz, fov_v = resp_fov.params
     reduced_fov_hz = float(fov_hz) * (1 - overlap[0] / 100)
     reduced_fov_v = float(fov_hz) * (1 - overlap[1] / 100)
 
-    delta_hz = to_hz.relative_to(from_hz)
+    delta_hz = (to_hz - from_hz).normalized()
     delta_v = to_v.relative_to(from_v)
 
     cols = math.ceil(abs(float(delta_hz)) / reduced_fov_hz) + 1
     rows = math.ceil(abs(float(delta_v)) / reduced_fov_v) + 1
+
+    if not confirm(
+        f"Start capturing images in {rows} row(s) and {cols} column(s)",
+        True
+    ):
+        echo_yellow("Program cancelled")
+        exit()
 
     print(
         "image",
@@ -73,49 +128,79 @@ def run_panorama(
         file=file
     )
 
-    counter = 1
-    for i in range(rows):
-        for j in range(cols):
-            tps.aut.turn_to(
-                (from_hz + delta_hz * j / (cols - 1)).normalized(),
-                (from_v + delta_v * i / (rows - 1)).normalized()
-            )
-            tps.cam.set_actual_image_name(
-                "panorama",
-                counter
-            )
-            tps.cam.take_image()
-            resp_cam_pos = tps.cam.get_camera_position()
-            if resp_cam_pos.params is None:
-                echo_red("Could not retrieve camera position")
-                logger.critical("Could not retrieve camera position")
-                exit(1)
+    console = Console()
+    progress = Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeRemainingColumn(),
+        TimeElapsedColumn(),
+        console=console
+    )
+    progress.start()
+    task = progress.add_task(
+        "Capturing panorama",
+        total=rows*cols
+    )
 
-            pos = resp_cam_pos.params
+    for idx, hz, v in image_positions(
+        from_hz,
+        from_v,
+        delta_hz,
+        delta_v,
+        cols,
+        rows
+    ):
+        resp_turn = tps.aut.turn_to(hz, v)
+        if resp_turn.error != GeoComCode.OK:
+            echo_yellow("Could not turn to position")
+            logger.error("Could not turn to position")
+            continue
 
-            resp_cam_dir = tps.cam.get_camera_direction(1)
-            if resp_cam_dir.params is None:
-                echo_red("Could not retrieve camera direction")
-                logger.critical("Could not retrieve camera direction")
-                exit(1)
+        resp_name = tps.cam.set_actual_image_name(prefix, idx)
+        if resp_name.error != GeoComCode.OK:
+            echo_yellow("Could not set image name")
+            logger.error("Could not set image name")
+            continue
 
-            vec = resp_cam_dir.params
+        resp_img = tps.cam.take_image()
+        if resp_img.error != GeoComCode.OK:
+            echo_yellow("Could not take image")
+            logger.error("Could not take image")
+            continue
 
-            print(
-                f"panorama{counter:05d}.jpg",
-                float(fov_hz),
-                float(fov_v),
-                pos.x,
-                pos.y,
-                pos.z,
-                vec.x,
-                vec.y,
-                vec.z,
-                sep=",",
-                file=file
-            )
+        resp_cam_pos = tps.cam.get_camera_position()
+        if resp_cam_pos.params is None:
+            echo_yellow("Could not retrieve camera position")
+            logger.error("Could not retrieve camera position")
+            continue
 
-            counter += 1
+        resp_cam_dir = tps.cam.get_camera_direction(1)
+        if resp_cam_dir.params is None:
+            echo_yellow("Could not retrieve camera direction")
+            logger.critical("Could not retrieve camera direction")
+            continue
+
+        pos = resp_cam_pos.params + center
+        vec = resp_cam_dir.params
+
+        print(
+            f"{prefix}{idx:05d}.jpg",
+            float(fov_hz),
+            float(fov_v),
+            pos.x,
+            pos.y,
+            pos.z,
+            vec.x,
+            vec.y,
+            vec.z,
+            sep=",",
+            file=file
+        )
+
+        progress.update(task, advance=1)
+
+    progress.stop()
 
 
 def main(
@@ -126,7 +211,8 @@ def main(
     retry: int = 1,
     sync_after_timeout: bool = False,
     zoom: str = "x1",
-    overlap: tuple[int, int] = (30, 30)
+    overlap: tuple[int, int] = (30, 30),
+    prefix: str = "panorama_"
 ) -> None:
     logger = getLogger("iman.panorama.measure")
     with open_serial(
@@ -138,4 +224,11 @@ def main(
         logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
-        run_panorama(tps, metadata, Zoom[zoom.upper()], overlap, logger)
+        run_panorama(
+            tps,
+            metadata,
+            Zoom[zoom.upper()],
+            overlap,
+            prefix,
+            logger
+        )
