@@ -29,19 +29,33 @@ def image_positions(
     cols: int,
     rows: int
 ) -> Generator[tuple[int, Angle, Angle], None, None]:
-    counter = 0
+    if cols < 1 or rows < 1:
+        raise ValueError(
+            "Cannot generate positions for less than "
+            f"1 ({rows})row and/or 1 ({cols}) column"
+        )
+
     to_hz = from_hz + delta_hz
+    if rows == 1:
+        from_v = from_v + delta_v / 2
+    if cols == 1:
+        from_hz = (from_hz + delta_hz / 2).normalized()
+
+    colstep = (delta_hz / (cols - 1)) if cols > 1 else Angle(0)
+    rowstep = (delta_v / (rows - 1)) if rows > 1 else Angle(0)
+
+    counter = 0
     for i in range(rows):
         for j in range(cols):
             counter += 1
             yield (
                 counter,
                 (
-                    (from_hz + delta_hz * j / (cols - 1))
+                    (from_hz + colstep * j)
                     if i % 2 == 0
-                    else (to_hz - delta_hz * j / (cols - 1))
+                    else (to_hz - colstep * j)
                 ).normalized(),
-                (from_v + delta_v * i / (rows - 1)).normalized()
+                (from_v + rowstep * i).normalized()
             )
 
 
