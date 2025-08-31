@@ -87,7 +87,23 @@ def run_panorama(
 
     from_hz, from_v = resp_start.params
     to_hz, to_v = resp_end.params
+    if to_v == from_v or to_hz == from_hz:
+        echo_red("Cannot capture panorama in a single row/column")
+        logger.critical("Cannot capture panorama in a single row/column")
+        exit(1)
+    elif (
+        not (0 < from_v < math.pi)
+        or not (0 < to_v < math.pi)
+    ):
+        echo_red("Cannot capture panorama in face 2")
+        logger.critical("Cannot capture panorama in face 2")
+        exit(1)
 
+    if to_v < from_v:
+        to_v, from_v = from_v, to_v
+
+    # If the pointer is left active by accident, it will show up on every
+    # image.
     tps.edm.switch_laserpointer(False)
 
     resp_zoom = tps.cam.set_zoom(zoom)
@@ -116,10 +132,17 @@ def run_panorama(
     reduced_fov_v = float(fov_hz) * (1 - overlap[1] / 100)
 
     delta_hz = (to_hz - from_hz).normalized()
-    delta_v = to_v.relative_to(from_v)
+    delta_v = to_v - from_v
 
-    cols = math.ceil(abs(float(delta_hz)) / reduced_fov_hz) + 1
-    rows = math.ceil(abs(float(delta_v)) / reduced_fov_v) + 1
+    if abs(float(delta_hz)) < reduced_fov_hz:
+        cols = 1
+    else:
+        cols = math.ceil(abs(float(delta_hz)) / reduced_fov_hz) + 1
+
+    if abs(float(delta_v)) < reduced_fov_v:
+        rows = 1
+    else:
+        rows = math.ceil(abs(float(delta_v)) / reduced_fov_v) + 1
 
     if not confirm(
         f"Start capturing images in {rows} row(s) and {cols} column(s)",
