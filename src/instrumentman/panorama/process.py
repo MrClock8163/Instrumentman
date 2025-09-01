@@ -1,25 +1,80 @@
 from pathlib import Path
-import math
-from typing import Callable
+from typing import Sequence
 
-from PIL import Image, ImageDraw, ImageFont
 from geocompy.data import Coordinate, Angle
+import numpy as np
+import numpy.typing as npt
+
+try:
+    import cv2 as cv
+    import cv2.typing as cvt
+except ModuleNotFoundError:
+    print(
+        """
+The panorama image processing requires extra dependencies.
+
+- opencv-python
+
+Install them manually, or install instrumentman with the 'panorama' extra:
+
+python -m pip install instrumentman[panorama]
+"""
+    )
+    exit(1)
 
 from ..utils import echo_yellow
+from .metadata import read_metadata, PanoramaMetadata
+
+
+def rot_x(angle: float) -> np.typing.NDArray[np.float64]:
+    return np.array(
+        (
+            (1, 0, 0),
+            (0, np.cos(angle), -np.sin(angle)),
+            (0, np.sin(angle), np.cos(angle))
+        )
+    )
+
+
+def rot_y(angle: float) -> np.typing.NDArray[np.float64]:
+    return np.array(
+        (
+            (np.cos(angle), 0, np.sin(angle)),
+            (0, 1, 0),
+            (-np.sin(angle), 0, np.cos(angle))
+        )
+    )
+
+
+def rot_z(angle: float) -> np.typing.NDArray[np.float64]:
+    return np.array(
+        (
+            (np.cos(angle), -np.sin(angle), 0),
+            (np.sin(angle), np.cos(angle), 0),
+            (0, 0, 1)
+        )
+    )
 
 
 def read_points(
     path: Path,
     skip: int = 0,
-    delimiter: str = ";"
-) -> list[tuple[str, Coordinate]]:
-    points: list[tuple[str, Coordinate]] = []
+    delimiter: str = ","
+) -> list[tuple[str, Coordinate, str]]:
+    points: list[tuple[str, Coordinate, str]] = []
     with path.open("rt", encoding="utf8") as file:
         for i in range(skip):
             next(file)
 
         for line in file:
-            pt, x, y, z = line.strip().split(delimiter)
+            fields = line.strip().split(delimiter)
+            if len(fields) == 4:
+                pt, x, y, z = fields
+                label = ""
+            else:
+                pt, x, y, z = fields[:4]
+                label = fields[4]
+
             points.append(
                 (
                     pt,
@@ -27,209 +82,321 @@ def read_points(
                         float(x),
                         float(y),
                         float(z)
-                    )
+                    ),
+                    label
                 )
             )
 
     return points
 
 
-def read_metadata(
-    path: Path
-) -> dict[str, tuple[Angle, Angle, Coordinate, Coordinate]]:
-    pictures: dict[str, tuple[Angle, Angle, Coordinate, Coordinate]] = {}
-    with path.open("rt", encoding="utf8") as file:
-        next(file)
-        for line in file:
-            (
-                img,
-                fov_hz,
-                fov_v,
-                pos_x,
-                pos_y,
-                pos_z,
-                dir_x,
-                dir_y,
-                dir_z
-            ) = line.strip().split(",")
-
-            pictures[img] = (
-                Angle.parse(fov_hz),
-                Angle.parse(fov_v),
-                Coordinate(
-                    float(pos_x),
-                    float(pos_y),
-                    float(pos_z)
-                ),
-                Coordinate(
-                    float(dir_x),
-                    float(dir_y),
-                    float(dir_z)
-                )
-            )
-
-    return pictures
-
-
-def draw_marker_dot(
-    draw: ImageDraw.ImageDraw,
-    x: float,
-    y: float,
+def text_pos(
     text: str,
-    font: ImageFont.FreeTypeFont,
-    markersize: float,
-    rgb: tuple[int, int, int]
-) -> None:
-    draw.circle((x, y), markersize / 2, rgb)
-    draw.text(
-        (
-            x + markersize / 3,
-            y + markersize / 3
-        ), text, rgb, font, anchor="la"
+    point: tuple[float, float],
+    offset: tuple[float, float],
+    fontscale: float,
+    thickness: int,
+    justify: str
+) -> tuple[int, int]:
+    (w, h), _ = cv.getTextSize(
+        text,
+        cv.FONT_HERSHEY_PLAIN,
+        fontscale,
+        thickness
     )
 
+    x, y = point
+    ox, oy = offset
 
-def draw_marker_cross(
-    draw: ImageDraw.ImageDraw,
-    x: float,
-    y: float,
-    text: str,
-    font: ImageFont.FreeTypeFont,
-    markersize: float,
-    rgb: tuple[int, int, int]
-) -> None:
-    leg = markersize / 2
-    draw.line(
-        (
-            x - leg, y,
-            x + leg, y
-        ),
-        rgb,
-        round(markersize / 10)
-    )
-    draw.line(
-        (
-            x, y - leg,
-            x, y + leg
-        ),
-        rgb,
-        round(markersize / 10)
-    )
-    draw.text(
-        (
-            x + markersize / 4,
-            y + markersize / 4
-        ), text, rgb, font, anchor="la"
-    )
+    match justify[0]:
+        case "t":
+            y += h
+        case "m":
+            y += h / 2
 
+    match justify[1]:
+        case "c":
+            x -= w / 2
+        case "r":
+            x -= w
 
-def annotate_image(
-    image: Image.Image,
-    info: tuple[Angle, Angle, Coordinate, Coordinate],
-    points: list[tuple[str, Coordinate]],
-    markerdrawer: Callable[[ImageDraw.ImageDraw, float, float, str], None]
-) -> None:
-    fov_hz, fov_v, pos, vec = info
-    half_width = image.width / 2
-    half_height = image.height / 2
-    half_fov_hz = float(fov_hz / 2)
-    half_fov_v = float(fov_v / 2)
-
-    img_hz, img_v, _ = vec.to_polar()
-    coef_hz = half_width / math.tan(half_fov_hz)
-    coef_v = half_height / math.tan(half_fov_v)
-
-    draw = ImageDraw.Draw(image)
-    for pt, coord in points:
-        pt_hz, pt_v, _ = (coord - pos).to_polar()
-        alpha = float(pt_hz.relative_to(img_hz))
-        beta = float(pt_v.relative_to(img_v))
-
-        if (
-            abs(alpha) > half_fov_hz
-            or abs(beta) > half_fov_v
-        ):
-            continue
-
-        x = (half_width + math.tan(alpha) * coef_hz)
-        y = (half_height + math.tan(beta) * coef_v)
-        markerdrawer(draw, x, y, pt)
+    return round(x + ox), round(y + oy)
 
 
 def run_annotate(
-    meta: dict[str, tuple[Angle, Angle, Coordinate, Coordinate]],
-    images: tuple[Path],
-    points: list[tuple[str, Coordinate]],
-    rgb: tuple[int, int, int] = (0, 0, 0),
-    fontsize: int = 50,
-    marker: str = "cross",
-    markersize: int = 50,
-    prefix: str = "annotated_"
+    meta: PanoramaMetadata,
+    output: Path,
+    images: dict[str, Path],
+    scale: float | None = None,
+    points: list[tuple[str, Coordinate, str]] = [],
+    color: tuple[int, int, int] = (0, 0, 0),
+    fontscale: float = 1,
+    thickness: int = 2,
+    marker: int = cv.MARKER_CROSS,
+    markersize: int = 10,
+    offset: tuple[int, int] = (10, -10),
+    justify: str = "bl",
+    label_fontscale: float = 1,
+    label_thickness: int = 2,
+    label_color: tuple[int, int, int] = (0, 0, 0),
+    label_offset: tuple[int, int] = (10, 10),
+    label_justify: str = "tl",
 ) -> None:
-    font = ImageFont.truetype("arial.ttf", fontsize)
-    match marker:
-        case "cross":
-            markerdrawer = draw_marker_cross
-        case "dot":
-            markerdrawer = draw_marker_dot
+    corners: list[Sequence[int]] = []
+    centers: list[tuple[int, int, Angle, Angle]] = []
+    images_warped: list[cvt.MatLike] = []
+    masks_warped: list[cvt.MatLike] = []
 
-    for path in images:
-        info = meta.get(path.stem + path.suffix)
-        if info is None:
+    fov_w, fov_h = meta["fov"]
+
+    for data in meta["images"]:
+        vec = Coordinate(*data["vector"])
+        path = images.get(data["filename"])
+        if path is None:
+            echo_yellow(f"Could not find '{data['filename']}'")
             continue
 
-        try:
-            image = Image.open(path)
-        except Exception:
-            echo_yellow(f"Could not open '{path}'")
+        img = cv.imread(str(path))
+        if img is None:
+            echo_yellow(f"Could not load '{data['filename']}'")
             continue
 
-        annotate_image(
-            image,
-            info,
-            points,
-            lambda draw, x, y, text: markerdrawer(
-                draw,
-                x,
-                y,
-                text,
-                font,
-                markersize,
-                rgb
+        hz, v, _ = vec.to_polar()
+        height: int
+        width: int
+        height, width, _ = img.shape
+        f_w: float = width / 2 / np.tan(fov_w / 2)
+        f_h: float = height / 2 / np.tan(fov_h / 2)
+        if scale is None:
+            scale = (f_w + f_h) / 2
+
+        instrinsics: npt.NDArray[np.float32] = np.array(
+            (
+                (f_w, 0.0, width/2),
+                (0.0, f_h, height/2),
+                (0.0, 0.0, 1.0)
+            )
+        ).astype("float32")
+        rot: npt.NDArray[np.float32] = (
+            rot_y(float(hz))
+            @ rot_x(np.pi / 2 - float(v))
+        ).astype("float32")
+
+        warper = cv.PyRotationWarper("spherical", scale)
+        corner, image_warped = warper.warp(
+            img,
+            instrinsics,
+            rot,
+            cv.INTER_LINEAR,
+            cv.BORDER_REPLICATE
+        )
+
+        _, mask_warped = warper.warp(
+            np.full((height, width), 255, "uint8"),
+            instrinsics,
+            rot,
+            cv.INTER_NEAREST,
+            cv.BORDER_CONSTANT
+        )
+        cx, cy = warper.warpPoint((width / 2, height / 2), instrinsics, rot)
+
+        centers.append(
+            (
+                int(cx), int(cy),
+                hz, v
             )
         )
+        corners.append(corner)
+        images_warped.append(image_warped)
+        masks_warped.append(mask_warped)
 
-        image.save(
-            path.with_stem(prefix + path.stem)
+    blender = cv.detail.Blender.createDefault(cv.detail.BLENDER_MULTI_BAND)
+    blender.prepare(
+        corners,
+        [(i.shape[1], i.shape[0]) for i in images_warped]
+    )
+    for corner, img, msk in zip(corners, images_warped, masks_warped):
+        dilated_mask = cv.dilate(msk, None)  # type: ignore[call-overload]
+        seam_mask = cv.resize(
+            dilated_mask,
+            (msk.shape[1], msk.shape[0]),
+            None,
+            0,
+            0,
+            cv.INTER_LINEAR_EXACT
         )
+        msk_warped = cv.bitwise_and(seam_mask, msk)
+        blender.feed(img.astype("int16"), msk_warped, corner)
+
+    result: cvt.MatLike
+    result, _ = blender.blend(
+        None, None
+    )  # type: ignore[call-overload]
+
+    center = Coordinate(*meta["center"])
+    origin_x, origin_y, _, _ = cv.detail.resultRoi(
+        corners,
+        [(i.shape[1], i.shape[0]) for i in images_warped]
+    )
+
+    # Top left image center point for reference
+    tl_x, tl_y, tl_hz, tl_v = centers[0]
+    tl_x -= origin_x
+    tl_y -= origin_y
+
+    if scale is None:
+        scale = 1000
+
+    full_360 = round(scale * np.pi * 2)
+    cam_offset = Coordinate(0, 0, 0.06)
+    for pt, coord, label in points:
+        pt_hz, pt_v, _ = (coord - (center + cam_offset)).to_polar()
+        pt_hz_f = float(pt_hz - tl_hz)
+        pt_v_f = float(pt_v - tl_v)
+        pt_x = round(tl_x + pt_hz_f * scale) % full_360
+        pt_y = round(tl_y + pt_v_f * scale) % full_360
+
+        cv.drawMarker(
+            result,
+            (pt_x, pt_y),
+            color,
+            marker,
+            markersize
+        )
+
+        cv.putText(
+            result,
+            pt,
+            text_pos(pt, (pt_x, pt_y), offset, fontscale, thickness, justify),
+            cv.FONT_HERSHEY_PLAIN,
+            fontscale,
+            color,
+            bottomLeftOrigin=False
+        )
+        if label == "":
+            continue
+
+        cv.putText(
+            result,
+            label,
+            text_pos(
+                label,
+                (pt_x, pt_y),
+                label_offset,
+                label_fontscale,
+                label_thickness,
+                label_justify
+            ),
+            cv.FONT_HERSHEY_PLAIN,
+            label_fontscale,
+            label_color,
+            bottomLeftOrigin=False
+        )
+
+    # For some reason the blending function returns the image as int16 instead
+    # uint8, and it might contain negative values. These need to be clipped,
+    # otherwise the type conversion will result in color artifacts due to the
+    # integer underflow.
+    result = np.clip(result, 0, 255)
+    cv.imwrite(
+        str(output),
+        result.astype(np.uint8)
+    )
+
+
+_MARKER_MAP = {
+    "cross": cv.MARKER_CROSS,
+    "x": cv.MARKER_TILTED_CROSS,
+    "star": cv.MARKER_STAR,
+    "diamond": cv.MARKER_DIAMOND,
+    "square": cv.MARKER_SQUARE,
+    "uptriangle": cv.MARKER_TRIANGLE_UP,
+    "downtriangle": cv.MARKER_TRIANGLE_DOWN
+}
 
 
 def main(
     metadata: Path,
+    output: Path,
     image: tuple[Path],
-    action: str = "annotate",
-    points: Path | None = None,
+    scale: float | None = None,
+    width: int | None = None,
+    height: int | None = None,
+    annotate: Path | None = None,
     skip: int = 0,
     delimiter: str = ",",
-    rgb: tuple[int, int, int] = (0, 0, 0),
-    fontsize: int = 50,
+    color: tuple[int, int, int] = (0, 0, 0),
+    fontsize: int = 10,
+    thickness: int = 1,
     marker: str = "cross",
     markersize: int = 50,
-    prefix: str = "annotated_"
+    offset: tuple[int, int] | None = (10, -10),
+    justify: str = "bl",
+    label_fontsize: int | None = None,
+    label_color: tuple[int, int, int] | None = None,
+    label_thickness: int | None = None,
+    label_offset: tuple[int, int] | None = (10, 10),
+    label_justify: str = "bl"
 ) -> None:
     meta = read_metadata(metadata)
-    match action:
-        case "annotate" if points is not None:
-            point = read_points(points, skip, delimiter)
-            run_annotate(
-                meta,
-                image,
-                point,
-                rgb,
-                fontsize,
-                marker,
-                markersize,
-                prefix
-            )
-        case _:
-            raise ValueError(f"Unknown action '{action}'")
+    if annotate is not None:
+        points = read_points(annotate, skip, delimiter)
+    else:
+        points = []
+
+    image_map: dict[str, Path] = {p.stem + p.suffix: p for p in image}
+
+    if width is not None:
+        scale = width / (2 * np.pi)
+    elif height is not None:
+        scale = height / np.pi
+
+    color = (color[2], color[1], color[0])
+    if label_color is None:
+        label_color = color
+    else:
+        label_color = (label_color[2], label_color[1], label_color[0])
+
+    fontscale = cv.getFontScaleFromHeight(
+        cv.FONT_HERSHEY_PLAIN,
+        fontsize,
+        thickness
+    )
+
+    if label_thickness is None:
+        label_thickness = thickness
+
+    if label_fontsize is None:
+        label_fontsize = fontsize
+
+    label_fontscale = cv.getFontScaleFromHeight(
+        cv.FONT_HERSHEY_PLAIN,
+        label_fontsize,
+        label_thickness
+    )
+
+    if offset is None:
+        offset = (fontsize // 2, -fontsize // 2)
+
+    if label_offset is None:
+        label_offset = (label_fontsize // 2, label_fontsize // 2)
+
+    run_annotate(
+        meta,
+        output,
+        image_map,
+        scale,
+        points,
+        color,
+        fontscale,
+        thickness,
+        _MARKER_MAP[marker],
+        markersize,
+        offset,
+        justify,
+        label_fontscale,
+        label_thickness,
+        label_color,
+        label_offset,
+        label_justify
+    )

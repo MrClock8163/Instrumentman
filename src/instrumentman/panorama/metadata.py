@@ -1,4 +1,6 @@
-from typing import TypedDict
+from pathlib import Path
+from typing import TypedDict, cast
+import json
 
 
 class PanoramaFrameMetadata(TypedDict):
@@ -13,3 +15,10 @@ class PanoramaMetadata(TypedDict):
     fov: tuple[float, float]  # horizontal, vertical
     center: tuple[float, float, float]
     images: list[PanoramaFrameMetadata]
+
+
+def read_metadata(
+    path: Path
+) -> PanoramaMetadata:
+    with path.open("rt", encoding="utf8") as file:
+        return cast(PanoramaMetadata, json.load(file))
