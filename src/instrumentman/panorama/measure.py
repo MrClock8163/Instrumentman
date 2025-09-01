@@ -1,6 +1,7 @@
 from typing import TextIO, Generator
 import math
 from logging import getLogger, Logger
+import json
 
 from rich.console import Console
 from rich.progress import (
@@ -19,6 +20,7 @@ from geocompy.geo.gcdata import Zoom
 from geocompy.geo.gctypes import GeoComCode
 
 from ..utils import echo_red, echo_yellow
+from .metadata import PanoramaMetadata, PanoramaFrameMetadata
 
 
 def image_positions(
@@ -151,22 +153,7 @@ def run_panorama(
         echo_yellow("Program cancelled")
         exit()
 
-    print(
-        "image",
-        "fov_hz_rad",
-        "fov_v_rad",
-        "center_x_m",
-        "center_y_m",
-        "center_z_m",
-        "pos_x_m",
-        "pos_y_m",
-        "pos_z_m",
-        "dir_x_m",
-        "dir_y_m",
-        "dir_z_m",
-        sep=",",
-        file=file
-    )
+    images: list[PanoramaFrameMetadata] = []
 
     console = Console()
     progress = Progress(
@@ -224,26 +211,25 @@ def run_panorama(
         pos = resp_cam_pos.params + center
         vec = resp_cam_dir.params
 
-        print(
-            f"{prefix}{idx:05d}.jpg",
-            float(fov_hz),
-            float(fov_v),
-            center.x,
-            center.y,
-            center.z,
-            pos.x,
-            pos.y,
-            pos.z,
-            vec.x,
-            vec.y,
-            vec.z,
-            sep=",",
-            file=file
-        )
+        meta: PanoramaFrameMetadata = {
+            "filename": f"{prefix}{idx:05d}.jpg",
+            "position": (pos.x, pos.y, pos.z),
+            "vector": (vec.x, vec.y, vec.z)
+        }
+
+        images.append(meta)
 
         progress.update(task, advance=1)
 
     progress.stop()
+
+    metadata: PanoramaMetadata = {
+        "grid": (cols, rows),
+        "fov": (float(fov_hz), float(fov_v)),
+        "center": (center.x, center.y, center.z),
+        "images": images
+    }
+    json.dump(metadata, file, indent=4)
 
 
 def main(
