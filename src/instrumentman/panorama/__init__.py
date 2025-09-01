@@ -80,6 +80,11 @@ def cli_measure(**kwargs: Any) -> None:
     nargs=-1,
     required=True
 )
+@option(
+    "--camera-offset",
+    help="Axis-aligned camera offset from the instrument center",
+    type=(float, float, float)
+)
 @option_group(
     "Output size options",
     (

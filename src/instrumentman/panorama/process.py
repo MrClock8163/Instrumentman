@@ -92,6 +92,28 @@ def read_points(
     return points
 
 
+def apply_rotation(
+    coord: Coordinate,
+    mat: npt.NDArray[np.floating]
+) -> Coordinate:
+    vector = np.array((coord.x, coord.y, coord.z))
+    vector @= mat
+
+    return Coordinate(
+        vector[0],
+        vector[1],
+        vector[2]
+    )
+
+
+def mean_coordinate(coords: list[Coordinate]) -> Coordinate:
+    x: float = np.mean(np.array([c.x for c in coords]))
+    y: float = np.mean(np.array([c.y for c in coords]))
+    z: float = np.mean(np.array([c.z for c in coords]))
+
+    return Coordinate(x, y, z)
+
+
 def text_pos(
     text: str,
     point: tuple[float, float],
@@ -131,6 +153,7 @@ def run_annotate(
     images: dict[str, Path],
     scale: float | None = None,
     points: list[tuple[str, Coordinate, str]] = [],
+    camera_offset: Coordinate | None = None,
     color: tuple[int, int, int] = (0, 0, 0),
     fontscale: float = 1,
     thickness: int = 2,
@@ -148,10 +171,13 @@ def run_annotate(
     centers: list[tuple[int, int, Angle, Angle]] = []
     images_warped: list[cvt.MatLike] = []
     masks_warped: list[cvt.MatLike] = []
+    cam_offsets: list[Coordinate] = []
 
     fov_w, fov_h = meta["fov"]
+    center = Coordinate(*meta["center"])
 
     for data in meta["images"]:
+        pos = Coordinate(*data["position"])
         vec = Coordinate(*data["vector"])
         path = images.get(data["filename"])
         if path is None:
@@ -212,6 +238,19 @@ def run_annotate(
         images_warped.append(image_warped)
         masks_warped.append(mask_warped)
 
+        # The de-rotation of the camera offset is not completely accurate
+        # since the optical axis of the camera might not be parallel to the
+        # axis of the telescope (which results in some angle deviation),
+        # but it is good enough estimation in case the offset is not precisely
+        # known beforehand.
+        #
+        # The matrix use in the spherical warp cannot be reused here, because
+        # OpenCV uses a different axis orientation order.
+        offset_rot = rot_z(float(hz)) @ rot_x(np.pi / 2 - float(v))
+        cam_offsets.append(
+            apply_rotation(pos - center, np.linalg.inv(offset_rot))
+        )
+
     blender = cv.detail.Blender.createDefault(cv.detail.BLENDER_MULTI_BAND)
     blender.prepare(
         corners,
@@ -235,13 +274,11 @@ def run_annotate(
         None, None
     )  # type: ignore[call-overload]
 
-    center = Coordinate(*meta["center"])
+    # Top left image center point for reference
     origin_x, origin_y, _, _ = cv.detail.resultRoi(
         corners,
         [(i.shape[1], i.shape[0]) for i in images_warped]
     )
-
-    # Top left image center point for reference
     tl_x, tl_y, tl_hz, tl_v = centers[0]
     tl_x -= origin_x
     tl_y -= origin_y
@@ -250,9 +287,23 @@ def run_annotate(
         scale = 1000
 
     full_360 = round(scale * np.pi * 2)
-    cam_offset = Coordinate(0, 0, 0.06)
+
+    if camera_offset is None:
+        camera_offset = mean_coordinate(cam_offsets)
+
     for pt, coord, label in points:
-        pt_hz, pt_v, _ = (coord - (center + cam_offset)).to_polar()
+        # To calculate the approximate "telescope" rotation, a preliminary
+        # polar position is needed. Then the camera offset is rotated with the
+        # preliminary angles.
+        prelim_hz, prelim_v, _ = (coord - center).to_polar()
+        offset_rot = (
+            rot_z(float(prelim_hz)) @ rot_x(np.pi / 2 - float(prelim_v))
+        )
+        pt_hz, pt_v, _ = (
+            coord
+            - (center + apply_rotation(camera_offset, offset_rot))
+        ).to_polar()
+
         pt_hz_f = float(pt_hz - tl_hz)
         pt_v_f = float(pt_v - tl_v)
         pt_x = round(tl_x + pt_hz_f * scale) % full_360
@@ -321,6 +372,7 @@ def main(
     metadata: Path,
     output: Path,
     image: tuple[Path],
+    camera_offset: tuple[float, float, float] | None = None,
     scale: float | None = None,
     width: int | None = None,
     height: int | None = None,
@@ -361,6 +413,15 @@ def main(
     elif height is not None:
         scale = height / np.pi
 
+    if camera_offset is not None:
+        cam_offset = Coordinate(
+            camera_offset[0],
+            camera_offset[1],
+            camera_offset[2]
+        )
+    else:
+        cam_offset = None
+
     color = (color[2], color[1], color[0])
     if label_color is None:
         label_color = color
@@ -397,6 +458,7 @@ def main(
         image_map,
         scale,
         points,
+        cam_offset,
         color,
         fontscale,
         thickness,
