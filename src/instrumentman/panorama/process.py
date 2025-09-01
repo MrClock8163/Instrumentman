@@ -126,13 +126,14 @@ def text_pos(
     text: str,
     point: tuple[float, float],
     offset: tuple[float, float],
+    font: int,
     fontscale: float,
     thickness: int,
     justify: str
 ) -> tuple[int, int]:
     (w, h), _ = cv.getTextSize(
         text,
-        cv.FONT_HERSHEY_PLAIN,
+        font,
         fontscale,
         thickness
     )
@@ -163,12 +164,14 @@ def run_annotate(
     points: list[tuple[str, Coordinate, str]] = [],
     camera_offset: Coordinate | None = None,
     color: tuple[int, int, int] = (0, 0, 0),
+    font: int = cv.FONT_HERSHEY_PLAIN,
     fontscale: float = 1,
     thickness: int = 2,
     marker: int = cv.MARKER_CROSS,
     markersize: int = 10,
     offset: tuple[int, int] = (10, -10),
     justify: str = "bl",
+    label_font: int = cv.FONT_HERSHEY_PLAIN,
     label_fontscale: float = 1,
     label_thickness: int = 2,
     label_color: tuple[int, int, int] = (0, 0, 0),
@@ -345,16 +348,26 @@ def run_annotate(
             (pt_x, pt_y),
             color,
             marker,
-            markersize
+            markersize,
+            thickness
         )
 
         cv.putText(
             result,
             pt,
-            text_pos(pt, (pt_x, pt_y), offset, fontscale, thickness, justify),
-            cv.FONT_HERSHEY_PLAIN,
+            text_pos(
+                pt,
+                (pt_x, pt_y),
+                offset,
+                font,
+                fontscale,
+                thickness,
+                justify
+            ),
+            font,
             fontscale,
             color,
+            thickness,
             bottomLeftOrigin=False
         )
         if label == "":
@@ -367,13 +380,15 @@ def run_annotate(
                 label,
                 (pt_x, pt_y),
                 label_offset,
+                label_font,
                 label_fontscale,
                 label_thickness,
                 label_justify
             ),
-            cv.FONT_HERSHEY_PLAIN,
+            label_font,
             label_fontscale,
             label_color,
+            label_thickness,
             bottomLeftOrigin=False
         )
 
@@ -403,6 +418,13 @@ _MARKER_MAP = {
     "downtriangle": cv.MARKER_TRIANGLE_DOWN
 }
 
+_FONT_MAP = {
+    "plain": cv.FONT_HERSHEY_PLAIN,
+    "simplex": cv.FONT_HERSHEY_SIMPLEX,
+    "duplex": cv.FONT_HERSHEY_DUPLEX,
+    "complex": cv.FONT_HERSHEY_COMPLEX
+}
+
 
 def main(
     metadata: Path,
@@ -416,12 +438,14 @@ def main(
     skip: int = 0,
     delimiter: str = ",",
     color: tuple[int, int, int] = (0, 0, 0),
+    font: str = "plain",
     fontsize: int = 10,
     thickness: int = 1,
     marker: str = "cross",
     markersize: int = 50,
     offset: tuple[int, int] | None = (10, -10),
     justify: str = "bl",
+    label_font: str | None = None,
     label_fontsize: int | None = None,
     label_color: tuple[int, int, int] | None = None,
     label_thickness: int | None = None,
@@ -465,7 +489,7 @@ def main(
         label_color = (label_color[2], label_color[1], label_color[0])
 
     fontscale = cv.getFontScaleFromHeight(
-        cv.FONT_HERSHEY_PLAIN,
+        _FONT_MAP[font],
         fontsize,
         thickness
     )
@@ -476,8 +500,11 @@ def main(
     if label_fontsize is None:
         label_fontsize = fontsize
 
+    if label_font is None:
+        label_font = font
+
     label_fontscale = cv.getFontScaleFromHeight(
-        cv.FONT_HERSHEY_PLAIN,
+        _FONT_MAP[label_font],
         label_fontsize,
         label_thickness
     )
@@ -496,12 +523,14 @@ def main(
         points,
         cam_offset,
         color,
+        _FONT_MAP[font],
         fontscale,
         thickness,
         _MARKER_MAP[marker],
         markersize,
         offset,
         justify,
+        _FONT_MAP[label_font],
         label_fontscale,
         label_thickness,
         label_color,

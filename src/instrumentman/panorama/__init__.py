@@ -139,17 +139,31 @@ def cli_measure(**kwargs: Any) -> None:
         default=(0, 0, 0)
     ),
     option(
+        "--font",
+        help="Font face type",
+        type=Choice(
+            (
+                "plain",
+                "simplex",
+                "duplex",
+                "complex"
+            ),
+            case_sensitive=False
+        ),
+        default="plain"
+    ),
+    option(
         "--fontsize",
         help="Font size in pixels",
         type=IntRange(0, min_open=True),
         default=10
     ),
-    # option(
-    #     "--thickness",
-    #     help="Font line thickness",
-    #     type=IntRange(0, min_open=True),
-    #     default=1
-    # ),
+    option(
+        "--thickness",
+        help="Font line thickness",
+        type=IntRange(0, min_open=True),
+        default=1
+    ),
     option(
         "--marker",
         help="Point marker shape",
@@ -192,15 +206,29 @@ def cli_measure(**kwargs: Any) -> None:
         default="bl"
     ),
     option(
+        "--label-font",
+        help="Label font face type",
+        type=Choice(
+            (
+                "plain",
+                "simplex",
+                "duplex",
+                "complex"
+            ),
+            case_sensitive=False
+        ),
+        default="plain"
+    ),
+    option(
         "--label-fontsize",
         help="Label font size in pixels",
         type=IntRange(0, min_open=True)
     ),
-    # option(
-    #     "--label_thickness",
-    #     help="Label text line thickness",
-    #     type=IntRange(0, min_open=True)
-    # ),
+    option(
+        "--label_thickness",
+        help="Label text line thickness",
+        type=IntRange(0, min_open=True)
+    ),
     option(
         "--label-color",
         help="Color in RGB8 notation",
