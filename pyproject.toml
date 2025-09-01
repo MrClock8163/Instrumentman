@@ -60,6 +60,12 @@ Changelog = "https://instrumentman.readthedocs.io/latest/changelog"
 [project.scripts]
 iman = "instrumentman:cli"
 
+[project.optional-dependencies]
+all = ["instrumentman[panorama"]
+panorama = [
+    "opencv-python~=4.8"
+]
+
 [dependency-groups]
 testing = [
     "pytest ~= 8.4.1"
