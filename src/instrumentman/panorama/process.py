@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Sequence
+from json import JSONDecodeError
 
+from jsonschema import ValidationError
 from geocompy.data import Coordinate, Angle
 import numpy as np
 import numpy.typing as npt
@@ -22,7 +24,7 @@ python -m pip install instrumentman[panorama]
     )
     exit(1)
 
-from ..utils import echo_yellow
+from ..utils import echo_yellow, echo_red
 from .metadata import read_metadata, PanoramaMetadata
 
 
@@ -338,7 +340,15 @@ def main(
     label_offset: tuple[int, int] | None = (10, 10),
     label_justify: str = "bl"
 ) -> None:
-    meta = read_metadata(metadata)
+    try:
+        meta = read_metadata(metadata)
+    except (ValidationError, JSONDecodeError):
+        echo_red(
+            "The metadata file is not a valid JSON or does not follow the "
+            "required schema"
+        )
+        exit(1)
+
     if annotate is not None:
         points = read_points(annotate, skip, delimiter)
     else:

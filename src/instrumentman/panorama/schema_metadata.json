@@ -1,0 +1,76 @@
+{
+    "title": "Instrumentman panorama metadata schema",
+    "description": "Additional data needed for panorama stitching and annotation",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["grid", "fov", "center", "images"],
+    "properties": {
+        "grid": {
+            "description": "Panorama frame grid columns and rows",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false
+            }
+        },
+        "fov": {
+            "description": "Horizontal and vertical field of view in radians",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false
+            }
+        },
+        "center": {
+            "description": "Instrument center position",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false
+            }
+        },
+        "images": {
+            "description": "Panorama frames",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "unevaluatedItems": false,
+                "additionalProperties": false,
+                "required": ["filename", "position", "vector"],
+                "properties": {
+                    "filename": {
+                        "description": "Image file name",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "position": {
+                        "description": "Camera position",
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                            "type": "number",
+                            "unevaluatedItems": false
+                        }
+                    },
+                    "vector": {
+                        "description": "Camera view vector",
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                            "type": "number",
+                            "unevaluatedItems": false
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,6 +1,9 @@
 from pathlib import Path
 from typing import TypedDict, cast
 import json
+import os
+
+from jsonschema import validate
 
 
 class PanoramaFrameMetadata(TypedDict):
@@ -21,4 +24,18 @@ def read_metadata(
     path: Path
 ) -> PanoramaMetadata:
     with path.open("rt", encoding="utf8") as file:
-        return cast(PanoramaMetadata, json.load(file))
+        data = json.load(file)
+
+    with open(
+        os.path.join(
+            os.path.dirname(__file__),
+            "schema_metadata.json"
+        ),
+        "rt",
+        encoding="utf8"
+    ) as file_schema:
+        schema = json.load(file_schema)
+
+    validate(data, schema)
+
+    return cast(PanoramaMetadata, data)
