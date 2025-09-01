@@ -2,6 +2,14 @@ from pathlib import Path
 from typing import Sequence
 from json import JSONDecodeError
 
+from rich.console import Console
+from rich.progress import (
+    Progress,
+    TextColumn,
+    BarColumn,
+    MofNCompleteColumn,
+    TimeRemainingColumn
+)
 from jsonschema import ValidationError
 from geocompy.data import Coordinate, Angle
 import numpy as np
@@ -175,6 +183,19 @@ def run_annotate(
 
     fov_w, fov_h = meta["fov"]
     center = Coordinate(*meta["center"])
+    console = Console()
+    progress = Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeRemainingColumn(),
+        console=console
+    )
+    progress.start()
+    task_images = progress.add_task(
+        "Preprocessing images",
+        total=len(meta["images"])
+    )
 
     for data in meta["images"]:
         pos = Coordinate(*data["position"])
@@ -182,11 +203,13 @@ def run_annotate(
         path = images.get(data["filename"])
         if path is None:
             echo_yellow(f"Could not find '{data['filename']}'")
+            progress.update(task_images, advance=1)
             continue
 
         img = cv.imread(str(path))
         if img is None:
             echo_yellow(f"Could not load '{data['filename']}'")
+            progress.update(task_images, advance=1)
             continue
 
         hz, v, _ = vec.to_polar()
@@ -251,6 +274,11 @@ def run_annotate(
             apply_rotation(pos - center, np.linalg.inv(offset_rot))
         )
 
+        progress.update(task_images, advance=1)
+
+    progress.stop()
+    console.print("Merging images... ", end="")
+
     blender = cv.detail.Blender.createDefault(cv.detail.BLENDER_MULTI_BAND)
     blender.prepare(
         corners,
@@ -273,6 +301,9 @@ def run_annotate(
     result, _ = blender.blend(
         None, None
     )  # type: ignore[call-overload]
+
+    console.print("Done")
+    console.print("Annotating points... ", end="")
 
     # Top left image center point for reference
     origin_x, origin_y, _, _ = cv.detail.resultRoi(
@@ -346,6 +377,8 @@ def run_annotate(
             bottomLeftOrigin=False
         )
 
+    console.print("Done")
+    console.print("Saving final image... ", end="")
     # For some reason the blending function returns the image as int16 instead
     # uint8, and it might contain negative values. These need to be clipped,
     # otherwise the type conversion will result in color artifacts due to the
@@ -355,6 +388,9 @@ def run_annotate(
         str(output),
         result.astype(np.uint8)
     )
+
+    console.print("Done")
+    console.print("Panorama complete", style="green")
 
 
 _MARKER_MAP = {
