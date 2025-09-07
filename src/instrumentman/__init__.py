@@ -108,7 +108,7 @@ def cli(
     )
 
 
-@cli.group("measure")  # type: ignore[misc]
+@cli.group("measure", aliases=["capture"])  # type: ignore[misc]
 def cli_measure() -> None:
     """Conduct measurements."""
 
