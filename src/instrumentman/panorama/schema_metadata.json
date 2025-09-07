@@ -3,18 +3,8 @@
     "description": "Additional data needed for panorama stitching and annotation",
     "type": "object",
     "additionalProperties": false,
-    "required": ["grid", "fov", "center", "images"],
+    "required": ["fov", "center", "images"],
     "properties": {
-        "grid": {
-            "description": "Panorama frame grid columns and rows",
-            "type": "array",
-            "minItems": 2,
-            "maxItems": 2,
-            "items": {
-                "type": "number",
-                "unevaluatedItems": false
-            }
-        },
         "fov": {
             "description": "Horizontal and vertical field of view in radians",
             "type": "array",

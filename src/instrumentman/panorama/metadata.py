@@ -14,7 +14,6 @@ class PanoramaFrameMetadata(TypedDict):
 
 
 class PanoramaMetadata(TypedDict):
-    grid: tuple[int, int]  # columns, rows
     fov: tuple[float, float]  # horizontal, vertical
     center: tuple[float, float, float]
     images: list[PanoramaFrameMetadata]

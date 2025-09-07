@@ -1,4 +1,4 @@
-from typing import TextIO, Generator
+from typing import TextIO
 import math
 from logging import getLogger, Logger
 import json
@@ -23,54 +23,111 @@ from ..utils import echo_red, echo_yellow
 from .metadata import PanoramaMetadata, PanoramaFrameMetadata
 
 
-def image_positions(
+def image_positions_optimal(
     from_hz: Angle,
     from_v: Angle,
-    delta_hz: Angle,
-    delta_v: Angle,
-    cols: int,
-    rows: int
-) -> Generator[tuple[int, Angle, Angle], None, None]:
-    if cols < 1 or rows < 1:
-        raise ValueError(
-            "Cannot generate positions for less than "
-            f"1 ({rows})row and/or 1 ({cols}) column"
-        )
+    to_hz: Angle,
+    to_v: Angle,
+    fov_hz: Angle,
+    fov_v: Angle,
+    overlap_hz: int,
+    overlap_v: int
+) -> list[tuple[Angle, Angle]]:
+    positions: list[tuple[Angle, Angle]] = []
+    delta_hz = (to_hz - from_hz).normalized()
+    delta_v = (to_v - from_v).normalized()
 
-    to_hz = from_hz + delta_hz
-    if rows == 1:
-        from_v = from_v + delta_v / 2
-    if cols == 1:
-        from_hz = (from_hz + delta_hz / 2).normalized()
+    center_hz = (from_hz + delta_hz / 2).normalized()
+    center_v = (from_v + delta_v / 2).normalized()
 
-    colstep = (delta_hz / (cols - 1)) if cols > 1 else Angle(0)
-    rowstep = (delta_v / (rows - 1)) if rows > 1 else Angle(0)
+    # FOV has to be reduced by twice the overlap percent, because overlap
+    # occurs on both sides of the view.
+    redfov_hz = fov_hz * (1 - overlap_hz / 50)
+    redfov_v = fov_v * (1 - overlap_v / 50)
 
-    counter = 0
-    for i in range(rows):
-        for j in range(cols):
-            counter += 1
-            yield (
-                counter,
-                (
-                    (from_hz + colstep * j)
-                    if i % 2 == 0
-                    else (to_hz - colstep * j)
-                ).normalized(),
-                (from_v + rowstep * i).normalized()
+    delta_v = delta_v - redfov_v
+
+    rows = math.ceil(float(delta_v) / float(redfov_v))
+    delta_v = redfov_v * rows
+
+    if delta_v > math.pi:
+        delta_v = Angle(math.pi)
+        from_v = Angle(0)
+        rows = math.ceil(math.pi / float(redfov_v))
+    else:
+        from_v = center_v - delta_v / 2
+
+    if from_v < 0:
+        from_v = Angle(0)
+
+    elif to_v > math.pi:
+        from_v = Angle(math.pi) - delta_v
+
+    rowstep = delta_v / rows
+    from_v = from_v + rowstep / 2
+
+    for r in range(rows):
+        v = from_v + rowstep * r
+
+        if v <= Angle(math.pi / 2):
+            row_radius = math.sin(v + redfov_v / 2)
+        else:
+            row_radius = math.sin(v - redfov_v / 2)
+
+        fovchord = math.sqrt(2 - 2 * math.cos(redfov_hz))
+        row_delta_hz = delta_hz
+
+        if fovchord > 2 * row_radius:
+            row_redfov_hz = row_delta_hz
+        else:
+            row_redfov_hz = Angle(
+                math.acos(1 - fovchord**2 / (2*row_radius**2))
             )
 
+        cols = math.ceil(float(row_delta_hz) / float(row_redfov_hz))
 
-def run_panorama(
+        row_delta_hz = row_redfov_hz * cols
+
+        if row_delta_hz > math.pi * 2:
+            row_delta_hz = Angle(math.pi * 2)
+
+        colstep = row_delta_hz / (cols)
+        row_from_hz = (
+            center_hz
+            - row_delta_hz / 2
+            + colstep / 2
+        ).normalized()
+        row_to_hz = (
+            center_hz
+            + row_delta_hz / 2
+            - colstep / 2
+        ).normalized()
+
+        for c in range(cols):
+            if r % 2 == 0:
+                hz = (row_from_hz + colstep * c).normalized()
+            else:
+                hz = (row_to_hz - colstep * c).normalized()
+
+            positions.append((hz, v))
+
+    return positions
+
+
+def get_extents_region(
     tps: GeoCom,
-    file: TextIO,
-    zoom: Zoom,
-    overlap: tuple[int, int],
-    prefix: str,
+    horizontal: tuple[Angle, Angle] | None,
+    vertical: tuple[Angle, Angle] | None,
     logger: Logger
-) -> None:
+) -> tuple[Angle, Angle, Angle, Angle]:
+    if horizontal is not None and vertical is not None:
+        from_hz, to_hz = horizontal
+        from_v, to_v = vertical
+        return from_hz, from_v, to_hz, to_v
+
     pause(
-        "Aim the instrument at the left starting corner, then press any key..."
+        "Aim the instrument at the left starting corner, "
+        "then press any key..."
     )
     resp_start = tps.tmc.get_angle()
     if resp_start.error != GeoComCode.OK or resp_start.params is None:
@@ -79,7 +136,8 @@ def run_panorama(
         exit(1)
 
     pause(
-        "Aim the instrument at the right finish corner, then press any key..."
+        "Aim the instrument at the right finish corner, "
+        "then press any key..."
     )
     resp_end = tps.tmc.get_angle()
     if resp_end.error != GeoComCode.OK or resp_end.params is None:
@@ -89,17 +147,80 @@ def run_panorama(
 
     from_hz, from_v = resp_start.params
     to_hz, to_v = resp_end.params
-    if to_v == from_v or to_hz == from_hz:
-        echo_red("Cannot capture panorama in a single row/column")
-        logger.critical("Cannot capture panorama in a single row/column")
+
+    return from_hz, from_v, to_hz, to_v
+
+
+def get_extents_strip(
+    tps: GeoCom,
+    vertical: tuple[Angle, Angle] | None,
+    logger: Logger
+) -> tuple[Angle, Angle, Angle, Angle]:
+    from_hz = Angle(0)
+    to_hz = Angle(2 * math.pi - 1e-5)
+    if vertical is not None:
+        from_v, to_v = vertical
+        return from_hz, from_v, to_hz, to_v
+
+    pause(
+        "Aim the instrument at the top of the strip, "
+        "then press any key..."
+    )
+    resp_start = tps.tmc.get_angle()
+    if resp_start.error != GeoComCode.OK or resp_start.params is None:
+        echo_red("Could not retrieve strip top angles")
+        logger.critical("Could not retrieve strip top angles")
         exit(1)
-    elif (
-        not (0 < from_v < math.pi)
-        or not (0 < to_v < math.pi)
-    ):
-        echo_red("Cannot capture panorama in face 2")
-        logger.critical("Cannot capture panorama in face 2")
+
+    pause(
+        "Aim the instrument at the bottom of the strip, "
+        "then press any key..."
+    )
+    resp_end = tps.tmc.get_angle()
+    if resp_end.error != GeoComCode.OK or resp_end.params is None:
+        echo_red("Could not retrieve strip bottom angles")
+        logger.critical("Could not retrieve strip bottom angles")
         exit(1)
+
+    from_hz, from_v = resp_start.params
+    to_hz, to_v = resp_end.params
+
+    return from_hz, from_v, to_hz, to_v
+
+
+def get_extents_sphere() -> tuple[Angle, Angle, Angle, Angle]:
+    return Angle(0), Angle(0), Angle(2 * math.pi - 1e-5), Angle(math.pi)
+
+
+def run_panorama(
+    tps: GeoCom,
+    file: TextIO,
+    zoom: Zoom,
+    overlap: tuple[int, int],
+    prefix: str,
+    shape: str,
+    horizontal: tuple[Angle, Angle] | None,
+    vertical: tuple[Angle, Angle] | None,
+    logger: Logger
+) -> None:
+    match shape:
+        case "sphere":
+            from_hz, from_v, to_hz, to_v = get_extents_sphere()
+        case "strip":
+            from_hz, from_v, to_hz, to_v = get_extents_strip(
+                tps,
+                vertical,
+                logger
+            )
+        case "region":
+            from_hz, from_v, to_hz, to_v = get_extents_region(
+                tps,
+                vertical,
+                horizontal,
+                logger
+            )
+        case _:
+            raise ValueError(f"Unknown capture area shape '{shape}'")
 
     if to_v < from_v:
         to_v, from_v = from_v, to_v
@@ -110,8 +231,8 @@ def run_panorama(
 
     resp_zoom = tps.cam.set_zoom(zoom)
     if resp_zoom.error != GeoComCode.OK:
-        echo_red("Could set retrieve camera zoom factor")
-        logger.critical("Could set retrieve camera zoom factor")
+        echo_red("Could set camera zoom factor")
+        logger.critical("Could set camera zoom factor")
         exit(1)
 
     resp_fov = tps.cam.get_camera_fov(zoom=zoom)
@@ -130,24 +251,20 @@ def run_panorama(
     center = station + Coordinate(0, 0, hi)
 
     fov_hz, fov_v = resp_fov.params
-    reduced_fov_hz = float(fov_hz) * (1 - overlap[0] / 100)
-    reduced_fov_v = float(fov_hz) * (1 - overlap[1] / 100)
 
-    delta_hz = (to_hz - from_hz).normalized()
-    delta_v = to_v - from_v
-
-    if abs(float(delta_hz)) < reduced_fov_hz:
-        cols = 1
-    else:
-        cols = math.ceil(abs(float(delta_hz)) / reduced_fov_hz) + 1
-
-    if abs(float(delta_v)) < reduced_fov_v:
-        rows = 1
-    else:
-        rows = math.ceil(abs(float(delta_v)) / reduced_fov_v) + 1
+    positions = image_positions_optimal(
+        from_hz,
+        from_v,
+        to_hz,
+        to_v,
+        fov_hz,
+        fov_v,
+        overlap[0],
+        overlap[1]
+    )
 
     if not confirm(
-        f"Start capturing images in {rows} row(s) and {cols} column(s)",
+        f"Start capturing panorama in {len(positions)} frame(s)",
         True
     ):
         echo_yellow("Program cancelled")
@@ -167,17 +284,10 @@ def run_panorama(
     progress.start()
     task = progress.add_task(
         "Capturing panorama",
-        total=rows*cols
+        total=len(positions)
     )
 
-    for idx, hz, v in image_positions(
-        from_hz,
-        from_v,
-        delta_hz,
-        delta_v,
-        cols,
-        rows
-    ):
+    for idx, (hz, v) in enumerate(positions):
         resp_turn = tps.aut.turn_to(hz, v)
         if resp_turn.error != GeoComCode.OK:
             echo_yellow("Could not turn to position")
@@ -223,8 +333,9 @@ def run_panorama(
 
     progress.stop()
 
+    tps.aut.turn_to(0, math.pi)
+
     metadata: PanoramaMetadata = {
-        "grid": (cols, rows),
         "fov": (float(fov_hz), float(fov_v)),
         "center": (center.x, center.y, center.z),
         "images": images
@@ -240,8 +351,13 @@ def main(
     retry: int = 1,
     sync_after_timeout: bool = False,
     zoom: str = "x1",
-    overlap: tuple[int, int] = (30, 30),
-    prefix: str = "panorama_"
+    overlap: tuple[int, int] = (5, 10),
+    prefix: str = "panorama_",
+    whitebalance: str | None = None,
+    increase_tolerance: bool = False,
+    shape: str = "region",
+    horizontal: tuple[str, str] | None = None,
+    vertical: tuple[str, str] | None = None
 ) -> None:
     logger = getLogger("iman.panorama.measure")
     with open_serial(
@@ -253,11 +369,43 @@ def main(
         logger=logger.getChild("com")
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
-        run_panorama(
-            tps,
-            metadata,
-            Zoom[zoom.upper()],
-            overlap,
-            prefix,
-            logger
-        )
+        tolerances: tuple[Angle, Angle] | None = None
+        try:
+            resp_tol = tps.aut.get_tolerance()
+            if (
+                increase_tolerance
+                and resp_tol.error == GeoComCode.OK
+                and resp_tol.params is not None
+            ):
+                print("Set reduced tolerances")
+                tolerances = resp_tol.params
+                tps.aut.set_tolerance(
+                    Angle.from_dms("0-30-00"),
+                    Angle.from_dms("0-30-00")
+                )
+            if whitebalance is not None:
+                tps.cam.set_whitebalance(whitebalance.upper())
+            run_panorama(
+                tps,
+                metadata,
+                Zoom[zoom.upper()],
+                overlap,
+                prefix,
+                shape,
+                (
+                    Angle.from_dms(horizontal[0]),
+                    Angle.from_dms(horizontal[1])
+                ) if horizontal is not None else None,
+                (
+                    Angle.from_dms(vertical[0]),
+                    Angle.from_dms(vertical[1])
+                ) if vertical is not None else None,
+                logger
+            )
+        finally:
+            if tolerances is not None:
+                print("Restored reduced tolerances")
+                tps.aut.set_tolerance(*tolerances)
+
+            if whitebalance is not None:
+                tps.cam.set_whitebalance("auto")

@@ -11,11 +11,19 @@ from click_extra import (
     IntRange,
     FloatRange
 )
-from cloup.constraints import mutually_exclusive
+from cloup.constraints import (
+    constraint,
+    mutually_exclusive,
+    accept_none,
+    require_all,
+    If,
+    Equal
+)
 
 from ..utils import (
     com_port_argument,
-    com_option_group
+    com_option_group,
+    Angle
 )
 
 
@@ -38,20 +46,101 @@ from ..utils import (
     default="x1"
 )
 @option(
-    "--overlap",
-    help="Minimum horizontal and vertical overlap between images (percentage)",
-    type=(IntRange(5, 95), IntRange(5, 95)),
-    default=(30, 30)
-)
-@option(
     "--prefix",
     help="Image prefix before number",
     type=str,
     default="panorama_"
 )
+@option(
+    "--whitebalance",
+    help=(
+        "Set white balance mode for the capture "
+        "(mode is reset to auto after the program is finished)"
+    ),
+    type=Choice(
+        (
+            "auto",
+            "indoor",
+            "outdoor"
+        ),
+        case_sensitive=False
+    )
+)
+@option(
+    "--increase-tolerance",
+    help=(
+        "Increase the positioning tolerances for the duration of the program. "
+        "USE WITH CAUTION!"
+    ),
+    is_flag=True
+)
+@option(
+    "--shape",
+    help="Panorama area type",
+    type=Choice(
+        (
+            "region",
+            "strip",
+            "sphere"
+        ),
+        case_sensitive=False
+    ),
+    default="region"
+)
+@option(
+    "--horizontal",
+    help="Horizontal start (left) and end (right) bearing",
+    type=(Angle(), Angle())
+)
+@option(
+    "--vertical",
+    help="Vertical start (top) and end (bottom) zenith angle",
+    type=(Angle(), Angle())
+)
+@constraint(
+    If(Equal("shape", "sphere"), accept_none),
+    ["horizontal", "vertical"]
+)
+@constraint(
+    If(Equal("shape", "strip"), accept_none),
+    ["horizontal"]
+)
+@constraint(
+    If("horizontal", require_all),
+    ["vertical"]
+)
 def cli_measure(**kwargs: Any) -> None:
     """
-    Take pictures with the instrument camera for later panormaic stitching
+    Take pictures with the overview camera of a total station for later
+    panoramic processing.
+
+    The angular area to cover can be set in the command line, or recorded
+    with the instrument at the start of the program. To use the point
+    annotation feature during later processing, the instrument should be
+    properly set up and oriented in the local coordinate system when running
+    this program.
+
+    The acquisition positions are calculated, so that there is at least 5%
+    overlap between images in a row, and 10% overlap between rows. When the
+    defined panorama area covers the full range (360 degrees horiztal
+    and/or 180 degrees vertical) the overlap will be usually larger, otherwise
+    the program will opt to capture a slightly wider/taller area to keep the
+    overlap close to the nominal values.
+
+    The metadata required for later processing is saved on the controlling
+    computer, the images themselves have to be downloaded from the instrument.
+    The images are typically saved to the SD card (if available), in the
+    'Data/Geocom/Images/Wide-angle' directory.
+
+    Time required for the whole process mainly depends on the number of images,
+    which in turn is dependent on the acquisition area. A full sphere panorama
+    at 1x zoom on a non-piezo motorized instrument takes around 25-30 minutes
+    to capture with around 350 images. New instruments with piezo motors might
+    be faster, but the main limiting factor is the camera, not the motors.
+
+    Enabling increased positioning tolerances might sligtly reduce the time,
+    but if an unexpected error occurs, the program might not be able to restore
+    the original tolerances, so USE WITH CAUTION.
     """
     from .measure import main
 
