@@ -114,7 +114,7 @@ def cli_measure(**kwargs: Any) -> None:
     "Point list file options",
     option(
         "--annotate",
-        help="Coordinate list of points to annotate on the images",
+        help="CSV coordinate list of points to annotate on the images",
         type=file_path(exists=True)
     ),
     option(
@@ -254,6 +254,32 @@ def cli_measure(**kwargs: Any) -> None:
     )
 )
 def cli_calc(**kwargs: Any) -> None:
+    """
+    Merge previously captured panorama frames and optionally annotate measured
+    points on the resulting panorama for documentation purposes.
+
+    The individual images are transformed into an equirectangular projection
+    based on the orientation metadata saved at the time of acquisition. The
+    projected images are then merged into a single panorama image.
+
+    On the merged panorama it is possible to annotate measured points given
+    with their 3D coordinates in a CSV file. The file is expected to contain
+    point name, easting, northing and height columns in this order (and
+    optionally a label column as last). The accuracy of the annotation is
+    usually a few centimeters. This is due to errors introduced by the offset
+    and the distortions of the overview camera. The program will try to
+    approximate the offset to improve the accuracy. If the precise offset is
+    known, it can also be provided explicitly.
+
+    A limit of the OpenCV provided by the 'opencv-python' package, is that
+    larger panoramas cannot be processed at full resolution. The maximum size
+    that OpenCV in this configuration can handle is defined by the maximum of a
+    16-bit signed integer (32767). This means, that at full resolution (2560 x
+    1920) only 12 images horizontally, and 17 images vertically can be
+    processed. This can be solved by setting the scale or one of the other
+    sizing options to downscale the processing resolution. The scale should be
+    set to maximum 5215 (32767 / (2 * pi)).
+    """
     from .process import main
 
     main(**kwargs)
