@@ -190,101 +190,94 @@ def run_annotate(
     fov_w, fov_h = meta["fov"]
     center = Coordinate(*meta["center"])
     console = Console()
-    progress = Progress(
+    with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         MofNCompleteColumn(),
         TimeRemainingColumn(),
         console=console
-    )
-    progress.start()
-    task_images = progress.add_task(
-        "Preprocessing images",
-        total=len(meta["images"])
-    )
+    ) as progress:
+        for data in progress.track(
+            meta["images"],
+            description="Preprocessing images"
+        ):
+            pos = Coordinate(*data["position"])
+            vec = Coordinate(*data["vector"])
+            path = images.get(data["filename"])
+            if path is None:
+                echo_yellow(f"Could not find '{data['filename']}'")
+                continue
 
-    for data in meta["images"]:
-        pos = Coordinate(*data["position"])
-        vec = Coordinate(*data["vector"])
-        path = images.get(data["filename"])
-        if path is None:
-            echo_yellow(f"Could not find '{data['filename']}'")
-            progress.update(task_images, advance=1)
-            continue
+            img = cv.imread(str(path))
+            if img is None:
+                echo_yellow(f"Could not load '{data['filename']}'")
+                continue
 
-        img = cv.imread(str(path))
-        if img is None:
-            echo_yellow(f"Could not load '{data['filename']}'")
-            progress.update(task_images, advance=1)
-            continue
+            hz, v, _ = vec.to_polar()
+            height: int
+            width: int
+            height, width, _ = img.shape
+            f_w: float = width / 2 / np.tan(fov_w / 2)
+            f_h: float = height / 2 / np.tan(fov_h / 2)
+            if scale is None:
+                scale = (f_w + f_h) / 2
 
-        hz, v, _ = vec.to_polar()
-        height: int
-        width: int
-        height, width, _ = img.shape
-        f_w: float = width / 2 / np.tan(fov_w / 2)
-        f_h: float = height / 2 / np.tan(fov_h / 2)
-        if scale is None:
-            scale = (f_w + f_h) / 2
+            scale = min(scale, _MAX_SCALE)
 
-        scale = min(scale, _MAX_SCALE)
+            instrinsics: npt.NDArray[np.float32] = np.array(
+                (
+                    (f_w, 0.0, width/2),
+                    (0.0, f_h, height/2),
+                    (0.0, 0.0, 1.0)
+                )
+            ).astype("float32")
+            rot: npt.NDArray[np.float32] = (
+                rot_y(float(hz))
+                @ rot_x(np.pi / 2 - float(v))
+            ).astype("float32")
 
-        instrinsics: npt.NDArray[np.float32] = np.array(
-            (
-                (f_w, 0.0, width/2),
-                (0.0, f_h, height/2),
-                (0.0, 0.0, 1.0)
+            warper = cv.PyRotationWarper("spherical", scale)
+            corner, image_warped = warper.warp(
+                img,
+                instrinsics,
+                rot,
+                cv.INTER_LINEAR,
+                cv.BORDER_REPLICATE
             )
-        ).astype("float32")
-        rot: npt.NDArray[np.float32] = (
-            rot_y(float(hz))
-            @ rot_x(np.pi / 2 - float(v))
-        ).astype("float32")
 
-        warper = cv.PyRotationWarper("spherical", scale)
-        corner, image_warped = warper.warp(
-            img,
-            instrinsics,
-            rot,
-            cv.INTER_LINEAR,
-            cv.BORDER_REPLICATE
-        )
-
-        _, mask_warped = warper.warp(
-            np.full((height, width), 255, "uint8"),
-            instrinsics,
-            rot,
-            cv.INTER_NEAREST,
-            cv.BORDER_CONSTANT
-        )
-        cx, cy = warper.warpPoint((width / 2, height / 2), instrinsics, rot)
-
-        centers.append(
-            (
-                int(cx), int(cy),
-                hz, v
+            _, mask_warped = warper.warp(
+                np.full((height, width), 255, "uint8"),
+                instrinsics,
+                rot,
+                cv.INTER_NEAREST,
+                cv.BORDER_CONSTANT
             )
-        )
-        corners.append(corner)
-        images_warped.append(image_warped)
-        masks_warped.append(mask_warped)
+            cx, cy = warper.warpPoint(
+                (width / 2, height / 2), instrinsics, rot)
 
-        # The de-rotation of the camera offset is not completely accurate
-        # since the optical axis of the camera might not be parallel to the
-        # axis of the telescope (which results in some angle deviation),
-        # but it is good enough estimation in case the offset is not precisely
-        # known beforehand.
-        #
-        # The matrix use in the spherical warp cannot be reused here, because
-        # OpenCV uses a different axis orientation order.
-        offset_rot = rot_z(float(hz)) @ rot_x(np.pi / 2 - float(v))
-        cam_offsets.append(
-            apply_rotation(pos - center, np.linalg.inv(offset_rot))
-        )
+            centers.append(
+                (
+                    int(cx), int(cy),
+                    hz, v
+                )
+            )
+            corners.append(corner)
+            images_warped.append(image_warped)
+            masks_warped.append(mask_warped)
 
-        progress.update(task_images, advance=1)
+            # The de-rotation of the camera offset is not completely accurate
+            # since the optical axis of the camera might not be parallel to the
+            # axis of the telescope (which results in some angle deviation),
+            # but it is good enough estimation in case the offset is not
+            # precisely known beforehand.
+            #
+            # The matrix use in the spherical warp cannot be reused here,
+            # because OpenCV uses a different axis orientation order.
+            offset_rot = rot_z(float(hz)) @ rot_x(np.pi / 2 - float(v))
+            cam_offsets.append(
+                apply_rotation(pos - center, np.linalg.inv(offset_rot))
+            )
 
-    progress.stop()
     console.print("Merging images... ", end="")
 
     blender = cv.detail.Blender.createDefault(cv.detail.BLENDER_MULTI_BAND)
@@ -522,25 +515,28 @@ def main(
     if label_offset is None:
         label_offset = (label_fontsize // 2, label_fontsize // 2)
 
-    run_annotate(
-        meta,
-        output,
-        image_map,
-        scale,
-        points,
-        cam_offset,
-        color,
-        _FONT_MAP[font],
-        fontscale,
-        thickness,
-        _MARKER_MAP[marker],
-        markersize,
-        offset,
-        justify,
-        _FONT_MAP[label_font],
-        label_fontscale,
-        label_thickness,
-        label_color,
-        label_offset,
-        label_justify
-    )
+    try:
+        run_annotate(
+            meta,
+            output,
+            image_map,
+            scale,
+            points,
+            cam_offset,
+            color,
+            _FONT_MAP[font],
+            fontscale,
+            thickness,
+            _MARKER_MAP[marker],
+            markersize,
+            offset,
+            justify,
+            _FONT_MAP[label_font],
+            label_fontscale,
+            label_thickness,
+            label_color,
+            label_offset,
+            label_justify
+        )
+    except cv.error as cve:
+        echo_red(f"The process failed due to an OpenCV error ({cve.code})")
