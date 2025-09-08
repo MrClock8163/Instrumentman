@@ -36,6 +36,9 @@ from ..utils import echo_yellow, echo_red
 from .metadata import read_metadata, PanoramaMetadata
 
 
+_MAX_SCALE = np.iinfo(np.int16).max // (2 * np.pi)
+
+
 def rot_x(angle: float) -> np.typing.NDArray[np.float64]:
     return np.array(
         (
@@ -224,6 +227,8 @@ def run_annotate(
         if scale is None:
             scale = (f_w + f_h) / 2
 
+        scale = min(scale, _MAX_SCALE)
+
         instrinsics: npt.NDArray[np.float32] = np.array(
             (
                 (f_w, 0.0, width/2),
@@ -306,93 +311,95 @@ def run_annotate(
     )  # type: ignore[call-overload]
 
     console.print("Done")
-    console.print("Annotating points... ", end="")
+    if len(points) > 0:
+        console.print("Annotating points... ", end="")
 
-    # Top left image center point for reference
-    origin_x, origin_y, _, _ = cv.detail.resultRoi(
-        corners,
-        [(i.shape[1], i.shape[0]) for i in images_warped]
-    )
-    tl_x, tl_y, tl_hz, tl_v = centers[0]
-    tl_x -= origin_x
-    tl_y -= origin_y
-
-    if scale is None:
-        scale = 1000
-
-    full_360 = round(scale * np.pi * 2)
-
-    if camera_offset is None:
-        camera_offset = mean_coordinate(cam_offsets)
-
-    for pt, coord, label in points:
-        # To calculate the approximate "telescope" rotation, a preliminary
-        # polar position is needed. Then the camera offset is rotated with the
-        # preliminary angles.
-        prelim_hz, prelim_v, _ = (coord - center).to_polar()
-        offset_rot = (
-            rot_z(float(prelim_hz)) @ rot_x(np.pi / 2 - float(prelim_v))
+        # Top left image center point for reference
+        origin_x, origin_y, _, _ = cv.detail.resultRoi(
+            corners,
+            [(i.shape[1], i.shape[0]) for i in images_warped]
         )
-        pt_hz, pt_v, _ = (
-            coord
-            - (center + apply_rotation(camera_offset, offset_rot))
-        ).to_polar()
+        tl_x, tl_y, tl_hz, tl_v = centers[0]
+        tl_x -= origin_x
+        tl_y -= origin_y
 
-        pt_hz_f = float(pt_hz - tl_hz)
-        pt_v_f = float(pt_v - tl_v)
-        pt_x = round(tl_x + pt_hz_f * scale) % full_360
-        pt_y = round(tl_y + pt_v_f * scale) % full_360
+        if scale is None:
+            scale = 1000
 
-        cv.drawMarker(
-            result,
-            (pt_x, pt_y),
-            color,
-            marker,
-            markersize,
-            thickness
-        )
+        full_360 = round(scale * np.pi * 2)
 
-        cv.putText(
-            result,
-            pt,
-            text_pos(
-                pt,
+        if camera_offset is None:
+            camera_offset = mean_coordinate(cam_offsets)
+
+        for pt, coord, label in points:
+            # To calculate the approximate "telescope" rotation, a preliminary
+            # polar position is needed. Then the camera offset is rotated with
+            # the preliminary angles.
+            prelim_hz, prelim_v, _ = (coord - center).to_polar()
+            offset_rot = (
+                rot_z(float(prelim_hz)) @ rot_x(np.pi / 2 - float(prelim_v))
+            )
+            pt_hz, pt_v, _ = (
+                coord
+                - (center + apply_rotation(camera_offset, offset_rot))
+            ).to_polar()
+
+            pt_hz_f = float(pt_hz - tl_hz)
+            pt_v_f = float(pt_v - tl_v)
+            pt_x = round(tl_x + pt_hz_f * scale) % full_360
+            pt_y = round(tl_y + pt_v_f * scale) % full_360
+
+            cv.drawMarker(
+                result,
                 (pt_x, pt_y),
-                offset,
+                color,
+                marker,
+                markersize,
+                thickness
+            )
+
+            cv.putText(
+                result,
+                pt,
+                text_pos(
+                    pt,
+                    (pt_x, pt_y),
+                    offset,
+                    font,
+                    fontscale,
+                    thickness,
+                    justify
+                ),
                 font,
                 fontscale,
+                color,
                 thickness,
-                justify
-            ),
-            font,
-            fontscale,
-            color,
-            thickness,
-            bottomLeftOrigin=False
-        )
-        if label == "":
-            continue
+                bottomLeftOrigin=False
+            )
+            if label == "":
+                continue
 
-        cv.putText(
-            result,
-            label,
-            text_pos(
+            cv.putText(
+                result,
                 label,
-                (pt_x, pt_y),
-                label_offset,
+                text_pos(
+                    label,
+                    (pt_x, pt_y),
+                    label_offset,
+                    label_font,
+                    label_fontscale,
+                    label_thickness,
+                    label_justify
+                ),
                 label_font,
                 label_fontscale,
+                label_color,
                 label_thickness,
-                label_justify
-            ),
-            label_font,
-            label_fontscale,
-            label_color,
-            label_thickness,
-            bottomLeftOrigin=False
-        )
+                bottomLeftOrigin=False
+            )
 
-    console.print("Done")
+        console.print("Done")
+
     console.print("Saving final image... ", end="")
     # For some reason the blending function returns the image as int16 instead
     # uint8, and it might contain negative values. These need to be clipped,

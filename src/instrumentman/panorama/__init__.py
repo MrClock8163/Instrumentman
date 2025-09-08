@@ -185,17 +185,17 @@ def cli_measure(**kwargs: Any) -> None:
     option(
         "--scale",
         help="Panorama scale in [pixels/rad]",
-        type=FloatRange(0, min_open=True)
+        type=FloatRange(0, 5215, min_open=True)
     ),
     option(
         "--width",
-        help="Width of complete sphere panorama in pixels",
-        type=IntRange(0, min_open=True)
+        help="Width of complete sphere panorama in [pixels]",
+        type=IntRange(0, 32767, min_open=True)
     ),
     option(
         "--height",
-        help="Height of complete sphere panorama in pixels",
-        type=IntRange(0, min_open=True)
+        help="Height of complete sphere panorama in [pixels]",
+        type=IntRange(0, 16383, min_open=True)
     ),
     constraint=mutually_exclusive
 )
@@ -360,14 +360,14 @@ def cli_calc(**kwargs: Any) -> None:
     approximate the offset to improve the accuracy. If the precise offset is
     known, it can also be provided explicitly.
 
-    A limit of the OpenCV provided by the 'opencv-python' package, is that
-    larger panoramas cannot be processed at full resolution. The maximum size
-    that OpenCV in this configuration can handle is defined by the maximum of a
-    16-bit signed integer (32767). This means, that at full resolution (2560 x
-    1920) only 12 images horizontally, and 17 images vertically can be
+    A limit of OpenCV is, that larger panoramas cannot be processed at full
+    resolution. The maximum size that OpenCV in this configuration can handle
+    is defined by the maximum of a 16-bit signed integer (32767). This means,
+    that at full resolution (2560 x 1920) only 12 images horizontally (for near
+    vertical views not even 1 image), and 17 images vertically can be
     processed. This can be solved by setting the scale or one of the other
-    sizing options to downscale the processing resolution. The scale should be
-    set to maximum 5215 (32767 / (2 * pi)).
+    sizing options to downscale the processing resolution. (The program
+    automatically downscales to an appropriate size.)
     """
     from .process import main
 
