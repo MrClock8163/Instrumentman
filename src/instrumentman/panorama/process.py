@@ -278,133 +278,139 @@ def run_annotate(
                 apply_rotation(pos - center, np.linalg.inv(offset_rot))
             )
 
-    console.print("Merging images... ", end="")
+    with Progress(transient=True) as progress:
+        progress.add_task(description="Merging images...", total=None)
 
-    blender = cv.detail.Blender.createDefault(cv.detail.BLENDER_MULTI_BAND)
-    blender.prepare(
-        corners,
-        [(i.shape[1], i.shape[0]) for i in images_warped]
-    )
-    for corner, img, msk in zip(corners, images_warped, masks_warped):
-        dilated_mask = cv.dilate(msk, None)  # type: ignore[call-overload]
-        seam_mask = cv.resize(
-            dilated_mask,
-            (msk.shape[1], msk.shape[0]),
-            None,
-            0,
-            0,
-            cv.INTER_LINEAR_EXACT
-        )
-        msk_warped = cv.bitwise_and(seam_mask, msk)
-        blender.feed(img.astype("int16"), msk_warped, corner)
-
-    result: cvt.MatLike
-    result, _ = blender.blend(
-        None, None
-    )  # type: ignore[call-overload]
-
-    console.print("Done")
-    if len(points) > 0:
-        console.print("Annotating points... ", end="")
-
-        # Top left image center point for reference
-        origin_x, origin_y, _, _ = cv.detail.resultRoi(
+        blender = cv.detail.Blender.createDefault(cv.detail.BLENDER_MULTI_BAND)
+        blender.prepare(
             corners,
             [(i.shape[1], i.shape[0]) for i in images_warped]
         )
-        tl_x, tl_y, tl_hz, tl_v = centers[0]
-        tl_x -= origin_x
-        tl_y -= origin_y
-
-        if scale is None:
-            scale = 1000
-
-        full_360 = round(scale * np.pi * 2)
-
-        if camera_offset is None:
-            camera_offset = mean_coordinate(cam_offsets)
-
-        for pt, coord, label in points:
-            # To calculate the approximate "telescope" rotation, a preliminary
-            # polar position is needed. Then the camera offset is rotated with
-            # the preliminary angles.
-            prelim_hz, prelim_v, _ = (coord - center).to_polar()
-            offset_rot = (
-                rot_z(float(prelim_hz)) @ rot_x(np.pi / 2 - float(prelim_v))
+        for corner, img, msk in zip(corners, images_warped, masks_warped):
+            dilated_mask = cv.dilate(msk, None)  # type: ignore[call-overload]
+            seam_mask = cv.resize(
+                dilated_mask,
+                (msk.shape[1], msk.shape[0]),
+                None,
+                0,
+                0,
+                cv.INTER_LINEAR_EXACT
             )
-            pt_hz, pt_v, _ = (
-                coord
-                - (center + apply_rotation(camera_offset, offset_rot))
-            ).to_polar()
+            msk_warped = cv.bitwise_and(seam_mask, msk)
+            blender.feed(img.astype("int16"), msk_warped, corner)
 
-            pt_hz_f = float(pt_hz - tl_hz)
-            pt_v_f = float(pt_v - tl_v)
-            pt_x = round(tl_x + pt_hz_f * scale) % full_360
-            pt_y = round(tl_y + pt_v_f * scale) % full_360
+        result: cvt.MatLike
+        result, _ = blender.blend(
+            None, None
+        )  # type: ignore[call-overload]
 
-            cv.drawMarker(
-                result,
-                (pt_x, pt_y),
-                color,
-                marker,
-                markersize,
-                thickness
+    console.print("Merged images")
+    if len(points) > 0:
+        with Progress(transient=True) as progress:
+            # Top left image center point for reference
+            origin_x, origin_y, _, _ = cv.detail.resultRoi(
+                corners,
+                [(i.shape[1], i.shape[0]) for i in images_warped]
             )
+            tl_x, tl_y, tl_hz, tl_v = centers[0]
+            tl_x -= origin_x
+            tl_y -= origin_y
 
-            cv.putText(
-                result,
-                pt,
-                text_pos(
-                    pt,
+            if scale is None:
+                scale = 1000
+
+            full_360 = round(scale * np.pi * 2)
+
+            if camera_offset is None:
+                camera_offset = mean_coordinate(cam_offsets)
+
+            for pt, coord, label in progress.track(
+                points,
+                description="Annotating points"
+            ):
+                # To calculate the approximate "telescope" rotation, a
+                # preliminary polar position is needed. Then the camera offset
+                # is rotated with the preliminary angles.
+                prelim_hz, prelim_v, _ = (coord - center).to_polar()
+                offset_rot = (
+                    rot_z(float(prelim_hz))
+                    @ rot_x(np.pi / 2 - float(prelim_v))
+                )
+                pt_hz, pt_v, _ = (
+                    coord
+                    - (center + apply_rotation(camera_offset, offset_rot))
+                ).to_polar()
+
+                pt_hz_f = float(pt_hz - tl_hz)
+                pt_v_f = float(pt_v - tl_v)
+                pt_x = round(tl_x + pt_hz_f * scale) % full_360
+                pt_y = round(tl_y + pt_v_f * scale) % full_360
+
+                cv.drawMarker(
+                    result,
                     (pt_x, pt_y),
-                    offset,
+                    color,
+                    marker,
+                    markersize,
+                    thickness
+                )
+
+                cv.putText(
+                    result,
+                    pt,
+                    text_pos(
+                        pt,
+                        (pt_x, pt_y),
+                        offset,
+                        font,
+                        fontscale,
+                        thickness,
+                        justify
+                    ),
                     font,
                     fontscale,
+                    color,
                     thickness,
-                    justify
-                ),
-                font,
-                fontscale,
-                color,
-                thickness,
-                bottomLeftOrigin=False
-            )
-            if label == "":
-                continue
+                    bottomLeftOrigin=False
+                )
+                if label == "":
+                    continue
 
-            cv.putText(
-                result,
-                label,
-                text_pos(
+                cv.putText(
+                    result,
                     label,
-                    (pt_x, pt_y),
-                    label_offset,
+                    text_pos(
+                        label,
+                        (pt_x, pt_y),
+                        label_offset,
+                        label_font,
+                        label_fontscale,
+                        label_thickness,
+                        label_justify
+                    ),
                     label_font,
                     label_fontscale,
+                    label_color,
                     label_thickness,
-                    label_justify
-                ),
-                label_font,
-                label_fontscale,
-                label_color,
-                label_thickness,
-                bottomLeftOrigin=False
-            )
+                    bottomLeftOrigin=False
+                )
 
-        console.print("Done")
+            console.print("Annotated points")
 
-    console.print("Saving final image... ", end="")
-    # For some reason the blending function returns the image as int16 instead
-    # uint8, and it might contain negative values. These need to be clipped,
-    # otherwise the type conversion will result in color artifacts due to the
-    # integer underflow.
-    result = np.clip(result, 0, 255)
-    cv.imwrite(
-        str(output),
-        result.astype(np.uint8)
-    )
+    with Progress(transient=True) as progress:
+        progress.add_task("Saving final image...", total=None)
+        # console.print("Saving final image... ", end="")
+        # For some reason the blending function returns the image as int16
+        # instead uint8, and it might contain negative values. These need to be
+        # clipped, otherwise the type conversion will result in color artifacts
+        # due to the integer underflow.
+        result = np.clip(result, 0, 255)
+        cv.imwrite(
+            str(output),
+            result.astype(np.uint8)
+        )
 
-    console.print("Done")
+    console.print("Saved final image")
     console.print("Panorama complete", style="green")
 
 
