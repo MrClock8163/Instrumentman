@@ -166,6 +166,8 @@ def run_annotate(
     scale: float | None = None,
     points: list[tuple[str, Coordinate, str]] = [],
     camera_offset: Coordinate | None = None,
+    compenstation_mode: int = cv.detail.EXPOSURE_COMPENSATOR_GAIN,
+    blending_mode: int = cv.detail.BLENDER_MULTI_BAND,
     color: tuple[int, int, int] = (0, 0, 0),
     font: int = cv.FONT_HERSHEY_PLAIN,
     fontscale: float = 1,
@@ -195,8 +197,10 @@ def run_annotate(
         BarColumn(),
         MofNCompleteColumn(),
         TimeRemainingColumn(),
-        console=console
+        console=console,
+        transient=True
     ) as progress:
+        warper: cv.PyRotationWarper | None = None
         for data in progress.track(
             meta["images"],
             description="Preprocessing images"
@@ -219,10 +223,13 @@ def run_annotate(
             height, width, _ = img.shape
             f_w: float = width / 2 / np.tan(fov_w / 2)
             f_h: float = height / 2 / np.tan(fov_h / 2)
-            if scale is None:
-                scale = (f_w + f_h) / 2
 
-            scale = min(scale, _MAX_SCALE)
+            if warper is None:
+                if scale is None:
+                    scale = (f_w + f_h) / 2
+
+                scale = min(scale, _MAX_SCALE)
+                warper = cv.PyRotationWarper("spherical", scale)
 
             instrinsics: npt.NDArray[np.float32] = np.array(
                 (
@@ -236,7 +243,6 @@ def run_annotate(
                 @ rot_x(np.pi / 2 - float(v))
             ).astype("float32")
 
-            warper = cv.PyRotationWarper("spherical", scale)
             corner, image_warped = warper.warp(
                 img,
                 instrinsics,
@@ -278,26 +284,37 @@ def run_annotate(
                 apply_rotation(pos - center, np.linalg.inv(offset_rot))
             )
 
+    console.print("Preprocessed images")
+
     with Progress(transient=True) as progress:
         progress.add_task(description="Merging images...", total=None)
+        compensator = cv.detail.ExposureCompensator.createDefault(
+            compenstation_mode
+        )
+        if compenstation_mode != cv.detail.EXPOSURE_COMPENSATOR_NO:
+            compensator.feed(
+                corners,
+                images_warped,  # type: ignore[arg-type]
+                masks_warped  # type: ignore[arg-type]
+            )
 
-        blender = cv.detail.Blender.createDefault(cv.detail.BLENDER_MULTI_BAND)
+        blender = cv.detail.Blender.createDefault(blending_mode)
         blender.prepare(
             corners,
             [(i.shape[1], i.shape[0]) for i in images_warped]
         )
-        for corner, img, msk in zip(corners, images_warped, masks_warped):
-            dilated_mask = cv.dilate(msk, None)  # type: ignore[call-overload]
-            seam_mask = cv.resize(
-                dilated_mask,
-                (msk.shape[1], msk.shape[0]),
-                None,
-                0,
-                0,
-                cv.INTER_LINEAR_EXACT
-            )
-            msk_warped = cv.bitwise_and(seam_mask, msk)
-            blender.feed(img.astype("int16"), msk_warped, corner)
+        for i, (corner, img, msk) in enumerate(
+            zip(corners, images_warped, masks_warped)
+        ):
+            if compenstation_mode != cv.detail.EXPOSURE_COMPENSATOR_NO:
+                img = compensator.apply(
+                    i,
+                    corner,
+                    img,
+                    msk
+                )
+
+            blender.feed(img.astype("int16"), msk, corner)
 
         result: cvt.MatLike
         result, _ = blender.blend(
@@ -395,7 +412,7 @@ def run_annotate(
                     bottomLeftOrigin=False
                 )
 
-            console.print("Annotated points")
+        console.print("Annotated points")
 
     with Progress(transient=True) as progress:
         progress.add_task("Saving final image...", total=None)
@@ -432,11 +449,27 @@ _FONT_MAP = {
 }
 
 
+_COMP_MAP = {
+    "none": cv.detail.EXPOSURE_COMPENSATOR_NO,
+    "channels": cv.detail.EXPOSURE_COMPENSATOR_CHANNELS,
+    "gain": cv.detail.EXPOSURE_COMPENSATOR_GAIN
+}
+
+
+_BLEND_MAP = {
+    "none": cv.detail.BLENDER_NO,
+    "multiband": cv.detail.BLENDER_MULTI_BAND,
+    "feather": cv.detail.BLENDER_FEATHER
+}
+
+
 def main(
     metadata: Path,
     output: Path,
     image: tuple[Path],
     camera_offset: tuple[float, float, float] | None = None,
+    compensation: str = "channel",
+    blending: str = "multiband",
     scale: float | None = None,
     width: int | None = None,
     height: int | None = None,
@@ -529,6 +562,8 @@ def main(
             scale,
             points,
             cam_offset,
+            _COMP_MAP[compensation],
+            _BLEND_MAP[blending],
             color,
             _FONT_MAP[font],
             fontscale,
@@ -546,3 +581,4 @@ def main(
         )
     except cv.error as cve:
         echo_red(f"The process failed due to an OpenCV error ({cve.code})")
+        echo_red(cve.err)

@@ -174,6 +174,24 @@ def cli_measure(**kwargs: Any) -> None:
     help="Axis-aligned camera offset from the instrument center",
     type=(float, float, float)
 )
+@option(
+    "--compensation",
+    help="Basic exposure compensation method",
+    type=Choice(
+        ("none", "channels", "gain"),
+        case_sensitive=False
+    ),
+    default="channels"
+)
+@option(
+    "--blending",
+    help="Overlap blending method",
+    type=Choice(
+        ("none", "multiband", "feather"),
+        case_sensitive=False
+    ),
+    default="multiband"
+)
 @option_group(
     "Output size options",
     (
