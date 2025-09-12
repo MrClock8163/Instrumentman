@@ -175,6 +175,14 @@ def cli_measure(**kwargs: Any) -> None:
     type=(float, float, float)
 )
 @option(
+    "--shift",
+    help=(
+        "Shift bearing of panorama center to reorient view and potentially "
+        "remove black gaps (only exact for strip and sphere)"
+    ),
+    type=Angle()
+)
+@option(
     "--compensation",
     help="Basic exposure compensation method",
     type=Choice(

@@ -163,6 +163,7 @@ def run_annotate(
     meta: PanoramaMetadata,
     output: Path,
     images: dict[str, Path],
+    shift: Angle,
     scale: float | None = None,
     points: list[tuple[str, Coordinate, str]] = [],
     camera_offset: Coordinate | None = None,
@@ -218,6 +219,7 @@ def run_annotate(
                 continue
 
             hz, v, _ = vec.to_polar()
+            hz = (hz - shift).normalized()
             height: int
             width: int
             height, width, _ = img.shape
@@ -350,13 +352,15 @@ def run_annotate(
                 # is rotated with the preliminary angles.
                 prelim_hz, prelim_v, _ = (coord - center).to_polar()
                 offset_rot = (
-                    rot_z(float(prelim_hz))
+                    rot_z(float((prelim_hz - shift).normalized()))
                     @ rot_x(np.pi / 2 - float(prelim_v))
                 )
                 pt_hz, pt_v, _ = (
                     coord
                     - (center + apply_rotation(camera_offset, offset_rot))
                 ).to_polar()
+
+                pt_hz = (pt_hz - shift).normalized()
 
                 pt_hz_f = float(pt_hz - tl_hz)
                 pt_v_f = float(pt_v - tl_v)
@@ -468,6 +472,7 @@ def main(
     output: Path,
     image: tuple[Path],
     camera_offset: tuple[float, float, float] | None = None,
+    shift: str | None = None,
     compensation: str = "channel",
     blending: str = "multiband",
     scale: float | None = None,
@@ -559,6 +564,7 @@ def main(
             meta,
             output,
             image_map,
+            Angle.from_dms(shift) if shift is not None else Angle(0),
             scale,
             points,
             cam_offset,
