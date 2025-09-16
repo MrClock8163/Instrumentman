@@ -23,7 +23,7 @@ from ..utils import echo_red, echo_yellow
 from .metadata import PanoramaMetadata, PanoramaFrameMetadata
 
 
-def image_positions_optimal(
+def image_positions(
     from_hz: Angle,
     from_v: Angle,
     to_hz: Angle,
@@ -31,7 +31,8 @@ def image_positions_optimal(
     fov_hz: Angle,
     fov_v: Angle,
     overlap_hz: int,
-    overlap_v: int
+    overlap_v: int,
+    adaptive_fov: bool
 ) -> list[tuple[Angle, Angle]]:
     positions: list[tuple[Angle, Angle]] = []
     delta_hz = (to_hz - from_hz).normalized()
@@ -68,21 +69,24 @@ def image_positions_optimal(
 
     for r in range(rows):
         v = from_v + rowstep * r
-
-        if v <= Angle(math.pi / 2):
-            row_radius = math.sin(v + redfov_v / 2)
-        else:
-            row_radius = math.sin(v - redfov_v / 2)
-
-        fovchord = math.sqrt(2 - 2 * math.cos(redfov_hz))
         row_delta_hz = delta_hz
 
-        if fovchord > 2 * row_radius:
-            row_redfov_hz = row_delta_hz
+        if adaptive_fov:
+            if v <= Angle(math.pi / 2):
+                row_radius = math.sin(v + redfov_v / 2)
+            else:
+                row_radius = math.sin(v - redfov_v / 2)
+
+            fovchord = math.sqrt(2 - 2 * math.cos(redfov_hz))
+
+            if fovchord > 2 * row_radius:
+                row_redfov_hz = row_delta_hz
+            else:
+                row_redfov_hz = Angle(
+                    math.acos(1 - fovchord**2 / (2*row_radius**2))
+                )
         else:
-            row_redfov_hz = Angle(
-                math.acos(1 - fovchord**2 / (2*row_radius**2))
-            )
+            row_redfov_hz = redfov_hz
 
         cols = math.ceil(float(row_delta_hz) / float(row_redfov_hz))
 
@@ -199,6 +203,7 @@ def run_panorama(
     overlap: tuple[int, int],
     prefix: str,
     shape: str,
+    layout: str,
     horizontal: tuple[Angle, Angle] | None,
     vertical: tuple[Angle, Angle] | None,
     logger: Logger
@@ -252,16 +257,33 @@ def run_panorama(
 
     fov_hz, fov_v = resp_fov.params
 
-    positions = image_positions_optimal(
-        from_hz,
-        from_v,
-        to_hz,
-        to_v,
-        fov_hz,
-        fov_v,
-        overlap[0],
-        overlap[1]
-    )
+    match layout:
+        case "grid":
+            positions = image_positions(
+                from_hz,
+                from_v,
+                to_hz,
+                to_v,
+                fov_hz,
+                fov_v,
+                overlap[0],
+                overlap[1],
+                False
+            )
+        case "adaptive-fov":
+            positions = image_positions(
+                from_hz,
+                from_v,
+                to_hz,
+                to_v,
+                fov_hz,
+                fov_v,
+                overlap[0],
+                overlap[1],
+                True
+            )
+        case _:
+            raise ValueError("Unknown position layout")
 
     if not confirm(
         f"Start capturing panorama in {len(positions)} frame(s)",
@@ -356,6 +378,7 @@ def main(
     whitebalance: str | None = None,
     increase_tolerance: bool = False,
     shape: str = "region",
+    layout: str = "adaptive-fov",
     horizontal: tuple[str, str] | None = None,
     vertical: tuple[str, str] | None = None
 ) -> None:
@@ -392,6 +415,7 @@ def main(
                 overlap,
                 prefix,
                 shape,
+                layout,
                 (
                     Angle.from_dms(horizontal[0]),
                     Angle.from_dms(horizontal[1])

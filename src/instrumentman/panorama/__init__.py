@@ -97,6 +97,15 @@ from ..utils import (
     default="region"
 )
 @option(
+    "--layout",
+    help="Image positions layout",
+    type=Choice(
+        ("grid", "adaptive-fov"),
+        case_sensitive=False
+    ),
+    default="adaptive-fov"
+)
+@option(
     "--horizontal",
     help="Horizontal start (left) and end (right) bearing",
     type=(Angle(), Angle())
@@ -134,7 +143,9 @@ def cli_measure(**kwargs: Any) -> None:
     defined panorama area covers the full range (360 degrees horiztal
     and/or 180 degrees vertical) the overlap will be usually larger, otherwise
     the program will opt to capture a slightly wider/taller area to keep the
-    overlap close to the nominal values.
+    overlap close to the nominal values. The default position layout take into
+    account, that images taken farther from horizon cover more and more
+    horizontal area.
 
     The metadata required for later processing is saved on the controlling
     computer, the images themselves have to be downloaded from the instrument.
