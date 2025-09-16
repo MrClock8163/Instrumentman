@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, cast
 from json import JSONDecodeError
 
 from rich.console import Console
@@ -169,6 +169,8 @@ def run_annotate(
     camera_offset: Coordinate | None = None,
     compenstation_mode: int = cv.detail.EXPOSURE_COMPENSATOR_GAIN,
     blending_mode: int = cv.detail.BLENDER_MULTI_BAND,
+    seam_mode: int = cv.detail.SEAM_FINDER_VORONOI_SEAM,
+    seam_overlap: int = 0,
     color: tuple[int, int, int] = (0, 0, 0),
     font: int = cv.FONT_HERSHEY_PLAIN,
     fontscale: float = 1,
@@ -289,6 +291,20 @@ def run_annotate(
     console.print("Preprocessed images")
 
     with Progress(transient=True) as progress:
+        progress.add_task(description="Finding seams...", total=None)
+        finder = cv.detail.SeamFinder.createDefault(seam_mode)
+        seams = finder.find(
+            cast(list[cv.UMat], images_warped),
+            corners,
+            cast(list[cv.UMat], masks_warped)
+        )
+
+    console.print("Identified seams")
+
+    if scale is None:
+        scale = 1000
+
+    with Progress(transient=True) as progress:
         progress.add_task(description="Merging images...", total=None)
         compensator = cv.detail.ExposureCompensator.createDefault(
             compenstation_mode
@@ -300,13 +316,24 @@ def run_annotate(
                 masks_warped  # type: ignore[arg-type]
             )
 
+        if seam_overlap == -1:
+            seam_overlap = round(scale / 100)
+
+        if seam_overlap > 0 and seam_mode != cv.detail.SEAM_FINDER_NO:
+            kernel_size = 1 + 2 * seam_overlap
+            kernel = cv.UMat(
+                np.ones((kernel_size, kernel_size), np.uint8)
+            )  # type: ignore[call-overload]
+        else:
+            kernel = None
+
         blender = cv.detail.Blender.createDefault(blending_mode)
         blender.prepare(
             corners,
             [(i.shape[1], i.shape[0]) for i in images_warped]
         )
-        for i, (corner, img, msk) in enumerate(
-            zip(corners, images_warped, masks_warped)
+        for i, (corner, img, msk, seam_msk) in enumerate(
+            zip(corners, images_warped, masks_warped, seams)
         ):
             if compenstation_mode != cv.detail.EXPOSURE_COMPENSATOR_NO:
                 img = compensator.apply(
@@ -316,7 +343,14 @@ def run_annotate(
                     msk
                 )
 
-            blender.feed(img.astype("int16"), msk, corner)
+            if kernel is not None:
+                seam_msk = cv.dilate(
+                    seam_msk,
+                    kernel,
+                    borderType=cv.BORDER_CONSTANT
+                )
+
+            blender.feed(img, cast(cvt.MatLike, seam_msk), corner)
 
         result: cvt.MatLike
         result, _ = blender.blend(
@@ -334,9 +368,6 @@ def run_annotate(
             tl_x, tl_y, tl_hz, tl_v = centers[0]
             tl_x -= origin_x
             tl_y -= origin_y
-
-            if scale is None:
-                scale = 1000
 
             full_360 = round(scale * np.pi * 2)
 
@@ -420,7 +451,6 @@ def run_annotate(
 
     with Progress(transient=True) as progress:
         progress.add_task("Saving final image...", total=None)
-        # console.print("Saving final image... ", end="")
         # For some reason the blending function returns the image as int16
         # instead uint8, and it might contain negative values. These need to be
         # clipped, otherwise the type conversion will result in color artifacts
@@ -467,6 +497,13 @@ _BLEND_MAP = {
 }
 
 
+_SEAM_MAP = {
+    "none": cv.detail.SEAM_FINDER_NO,
+    "voronoi": cv.detail.SEAM_FINDER_VORONOI_SEAM,
+    "dynamic-programming": cv.detail.SEAM_FINDER_DP_SEAM
+}
+
+
 def main(
     metadata: Path,
     output: Path,
@@ -475,6 +512,8 @@ def main(
     shift: str | None = None,
     compensation: str = "channel",
     blending: str = "multiband",
+    seams: str = "voronoi",
+    seam_overlap: int = 0,
     scale: float | None = None,
     width: int | None = None,
     height: int | None = None,
@@ -570,6 +609,8 @@ def main(
             cam_offset,
             _COMP_MAP[compensation],
             _BLEND_MAP[blending],
+            _SEAM_MAP[seams],
+            seam_overlap,
             color,
             _FONT_MAP[font],
             fontscale,

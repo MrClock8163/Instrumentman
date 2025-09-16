@@ -200,6 +200,24 @@ def cli_measure(**kwargs: Any) -> None:
     ),
     default="multiband"
 )
+@option(
+    "--seams",
+    help="Method to delineate individual frames at overlaps",
+    type=Choice(
+        ("none", "voronoi", "dynamic-programming"),
+        case_sensitive=False
+    ),
+    default="voronoi"
+)
+@option(
+    "--seam-overlap",
+    help=(
+        "Pixel dilation of seam masks to provide blending overlap "
+        "(set to -1 for automatic calculation)"
+    ),
+    type=IntRange(-1),
+    default=0
+)
 @option_group(
     "Output size options",
     (
