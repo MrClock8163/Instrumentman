@@ -75,6 +75,15 @@ from ..utils import (
     is_flag=True
 )
 @option(
+    "--overlap",
+    help=(
+        "Overlap between images within a row, and overlap between rows "
+        "(percentage)"
+    ),
+    type=(IntRange(5, 95), IntRange(10, 95)),
+    default=(5, 10)
+)
+@option(
     "--shape",
     help="Panorama area type",
     type=Choice(
