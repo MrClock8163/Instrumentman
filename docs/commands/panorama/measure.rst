@@ -27,14 +27,21 @@ reduce the number of angle inputs needed for specific cases:
 
 .. note::
 
-    The complete sphere panorama is very practical, and more of a proof of
+    The complete sphere panorama is not very practical, and more of a proof of
     concept, as capturing the full view takes impractically long time.
 
-Images that are taken at angles that deviate from the horizontal position
+If adaptive FoV is enabled for the position layout generation, images that are
+taken at angles that deviate from the horizontal position are considered to
 cover a wider horizontal angle area. To avoid taking unnecessary images, the
 top and bottom rows have fewer images.
 
 .. image:: image_positions.png
+
+To reduce the parallax errors of close range objects caused by the camera
+offset, it is possible to increase the overlap between images (effectively
+reducing the motion between images), but this can significantly increase the
+required number of images and time (e.g. full sphere panorama with 30%
+overlap requires approximately 1500 images).
 
 Examples
 --------
