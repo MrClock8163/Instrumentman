@@ -408,4 +408,4 @@ def main(
                 tps.aut.set_tolerance(*tolerances)
 
             if whitebalance is not None:
-                tps.cam.set_whitebalance("auto")
+                tps.cam.set_whitebalance("AUTO")
