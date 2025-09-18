@@ -1,5 +1,12 @@
+# While the OpenCV Python binding package has some measure of type hints,
+# these are often not reliable. To provide more accurate information to the
+# reader, typing information provided by 'opencv-python' is overruled (and/or
+# ignored) in many places in this module, with types that are closer to the
+# actual behavior of the functions in the context of this program (and to
+# correct problems in the 'opencv-python' type hints).
+
 from pathlib import Path
-from typing import Sequence, cast
+from typing import Sequence
 from json import JSONDecodeError
 
 from rich.console import Console
@@ -17,7 +24,6 @@ import numpy.typing as npt
 
 try:
     import cv2 as cv
-    import cv2.typing as cvt
 except ModuleNotFoundError:
     print(
         """
@@ -171,6 +177,7 @@ def run_annotate(
     blending_mode: int = cv.detail.BLENDER_MULTI_BAND,
     seam_mode: int = cv.detail.SEAM_FINDER_VORONOI_SEAM,
     seam_overlap: int = 0,
+    visualize_stitch: bool = False,
     color: tuple[int, int, int] = (0, 0, 0),
     font: int = cv.FONT_HERSHEY_PLAIN,
     fontscale: float = 1,
@@ -188,8 +195,8 @@ def run_annotate(
 ) -> None:
     corners: list[Sequence[int]] = []
     centers: list[tuple[int, int, Angle, Angle]] = []
-    images_warped: list[cvt.MatLike] = []
-    masks_warped: list[cvt.MatLike] = []
+    images_warped: list[npt.NDArray[np.uint8]] = []
+    masks_warped: list[npt.NDArray[np.uint8]] = []
     cam_offsets: list[Coordinate] = []
 
     fov_w, fov_h = meta["fov"]
@@ -215,7 +222,11 @@ def run_annotate(
                 echo_yellow(f"Could not find '{data['filename']}'")
                 continue
 
-            img = cv.imread(str(path))
+            # Returns uint8
+            img: npt.NDArray[np.uint8] = cv.imread(
+                str(path),
+                cv.IMREAD_COLOR_BGR
+            )  # type: ignore[assignment]
             if img is None:
                 echo_yellow(f"Could not load '{data['filename']}'")
                 continue
@@ -227,6 +238,28 @@ def run_annotate(
             height, width, _ = img.shape
             f_w: float = width / 2 / np.tan(fov_w / 2)
             f_h: float = height / 2 / np.tan(fov_h / 2)
+
+            if visualize_stitch:
+                img = np.stack(
+                    (
+                        np.full(
+                            (height, width),
+                            np.random.randint(0, 255),
+                            np.uint8
+                        ),
+                        np.full(
+                            (height, width),
+                            np.random.randint(0, 255),
+                            np.uint8
+                        ),
+                        np.full(
+                            (height, width),
+                            np.random.randint(0, 255),
+                            np.uint8
+                        )
+                    ),
+                    axis=2
+                )
 
             if warper is None:
                 if scale is None:
@@ -241,13 +274,15 @@ def run_annotate(
                     (0.0, f_h, height/2),
                     (0.0, 0.0, 1.0)
                 )
-            ).astype("float32")
+            ).astype(np.float32)
             rot: npt.NDArray[np.float32] = (
                 rot_y(float(hz))
                 @ rot_x(np.pi / 2 - float(v))
-            ).astype("float32")
+            ).astype(np.float32)
 
-            corner, image_warped = warper.warp(
+            # Maintains input type (uint8)
+            image_warped: npt.NDArray[np.uint8]
+            corner, image_warped = warper.warp(  # type: ignore[assignment]
                 img,
                 instrinsics,
                 rot,
@@ -255,8 +290,9 @@ def run_annotate(
                 cv.BORDER_REPLICATE
             )
 
-            _, mask_warped = warper.warp(
-                np.full((height, width), 255, "uint8"),
+            mask_warped: npt.NDArray[np.uint8]
+            _, mask_warped = warper.warp(  # type: ignore[assignment]
+                np.full((height, width), 255, np.uint8),
                 instrinsics,
                 rot,
                 cv.INTER_NEAREST,
@@ -281,7 +317,7 @@ def run_annotate(
             # but it is good enough estimation in case the offset is not
             # precisely known beforehand.
             #
-            # The matrix use in the spherical warp cannot be reused here,
+            # The matrix used in the spherical warp cannot be reused here,
             # because OpenCV uses a different axis orientation order.
             offset_rot = rot_z(float(hz)) @ rot_x(np.pi / 2 - float(v))
             cam_offsets.append(
@@ -294,9 +330,9 @@ def run_annotate(
         progress.add_task(description="Finding seams...", total=None)
         finder = cv.detail.SeamFinder.createDefault(seam_mode)
         seams = finder.find(
-            cast(list[cv.UMat], images_warped),
+            images_warped,  # type: ignore[arg-type]
             corners,
-            cast(list[cv.UMat], masks_warped)
+            masks_warped  # type: ignore[arg-type]
         )
 
     console.print("Identified seams")
@@ -341,7 +377,7 @@ def run_annotate(
                     corner,
                     img,
                     msk
-                )
+                )  # type: ignore[assignment]
 
             if kernel is not None:
                 seam_msk = cv.dilate(
@@ -350,9 +386,13 @@ def run_annotate(
                     borderType=cv.BORDER_CONSTANT
                 )
 
-            blender.feed(img, cast(cvt.MatLike, seam_msk), corner)
+            blender.feed(
+                img.astype(np.int16),
+                seam_msk.get().astype(np.uint8),
+                corner
+            )
 
-        result: cvt.MatLike
+        result: npt.NDArray[np.int16]
         result, _ = blender.blend(
             None, None
         )  # type: ignore[call-overload]
@@ -514,6 +554,7 @@ def main(
     blending: str = "multiband",
     seams: str = "voronoi",
     seam_overlap: int = 0,
+    visualize_stitch: bool = False,
     scale: float | None = None,
     width: int | None = None,
     height: int | None = None,
@@ -611,6 +652,7 @@ def main(
             _BLEND_MAP[blending],
             _SEAM_MAP[seams],
             seam_overlap,
+            visualize_stitch,
             color,
             _FONT_MAP[font],
             fontscale,

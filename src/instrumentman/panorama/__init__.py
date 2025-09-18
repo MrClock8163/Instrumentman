@@ -238,6 +238,11 @@ def cli_measure(**kwargs: Any) -> None:
     type=IntRange(-1),
     default=0
 )
+@option(
+    "--visualize-stitch",
+    help="Debug option to show individual frames with random colors",
+    is_flag=True
+)
 @option_group(
     "Output size options",
     (
