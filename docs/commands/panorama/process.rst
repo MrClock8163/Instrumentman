@@ -54,5 +54,5 @@ Examples
 Usage
 -----
 
-.. click:: instrumentman.panorama:cli_process
+.. click:: instrumentman.panorama:cli_calc
     :prog: iman process panorama
