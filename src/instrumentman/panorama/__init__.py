@@ -416,6 +416,8 @@ def cli_calc(**kwargs: Any) -> None:
     Merge previously captured panorama frames and optionally annotate measured
     points on the resulting panorama for documentation purposes.
 
+    IMPORTANT: This command requires an extra dependency: 'opencv-python'
+
     The individual images are transformed into an equirectangular projection
     based on the orientation metadata saved at the time of acquisition. The
     projected images are then merged into a single panorama image.
