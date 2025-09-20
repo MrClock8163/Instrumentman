@@ -19,9 +19,6 @@ from re import compile
 from pathlib import Path
 
 from click_extra import (
-    Color,
-    echo,
-    style,
     option,
     option_group,
     argument,
@@ -42,6 +39,9 @@ from cloup.constraints import (
     If,
     AnySet
 )
+from rich.console import Console
+from rich.style import Style
+from rich.theme import Theme
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -58,6 +58,77 @@ EXIT_CODE_DESCRIPTIONS: dict[int, str] = {
     1103: "Target CSV file does not exist",
     1200: "Unknown measurement order"
 }
+
+
+theme_iman = Theme(
+    {
+        "success": Style(color="bright_green"),
+        "warning": Style(color="bright_yellow"),
+        "error": Style(color="bright_red")
+    }
+)
+
+
+theme_progress_interrupted = Theme(
+    {
+        "bar.complete": "bright_yellow",
+        "bar.finished": "bright_yellow",
+        "bar.pulse": "bright_yellow"
+    }
+)
+
+theme_progress_error = Theme(
+    {
+        "bar.complete": "bright_red",
+        "bar.finished": "bright_red",
+        "bar.pulse": "bright_red"
+    }
+)
+
+console = Console(theme=theme_iman)
+
+
+def print(
+    value: Any,
+    newline: bool = True
+) -> None:
+    console.print(value, end="\n" if newline else "")
+
+
+def print_style(
+    message: Any,
+    style: str | Style,
+    newline: bool = True
+) -> None:
+    console.print(message, style=style, end="\n" if newline else "")
+
+
+def print_warning(
+    message: Any,
+    newline: bool = True
+) -> None:
+    print_style(message, "warning", newline)
+
+
+def print_success(
+    message: Any,
+    newline: bool = True
+) -> None:
+    print_style(message, "success", newline)
+
+
+def print_error(
+    message: Any,
+    newline: bool = True
+) -> None:
+    print_style(message, "error", newline)
+
+
+def print_plain(
+    value: Any,
+    newline: bool = True
+) -> None:
+    console.print(value, end="\n" if newline else "", highlight=False)
 
 
 def com_port_argument() -> Callable[[F], F]:
@@ -249,46 +320,6 @@ def logging_rotation_constraint() -> Callable[[F], F]:
         ),
         ["file"]
     )
-
-
-def echo_color(
-    message: Any,
-    color: str,
-    newline: bool = True,
-    error: bool = False
-) -> None:
-    echo(
-        style(
-            message,
-            color
-        ),
-        nl=newline,
-        err=error
-    )
-
-
-def echo_yellow(
-    message: Any,
-    newline: bool = True,
-    error: bool = False
-) -> None:
-    echo_color(message, Color.yellow, newline, error)
-
-
-def echo_green(
-    message: Any,
-    newline: bool = True,
-    error: bool = False
-) -> None:
-    echo_color(message, Color.green, newline, error)
-
-
-def echo_red(
-    message: Any,
-    newline: bool = True,
-    error: bool = False
-) -> None:
-    echo_color(message, Color.red, newline, error)
 
 
 class Angle(ParamType):

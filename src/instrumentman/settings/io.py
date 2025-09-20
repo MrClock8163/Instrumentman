@@ -5,7 +5,7 @@ import json
 import yaml
 import toml
 
-from ..utils import echo_red
+from ..utils import print_error
 
 
 class SubsystemSettingsDict(TypedDict):
@@ -40,7 +40,7 @@ def read_settings(
             with file.open("rb") as settings:
                 data = cast(SettingsDict, toml.load(settings))
         case _:
-            echo_red(f"Unknown file format: {format}")
+            print_error(f"Unknown file format: {format}")
             exit(1)
 
     return data
@@ -63,5 +63,5 @@ def write_settings(
             case "toml":
                 toml.dump(data, settings)
             case _:
-                echo_red(f"Unknown file format: {format}")
+                print_error(f"Unknown file format: {format}")
                 exit(1)

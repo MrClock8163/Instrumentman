@@ -11,7 +11,7 @@ from geocompy.gsi.dna import GsiOnlineDNA
 from geocompy.gsi.gsitypes import GsiOnlineResponse
 from geocompy.gsi.dna.settings import GsiOnlineDNASettings
 
-from ..utils import echo_red, echo_yellow, echo_green
+from ..utils import print_error, print_warning, print_success
 from .io import read_settings, SettingsDict
 from .validate import validate_settings
 
@@ -32,7 +32,7 @@ def set_setting_geocom(
         GeoComResponse[Any]
     ] | None = getattr(system, name, None)
     if method is None:
-        echo_yellow(f"Could not find '{name}' to set '{setting}'")
+        print_warning(f"Could not find '{name}' to set '{setting}'")
         logger.error(f"Could not find '{name}' to set '{setting}'")
         return
 
@@ -42,7 +42,7 @@ def set_setting_geocom(
         response = method(value)
 
     if response.error != GeoComCode.OK:
-        echo_yellow(f"Could not set '{setting}'")
+        print_warning(f"Could not set '{setting}'")
         logger.error(f"Could not set '{setting}' ({response})")
         return
 
@@ -59,14 +59,14 @@ def set_setting_gsidna(
         GsiOnlineResponse[bool]
     ] | None = getattr(system, name, None)
     if method is None:
-        echo_yellow(f"Could not find '{name}' to set '{setting}'")
+        print_warning(f"Could not find '{name}' to set '{setting}'")
         logger.error(f"Could not find '{name}' to set '{setting}'")
         return
 
     response = method(value)
 
     if response.value is None or not response.value:
-        echo_yellow(f"Could not set '{setting}'")
+        print_warning(f"Could not set '{setting}'")
         logger.error(f"Could not set '{setting}' ({response.response})")
         return
 
@@ -81,7 +81,7 @@ def upload_settings_geocom(
         sysname = item["subsystem"]
         subsystem: Any = getattr(protocol, sysname)
         if subsystem is None:
-            echo_red(f"Could not find '{sysname}' subsystem")
+            print_error(f"Could not find '{sysname}' subsystem")
             logger.critical(f"Could not find '{sysname}' subsystem")
             exit(1)
 
@@ -105,7 +105,7 @@ def upload_settings_gsidna(
         sysname = item["subsystem"]
         subsystem: Any = getattr(protocol, sysname)
         if subsystem is None:
-            echo_red(f"Could not find '{sysname}' subsystem")
+            print_error(f"Could not find '{sysname}' subsystem")
             logger.critical(f"Could not find '{sysname}' subsystem")
             exit(1)
 
@@ -131,7 +131,7 @@ def main(
     logger = getLogger("iman.settings.load")
     data = read_settings(settings, format)
     if not validate_settings(data):
-        echo_red("Settings file does not follow schema")
+        print_error("Settings file does not follow schema")
         logger.critical("Settings file does not follow schema")
         exit(1)
 
@@ -151,4 +151,4 @@ def main(
                 dna = GsiOnlineDNA(com, logger.getChild("instrument"))
                 upload_settings_gsidna(dna, logger, data)
 
-    echo_green(f"Settings loaded from {settings}")
+    print_success(f"Settings loaded from {settings}")

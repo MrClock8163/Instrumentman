@@ -1,12 +1,9 @@
 from logging import Logger, getLogger
 from typing import Callable, Any
 
-from click_extra import (
-    echo,
-    pause
-)
 from rich.live import Live
 from rich.table import Table, Column
+from rich.prompt import Confirm
 from serial import SerialException
 from geocompy.data import Angle
 from geocompy.geo import GeoCom
@@ -16,7 +13,7 @@ from geocompy.gsi.dna import GsiOnlineDNA
 from geocompy.gsi.gsitypes import GsiOnlineResponse
 from geocompy.communication import open_serial
 
-from ..utils import echo_red
+from ..utils import print_error, console
 
 
 def _test_geocom_mot(tps: GeoCom) -> GeoComResponse[Any]:
@@ -38,18 +35,18 @@ def tests_geocom(
     tps: GeoCom,
     logger: Logger
 ) -> None:
-    echo("GeoCom connection successful")
-    echo(
+    console.print("GeoCom connection successful")
+    console.print(
         "Various GeoCom functions will be tested. Certain settings will be "
         "changed on the instrument (ATR off, prism target off, etc.)."
     )
-    echo(
+    console.print(
         "The program will attempt to use motorized functions. Give "
         "appropriate clearance for the instrument!"
     )
-    pause("Press any key when ready to proceed...")
+    Confirm.ask("Proceed with tests", console=console, default=True)
 
-    echo("Testing subsystems...")
+    console.print("Testing subsystems...")
     logger.info("Starting GeoCom tests")
     tests: list[
         tuple[str, Callable[..., GeoComResponse[Any]], tuple[Any, ...]]
@@ -83,7 +80,7 @@ def tests_geocom(
         "Subsystem",
         Column("Available", justify="center")
     )
-    with Live(table):
+    with Live(table, console=console):
         for subsystem, cmd, params in tests:
             response = cmd(*params)
             if response.error == GeoComCode.OK:
@@ -101,14 +98,14 @@ def tests_gsidna(
     dna: GsiOnlineDNA,
     logger: Logger
 ) -> None:
-    echo("GSI Online connection successful")
-    echo(
+    console.print("GSI Online connection successful")
+    console.print(
         "Various GSI Online DNA functions will be tested. Certain settings "
         "might be changed on the instrument (staff mode, point number, etc.)."
     )
-    pause("Press any key when ready to proceed...")
+    Confirm.ask("Proceed with tests", console=console, default=True)
 
-    echo("Testing commands...")
+    console.print("Testing commands...")
     logger.info("Starting GSI Online DNA tests")
     tests: list[
         tuple[str, Callable[..., GsiOnlineResponse[Any]], tuple[Any, ...]]
@@ -130,7 +127,7 @@ def tests_gsidna(
         "Commands",
         Column("Available", justify="center")
     )
-    with Live(table):
+    with Live(table, console=console):
         for subsystem, cmd, params in tests:
             response = cmd(*params)
             if response.value is not None:
@@ -170,11 +167,11 @@ def main(
                     dna = GsiOnlineDNA(com, logger.getChild("instrument"))
                     tests_gsidna(dna, logger)
             except Exception:
-                echo_red("An exception occured while running the tests")
+                print_error("An exception occured while running the tests")
                 logger.exception(
                     "An exception occured while running the tests"
                 )
 
     except (SerialException, ConnectionError) as e:
-        echo_red(f"Connection was not successful ({e})")
+        print_error(f"Connection was not successful ({e})")
         logger.exception("Connection was not successful")

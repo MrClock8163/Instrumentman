@@ -2,11 +2,18 @@ from io import BufferedWriter, TextIOWrapper
 from logging import getLogger
 
 from serial import SerialTimeoutException
-from rich.progress import Progress, TextColumn
-from click_extra import echo
+from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn
 from geocompy.communication import open_serial
 
-from ..utils import echo_green, echo_red, echo_yellow
+from ..utils import (
+    print_success,
+    print_error,
+    print_warning,
+    print_plain,
+    console,
+    theme_progress_interrupted,
+    theme_progress_error
+)
 
 
 def main_download(
@@ -30,39 +37,77 @@ def main_download(
         started = False
         logger.info("Starting data download")
         logger.debug("Waiting for first line...")
-        while True:
-            try:
-                data = com.receive_binary()
-                if not started:
-                    started = True
-                    logger.debug("Received first line...")
+        with Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("{task.completed} line(s)"),
+            TimeElapsedColumn(),
+            console=console
+        ) as progress:
+            task = progress.add_task("Waiting for data...", total=None)
 
-                if data == eof_bytes and autoclose and not include_eof:
-                    echo_green("Download finished (end-of-file)")
-                    logger.info("Download finished (end-of-file)")
-                    break
+            lines = 0
+            while True:
+                try:
+                    data = com.receive_binary()
+                    if not started:
+                        started = True
+                        logger.debug("Received first line...")
+                        progress.update(task, description="Receiving data")
 
-                echo(data.decode("ascii", "replace"))
-                if output is not None:
-                    output.write(data + eol_bytes)
+                    if data == eof_bytes and autoclose and not include_eof:
+                        logger.info("Download finished (end-of-file)")
 
-                if data == eof_bytes and autoclose:
-                    echo_green("Download finished (end-of-file)")
-                    logger.info("Download finished (end-of-file)")
+                        progress.update(
+                            task,
+                            total=lines,
+                            description="End-Of-File"
+                        )
+                        break
+
+                    print_plain(data.decode("ascii", "replace"))
+                    lines += 1
+                    progress.update(task, completed=lines)
+                    if output is not None:
+                        output.write(data + eol_bytes)
+
+                    if data == eof_bytes and autoclose:
+                        logger.info("Download finished (end-of-file)")
+                        print_success("Download reached end-of-file")
+
+                        progress.update(
+                            task,
+                            total=lines
+                        )
+                        break
+                except SerialTimeoutException:
+                    if started and autoclose:
+                        logger.info("Download finished (timeout)")
+                        print_success("Download finished due to timeout")
+
+                        progress.update(
+                            task,
+                            total=lines
+                        )
+                        break
+                except KeyboardInterrupt:
+                    logger.info("Download stopped manually")
+                    print_warning("Manually interrupted")
+                    console.push_theme(theme_progress_interrupted)
+                    progress.update(
+                        task,
+                        refresh=True
+                    )
                     break
-            except SerialTimeoutException:
-                if started and autoclose:
-                    echo_green("Download finished (timeout)")
-                    logger.info("Download finished (timeout)")
+                except Exception as e:
+                    print_error(e)
+                    console.push_theme(theme_progress_error)
+                    progress.update(
+                        task,
+                        refresh=True
+                    )
+                    logger.exception("Download interrupted by error")
                     break
-            except KeyboardInterrupt:
-                echo_yellow("Download stopped manually")
-                logger.info("Download stopped manually")
-                break
-            except Exception as e:
-                echo_red(f"Download interrupted by error ({e})")
-                logger.exception("Download interrupted by error")
-                break
 
 
 def main_upload(
@@ -86,18 +131,24 @@ def main_upload(
                 next(file)
 
             with Progress(
-                *Progress.get_default_columns(),
-                TextColumn("{task.completed} line(s)")
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TextColumn("{task.completed} line(s)"),
+                TimeElapsedColumn(),
+                console=console
             ) as progress:
-                for line in progress.track(file, description="Uploading..."):
+                lines = 0
+                task = progress.add_task("Uploading", total=None)
+                for line in file:
+                    lines += 1
                     com.send(line)
+                    progress.update(task, completed=lines)
+
+                progress.update(task, total=lines)
 
         except KeyboardInterrupt:
-            echo_yellow("Upload cancelled")
+            print_warning("Upload cancelled")
             logger.info("Upload cancelled by user")
         except Exception as e:
-            echo_red(f"Upload interrupted by error ({e})")
+            print_error(f"Upload interrupted by error ({e})")
             logger.exception("Upload interrupted by error")
-        else:
-            echo_green("Upload finished")
-            logger.info("Upload finished")

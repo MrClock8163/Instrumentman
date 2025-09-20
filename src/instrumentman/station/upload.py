@@ -5,7 +5,7 @@ from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
 
-from ..utils import echo_red, echo_green
+from ..utils import print_error, print_success
 
 
 def main(
@@ -35,11 +35,11 @@ def main(
                 instrumentheight
             )
             if resp_stn.error != GeoComCode.OK:
-                echo_red("Cannot set station")
+                print_error("Cannot set station")
                 logger.critical(f"Cannot set station ({resp_stn})")
                 exit(1)
             else:
-                echo_green("Station set")
+                print_success("Station set")
                 logger.info(f"Station set to {coordinates}")
 
         if azimuth is not None:
@@ -49,7 +49,7 @@ def main(
             logger.info(f"Setting orientation to {orientation}")
             resp_angle = tps.tmc.get_angle()
             if resp_angle.error != GeoComCode.OK or resp_angle.params is None:
-                echo_red("Could not get current orientation")
+                print_error("Could not get current orientation")
                 logger.critical(
                     f"Could not get current orientation ({resp_angle})"
                 )
@@ -64,9 +64,9 @@ def main(
 
         resp_ori = tps.tmc.set_azimuth(hz)
         if resp_ori.error != GeoComCode.OK:
-            echo_red("Could not set orientation/azimuth")
+            print_error("Could not set orientation/azimuth")
             logger.critical(f"Could not set orientation/azimuth ({resp_ori})")
             exit(1)
 
-        echo_green("Orientation/azimuth set")
+        print_success("Orientation/azimuth set")
         logger.info("Orientation/azimuth set")

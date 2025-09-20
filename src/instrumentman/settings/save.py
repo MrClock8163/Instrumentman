@@ -10,7 +10,7 @@ from geocompy.geo.gctypes import GeoComResponse, GeoComSubsystem, GeoComCode
 from geocompy.gsi.dna import GsiOnlineDNA
 from geocompy.gsi.gsitypes import GsiOnlineResponse
 
-from ..utils import echo_green
+from ..utils import print_success
 from .io import write_settings, SettingsDict, SubsystemSettingsDict
 
 
@@ -290,5 +290,5 @@ def main(
     logger.info("Removed empty options")
 
     write_settings(data, file, format)
-    echo_green(f"Saved settings to {file}")
+    print_success(f"Saved settings to {file}")
     logger.info(f"Saved settings to {file}")
