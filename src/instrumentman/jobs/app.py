@@ -6,7 +6,7 @@ from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
 
-from ..utils import echo_red, echo_yellow
+from ..utils import print_error, print_warning, console
 
 
 def run_listing(
@@ -16,7 +16,7 @@ def run_listing(
     logger.info("Starting job listing")
     resp_setup = tps.csv.setup_listing()
     if resp_setup.error != GeoComCode.OK:
-        echo_red("Could not set up listing")
+        print_error("Could not set up listing")
         logger.critical(
             f"Could not set up listing ({resp_setup})"
         )
@@ -24,13 +24,13 @@ def run_listing(
 
     resp_list = tps.csv.list()
     if resp_list.error != GeoComCode.OK or resp_list.params is None:
-        echo_red("Could not start listing")
+        print_error("Could not start listing")
         logger.critical(f"Could not start listing ({resp_list})")
         return
 
     job, file, _, _, _ = resp_list.params
     if job == "" or file == "":
-        echo_yellow("No jobs were found")
+        print_warning("No jobs were found")
         logger.info("No jobs were found")
         return
 
@@ -41,7 +41,7 @@ def run_listing(
         col_file
     )
     table.add_row(job, file)
-    with Live(table):
+    with Live(table, console=console):
         while True:
             resp_list = tps.csv.list()
             if resp_list.error != GeoComCode.OK or resp_list.params is None:

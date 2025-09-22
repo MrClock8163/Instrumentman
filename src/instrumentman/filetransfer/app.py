@@ -6,19 +6,18 @@ import os
 from re import compile, IGNORECASE
 from logging import getLogger, Logger
 
-from click_extra import echo
-from rich.console import Console, RenderableType
+from rich.console import RenderableType
 from rich.text import Text
 from rich.tree import Tree
 from rich.table import Table
 from rich.filesize import decimal
-from rich.progress import Progress, TextColumn
+from rich.progress import Progress, TextColumn, TimeElapsedColumn
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
 from geocompy.geo.gcdata import File, Device
 
-from ..utils import echo_red, echo_green
+from ..utils import print_error, console, theme_progress_error
 
 
 _FILE = {
@@ -203,7 +202,6 @@ def run_listing_tree(
     depth: int = 1
 ) -> None:
     filetype = filetype or "unknown"
-    console = Console(width=120)
     logger.info(
         f"Starting content listing of '{directory}' from '{dev}' device"
     )
@@ -215,7 +213,7 @@ def run_listing_tree(
         transient=True
     ) as progress:
         task = progress.add_task(
-            "Indexing directories...",
+            "Indexing directories",
             total=None,
             path=""
         )
@@ -240,6 +238,7 @@ def run_listing_tree(
 
     logger.info("Listing complete")
     treeview = build_file_tree(tree)
+    console.width = 120
     console.print(treeview)
 
 
@@ -271,7 +270,7 @@ def run_download(
         _FILE[filetype]
     )
     if resp_setup.error != GeoComCode.OK or resp_setup.params is None:
-        echo_red("Could not set up file download")
+        print_error("Could not set up file download")
         logger.critical(
             f"Could not set up file download ({resp_setup})"
         )
@@ -280,21 +279,25 @@ def run_download(
     block_count = resp_setup.params
     logger.info(f"Expected number of chunks: {block_count:d}")
 
-    with Progress() as progress:
+    with Progress(
+        *Progress.get_default_columns(),
+        TimeElapsedColumn(),
+        console=console
+    ) as progress:
         for i in progress.track(range(block_count), description="Downloading"):
             resp_pull = download(i + 1)
             if resp_pull.error != GeoComCode.OK or resp_pull.params is None:
+                console.push_theme(theme_progress_error)
+                print_error("An error occured during download")
                 progress.stop()
-                echo_red("An error occured during download")
                 logger.critical(
                     f"An error occured during download ({resp_pull})"
                 )
                 return
 
-            echo(bytes.fromhex(resp_pull.params), file, False)
+            file.write(bytes.fromhex(resp_pull.params))
 
     logger.info("Download complete")
-    echo_green("Download complete")
 
 
 def main_download(

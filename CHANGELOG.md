@@ -5,6 +5,12 @@ file.
 
 The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+
+- All console output was updated to use the `rich` package instead of `click`
+
 ## v0.4.0 (2025-08-26)
 
 ### Added

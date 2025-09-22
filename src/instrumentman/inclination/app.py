@@ -7,14 +7,13 @@ from logging import Logger, getLogger
 from rich.console import Console
 from rich.progress import track
 from rich.table import Table, Column
-from click_extra import echo
 from geocompy.data import Angle, Coordinate
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
 from geocompy.communication import open_serial
 
 from ..calculations import adjust_uniform_single
-from ..utils import echo_green
+from ..utils import print_success, console
 
 
 _LINE = compile(r"^\d+(?:\.\d+)?(?:,\-?\d+\.\d+){2}$")
@@ -137,15 +136,15 @@ def main_merge(
     inputs: list[TextIOWrapper],
     output: TextIOWrapper
 ) -> None:
-    echo("hz_deg,cross_sec,length_sec", output)
+    output.write("hz_deg,cross_sec,length_sec\n")
     for item in inputs:
         for line in item:
             if not _LINE.match(line.strip()):
                 continue
 
-            echo(line, output, False)
+            output.write(line)
 
-    echo_green(f"Merged measurements from {len(inputs)} files.")
+    print_success(f"Merged measurements from {len(inputs)} files.")
 
 
 def main_calc(
@@ -186,24 +185,20 @@ def main_calc(
     direction, inc, _ = Coordinate(x, y, z).to_polar()
 
     if output is None:
-        echo(f"""Axis aligned:
-    inclination X: {inc_x:.1f}" +/- {inc_x_dev:.1f}"
-    inclination Y: {inc_y:.1f}" +/- {inc_y_dev:.1f}"
+        console.print(
+            f"""Axis aligned:
+    inclination X: {inc_x:.1f}" ± {inc_x_dev:.1f}"
+    inclination Y: {inc_y:.1f}" ± {inc_y_dev:.1f}"
 Polar:
     direction: {direction.asunit('deg'):.4f}°
     inclination: {inc.asunit('deg') * 3600:.1f}\""""
-             )
+        )
         return
 
-    echo(
-        "inc_x_sec,inc_x_dev_sec,inc_y_sec,inc_y_dev_sec,dir_deg,inc_sec",
-        output
+    output.write(
+        "inc_x_sec,inc_x_dev_sec,inc_y_sec,inc_y_dev_sec,dir_deg,inc_sec\n"
     )
-
-    echo(
-        (
-            f"{inc_x:.1f},{inc_x_dev:.1f},{inc_y:.1f},{inc_y_dev:.1f},"
-            f"{direction.asunit('deg'):.4f},{inc.asunit('deg') * 3600:.1f}"
-        ),
-        output
+    output.write(
+        f"{inc_x:.1f},{inc_x_dev:.1f},{inc_y:.1f},{inc_y_dev:.1f},"
+        f"{direction.asunit('deg'):.4f},{inc.asunit('deg') * 3600:.1f}\n"
     )

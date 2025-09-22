@@ -10,7 +10,7 @@ from ..setmeasurement.process import (
     SessionValidator,
     calc_angles
 )
-from ..utils import echo_red
+from ..utils import print_error
 from ..calculations import resection_2d_1d, preliminary_resection
 
 
@@ -28,18 +28,18 @@ def main(
     try:
         validator.validate(data)
     except ValidationError as ve:
-        echo_red("Measurement data does not follow the required schema")
-        echo_red(ve)
+        print_error("Measurement data does not follow the required schema")
+        print_error(ve)
         exit(4)
     except ValueError as e:
-        echo_red("The Measurement data did not pass validation")
-        echo_red(e)
+        print_error("The Measurement data did not pass validation")
+        print_error(e)
         exit(4)
 
     try:
         targetlist = load_targets_from_json(str(targets))
     except ValidationError:
-        echo_red("Target data does not follow the required schema")
+        print_error("Target data does not follow the required schema")
         exit(4)
 
     target_names = targetlist.get_target_names()
@@ -78,7 +78,7 @@ def main(
             )
 
     if len(set(actual_targets)) < 2:
-        echo_red("Cannot calculate resection from less than 2 targets")
+        print_error("Cannot calculate resection from less than 2 targets")
         exit(1)
 
     (
@@ -97,7 +97,7 @@ def main(
     )
 
     if not converged:
-        echo_red("Resection calculation failed")
+        print_error("Resection calculation failed")
         exit(1)
 
     results = {

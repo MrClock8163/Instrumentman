@@ -2,7 +2,7 @@ from io import TextIOWrapper
 import csv
 from typing import cast, Callable
 
-from click_extra import prompt, Choice
+from rich.prompt import Prompt, FloatPrompt
 from jsonschema import ValidationError
 from geocompy.data import Coordinate
 from geocompy.geo.gcdata import Prism
@@ -20,7 +20,7 @@ from geocompy.gsi.gsiformat import (
     write_gsi_blocks_to_file
 )
 
-from ..utils import echo_red, echo_yellow, echo_green
+from ..utils import print_error, print_warning, print_success, console
 from ..targets import (
     TargetList,
     TargetPoint,
@@ -29,22 +29,20 @@ from ..targets import (
 )
 
 
-_PRISMCHOICES = Choice(
-    (
-        'ROUND',
-        'MINI',
-        'TAPE',
-        'THREESIXTY',
-        'USER1',
-        'USER2',
-        'USER3',
-        'MINI360',
-        'MINIZERO',
-        'NDSTAPE',
-        'GRZ121',
-        'MPR122'
-    )
-)
+_PRISMCHOICES = [
+    'ROUND',
+    'MINI',
+    'TAPE',
+    'THREESIXTY',
+    'USER1',
+    'USER2',
+    'USER3',
+    'MINI360',
+    'MINIZERO',
+    'NDSTAPE',
+    'GRZ121',
+    'MPR122'
+]
 
 
 def main_csv_to_targets(
@@ -68,7 +66,7 @@ def main_csv_to_targets(
             return columns.index(name)
         except ValueError:
             if mandatory:
-                echo_red(f"Mandatory '{name}' column was not specified")
+                print_error(f"Mandatory '{name}' column was not specified")
                 exit(1)
 
             return None
@@ -86,9 +84,11 @@ def main_csv_to_targets(
             return Prism[reflector]
 
         return Prism[
-            prompt(
+            Prompt.ask(
                 f"Reflector type of {pt}",
-                type=_PRISMCHOICES
+                console=console,
+                choices=_PRISMCHOICES,
+                case_sensitive=False
             )
         ]
 
@@ -104,12 +104,9 @@ def main_csv_to_targets(
         if height is not None:
             return height
 
-        return cast(
-            float,
-            prompt(
-                f"Target height of {pt}",
-                type=float
-            )
+        return FloatPrompt.ask(
+            f"Target height of {pt}",
+            console=console
         )
 
     targets = TargetList()
@@ -136,7 +133,7 @@ def main_csv_to_targets(
                 )
             )
         except ValueError:
-            echo_red(f"Duplicate point '{name}' in source files")
+            print_error(f"Duplicate point '{name}' in source files")
             exit(1)
 
     export_targets_to_json(
@@ -165,7 +162,7 @@ def main_targets_to_csv(
     try:
         targets = load_targets_from_json(input)
     except ValidationError:
-        echo_red("Target definition file is not valid")
+        print_error("Target definition file is not valid")
         exit(1)
 
     writer = csv.writer(output, delimiter=delimiter, lineterminator="\n")
@@ -212,7 +209,7 @@ def main_gsi_to_targets(
         try:
             block = GsiBlock.parse(line.strip("\n"), keep_unknowns=False)
         except Exception:
-            echo_yellow(f"Could not parse line {i + 1}")
+            print_warning(f"Could not parse line {i + 1}")
             continue
 
         if block.blocktype != "measurement":
@@ -261,9 +258,9 @@ def main_gsi_to_targets(
         elif height is not None:
             ht = height
         else:
-            ht = prompt(
+            ht = FloatPrompt.ask(
                 f"Target height of {point}",
-                type=float,
+                console=console,
                 default=ht
             )
 
@@ -273,9 +270,11 @@ def main_gsi_to_targets(
         if reflector is not None:
             prism = Prism[reflector]
         else:
-            answer: str = prompt(
+            answer: str = Prompt.ask(
                 f"Reflector type of {point}",
-                type=_PRISMCHOICES,
+                console=console,
+                choices=_PRISMCHOICES,
+                case_sensitive=False,
                 default=prism.name
             )
             prism = Prism[answer]
@@ -290,11 +289,11 @@ def main_gsi_to_targets(
         )
 
     if len(targets) == 0:
-        echo_red("Could not import any targets")
+        print_error("Could not import any targets")
         exit(1)
 
     export_targets_to_json(output, targets)
-    echo_green(f"Imported {len(targets)} target(s)")
+    print_success(f"Imported {len(targets)} target(s)")
 
 
 _UNIT_MAPPING = {
@@ -315,7 +314,7 @@ def main_targets_to_gsi(
     try:
         targets = load_targets_from_json(input)
     except ValidationError:
-        echo_red("Target definition file is not valid")
+        print_error("Target definition file is not valid")
         exit(1)
 
     unit = _UNIT_MAPPING[length_unit]

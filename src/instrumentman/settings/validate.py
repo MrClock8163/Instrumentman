@@ -3,15 +3,14 @@ import json
 import os
 
 from jsonschema import validate, ValidationError
-from click_extra import echo
 
-from ..utils import echo_green, echo_red
+from ..utils import print_success, print_error
 from .io import read_settings, SettingsDict
 
 
 def validate_settings(
     settings: SettingsDict,
-    print_error: bool = False
+    print_error_message: bool = False
 ) -> bool:
     with open(
         os.path.join(
@@ -24,8 +23,8 @@ def validate_settings(
         try:
             validate(settings, json.load(schema))
         except ValidationError as e:
-            if print_error:
-                echo(e.message)
+            if print_error_message:
+                print_error(e.message)
             return False
 
     return True
@@ -36,9 +35,9 @@ def main(
     format: str = "auto"
 ) -> None:
     settings = read_settings(file, format)
-    is_valid = validate_settings(settings, print_error=True)
+    is_valid = validate_settings(settings, print_error_message=True)
     if not is_valid:
-        echo_red("Settings file is not valid")
+        print_error("Settings file is not valid")
         return
 
-    echo_green("Settings file is valid")
+    print_success("Settings file is valid")

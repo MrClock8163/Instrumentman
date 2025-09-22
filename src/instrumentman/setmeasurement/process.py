@@ -26,9 +26,9 @@ from geocompy.gsi.gsiformat import (
 
 from .sessions import SessionDict
 from ..utils import (
-    echo_red,
-    echo_green,
-    echo_yellow,
+    print_error,
+    print_success,
+    print_warning,
     make_directory
 )
 
@@ -131,12 +131,14 @@ def main_merge(
     try:
         validator.validate_for_merge(sessions)
     except ValidationError as ve:
-        echo_red("One of the input files does not follow the required schema")
-        echo_red(ve)
+        print_error(
+            "One of the input files does not follow the required schema"
+        )
+        print_error(ve)
         exit(4)
 
     if len(sessions) == 0:
-        echo_yellow("There were no sessions found to merge")
+        print_warning("There were no sessions found to merge")
         exit(0)
 
     session: SessionDict = {
@@ -148,11 +150,11 @@ def main_merge(
     try:
         validator.validate(session)
     except ValidationError as ve:
-        echo_red("The merging process caused a schema error")
-        echo_red(ve)
+        print_error("The merging process caused a schema error")
+        print_error(ve)
         exit(4)
     except ValueError as e:
-        echo_red(f"The merged output could not be validated ({e})")
+        print_error(f"The merged output could not be validated ({e})")
         exit(4)
 
     make_directory(str(output))
@@ -163,7 +165,7 @@ def main_merge(
             indent=4
         )
 
-    echo_green(
+    print_success(
         f"Merged {len(session['cycles'])} cycles "
         f"from {len(sessions)} sessions"
     )
@@ -183,29 +185,29 @@ def main_validate(
     if schema_only:
         try:
             validator.validate_for_merge(sessions)
-            echo_green("Schema validation succeeded")
+            print_success("Schema validation succeeded")
             exit(0)
         except ValidationError as ve:
-            echo_red(
+            print_error(
                 "One of the input files does not follow the required schema"
             )
-            echo_red(ve)
+            print_error(ve)
             exit(4)
 
     try:
         for s in sessions:
             validator.validate(s)
 
-        echo_green("Validation succeeded")
+        print_success("Validation succeeded")
         exit(0)
     except ValidationError as ve:
-        echo_red(
+        print_error(
             "One of the input files does not follow the required schema"
         )
-        echo_red(ve)
+        print_error(ve)
         exit(4)
     except ValueError as e:
-        echo_red(f"The merged output could not be validated ({e})")
+        print_error(f"The merged output could not be validated ({e})")
         exit(4)
 
 
@@ -227,12 +229,12 @@ def main_calc(
     try:
         validator.validate(data)
     except ValidationError as ve:
-        echo_red("Input data does not follow the required schema")
-        echo_red(ve)
+        print_error("Input data does not follow the required schema")
+        print_error(ve)
         exit(4)
     except ValueError as e:
-        echo_red("The input data did not pass validation")
-        echo_red(e)
+        print_error("The input data did not pass validation")
+        print_error(e)
         exit(4)
 
     points = {"points": search("cycles[].points[]", data)}
@@ -286,7 +288,7 @@ def main_calc(
 
                 d = (d + d_f2) / 2
             elif not allow_oneface:
-                echo_red("Not all measurements have data for both faces")
+                print_error("Not all measurements have data for both faces")
                 exit(4)
 
             c = stn + Coordinate.from_polar(
@@ -358,12 +360,12 @@ def main_convert_set_to_gsi(
     try:
         validator.validate(data)
     except ValidationError as ve:
-        echo_red("Input data does not follow the required schema")
-        echo_red(ve)
+        print_error("Input data does not follow the required schema")
+        print_error(ve)
         exit(4)
     except ValueError as e:
-        echo_red("The input data did not pass validation")
-        echo_red(e)
+        print_error("The input data did not pass validation")
+        print_error(e)
         exit(4)
 
     stn_e, stn_n, stn_h = data["station"]

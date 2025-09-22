@@ -8,8 +8,8 @@ from geocompy.geo import GeoCom
 from geocompy.communication import open_serial
 
 from ..utils import (
-    echo_red,
-    echo_green
+    print_error,
+    console
 )
 
 
@@ -98,7 +98,8 @@ def relay_message(
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
-        TaskProgressColumn()
+        TaskProgressColumn(),
+        console=console
     ) as progress:
         for char in progress.track(encoded, description="Relaying message"):
             match char:
@@ -121,7 +122,6 @@ def relay_message(
                         f"Invalid morse stream character: '{char}'"
                     )
 
-    echo_green("Message complete")
     logger.info("Message complete")
 
 
@@ -142,7 +142,7 @@ def main(
         try:
             message.casefold().encode("ascii")
         except UnicodeEncodeError:
-            echo_red("The message contains non-ASCII characters.")
+            print_error("The message contains non-ASCII characters.")
             logger.critical("Message contains non-ASCII characters.")
             exit(1)
 
