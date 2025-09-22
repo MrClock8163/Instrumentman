@@ -3,7 +3,6 @@ import math
 from logging import getLogger, Logger
 import json
 
-from rich.console import Console
 from rich.progress import (
     Progress,
     TextColumn,
@@ -12,14 +11,14 @@ from rich.progress import (
     TimeElapsedColumn,
     MofNCompleteColumn
 )
-from click_extra import pause, confirm
+from rich.prompt import Confirm
 from geocompy.data import Coordinate, Angle
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gcdata import Zoom
 from geocompy.geo.gctypes import GeoComCode
 
-from ..utils import echo_red, echo_yellow
+from ..utils import console, print_error, print_warning
 from .metadata import PanoramaMetadata, PanoramaFrameMetadata
 
 
@@ -129,23 +128,23 @@ def get_extents_region(
         from_v, to_v = vertical
         return from_hz, from_v, to_hz, to_v
 
-    pause(
+    console.input(
         "Aim the instrument at the left starting corner, "
-        "then press any key..."
+        "then press ENTER..."
     )
     resp_start = tps.tmc.get_angle()
     if resp_start.error != GeoComCode.OK or resp_start.params is None:
-        echo_red("Could not retrieve starting corner angles")
+        print_error("Could not retrieve starting corner angles")
         logger.critical("Could not retrieve starting corner angles")
         exit(1)
 
-    pause(
+    console.input(
         "Aim the instrument at the right finish corner, "
-        "then press any key..."
+        "then press ENTER..."
     )
     resp_end = tps.tmc.get_angle()
     if resp_end.error != GeoComCode.OK or resp_end.params is None:
-        echo_red("Could not retrieve finishing corner angles")
+        print_error("Could not retrieve finishing corner angles")
         logger.critical("Could not retrieve finishing corner angles")
         exit(1)
 
@@ -166,23 +165,23 @@ def get_extents_strip(
         from_v, to_v = vertical
         return from_hz, from_v, to_hz, to_v
 
-    pause(
+    console.input(
         "Aim the instrument at the top of the strip, "
-        "then press any key..."
+        "then press ENTER..."
     )
     resp_start = tps.tmc.get_angle()
     if resp_start.error != GeoComCode.OK or resp_start.params is None:
-        echo_red("Could not retrieve strip top angles")
+        print_error("Could not retrieve strip top angles")
         logger.critical("Could not retrieve strip top angles")
         exit(1)
 
-    pause(
+    console.input(
         "Aim the instrument at the bottom of the strip, "
-        "then press any key..."
+        "then press ENTER..."
     )
     resp_end = tps.tmc.get_angle()
     if resp_end.error != GeoComCode.OK or resp_end.params is None:
-        echo_red("Could not retrieve strip bottom angles")
+        print_error("Could not retrieve strip bottom angles")
         logger.critical("Could not retrieve strip bottom angles")
         exit(1)
 
@@ -236,19 +235,19 @@ def run_panorama(
 
     resp_zoom = tps.cam.set_zoom(zoom)
     if resp_zoom.error != GeoComCode.OK:
-        echo_red("Could set camera zoom factor")
+        print_error("Could set camera zoom factor")
         logger.critical("Could set camera zoom factor")
         exit(1)
 
     resp_fov = tps.cam.get_camera_fov(zoom=zoom)
     if resp_fov.params is None:
-        echo_red("Could not retrieve camera FOV")
+        print_error("Could not retrieve camera FOV")
         logger.critical("Could not retrieve camera FOV")
         exit(1)
 
     resp_station = tps.tmc.get_station()
     if resp_station.error != GeoComCode.OK or resp_station.params is None:
-        echo_red("Could not retrieve station coordinates")
+        print_error("Could not retrieve station coordinates")
         logger.critical("Could not retrieve station coordinates")
         exit(1)
 
@@ -285,16 +284,16 @@ def run_panorama(
         case _:
             raise ValueError("Unknown position layout")
 
-    if not confirm(
+    if not Confirm.ask(
         f"Start capturing panorama in {len(positions)} frame(s)",
-        True
+        console=console,
+        default=True
     ):
-        echo_yellow("Program cancelled")
+        print_warning("Program cancelled")
         exit()
 
     images: list[PanoramaFrameMetadata] = []
 
-    console = Console()
     progress = Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
@@ -312,31 +311,31 @@ def run_panorama(
     for idx, (hz, v) in enumerate(positions):
         resp_turn = tps.aut.turn_to(hz, v)
         if resp_turn.error != GeoComCode.OK:
-            echo_yellow("Could not turn to position")
+            print_warning("Could not turn to position")
             logger.error("Could not turn to position")
             continue
 
         resp_name = tps.cam.set_actual_image_name(prefix, idx)
         if resp_name.error != GeoComCode.OK:
-            echo_yellow("Could not set image name")
+            print_warning("Could not set image name")
             logger.error("Could not set image name")
             continue
 
         resp_img = tps.cam.take_image()
         if resp_img.error != GeoComCode.OK:
-            echo_yellow("Could not take image")
+            print_warning("Could not take image")
             logger.error("Could not take image")
             continue
 
         resp_cam_pos = tps.cam.get_camera_position()
         if resp_cam_pos.params is None:
-            echo_yellow("Could not retrieve camera position")
+            print_warning("Could not retrieve camera position")
             logger.error("Could not retrieve camera position")
             continue
 
         resp_cam_dir = tps.cam.get_camera_direction(1)
         if resp_cam_dir.params is None:
-            echo_yellow("Could not retrieve camera direction")
+            print_warning("Could not retrieve camera direction")
             logger.critical("Could not retrieve camera direction")
             continue
 

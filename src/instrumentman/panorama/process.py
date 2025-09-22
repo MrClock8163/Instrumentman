@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Sequence
 from json import JSONDecodeError
 
-from rich.console import Console
 from rich.progress import (
     Progress,
     TextColumn,
@@ -38,11 +37,11 @@ python -m pip install instrumentman[panorama]
     )
     exit(1)
 
-from ..utils import echo_yellow, echo_red
+from ..utils import print_warning, print_error, console
 from .metadata import read_metadata, PanoramaMetadata
 
 
-_MAX_SCALE = np.iinfo(np.int16).max // (2 * np.pi)
+_MAX_SCALE = np.iinfo(np.int16).max // (2 * np.pi) - 1
 
 
 def rot_x(angle: float) -> np.typing.NDArray[np.float64]:
@@ -201,7 +200,6 @@ def run_annotate(
 
     fov_w, fov_h = meta["fov"]
     center = Coordinate(*meta["center"])
-    console = Console()
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
@@ -219,7 +217,7 @@ def run_annotate(
             vec = Coordinate(*data["vector"])
             path = images.get(data["filename"])
             if path is None:
-                echo_yellow(f"Could not find '{data['filename']}'")
+                print_warning(f"Could not find '{data['filename']}'")
                 continue
 
             # Returns uint8
@@ -228,7 +226,7 @@ def run_annotate(
                 cv.IMREAD_COLOR_BGR
             )  # type: ignore[assignment]
             if img is None:
-                echo_yellow(f"Could not load '{data['filename']}'")
+                print_warning(f"Could not load '{data['filename']}'")
                 continue
 
             hz, v, _ = vec.to_polar()
@@ -275,6 +273,7 @@ def run_annotate(
                     (0.0, 0.0, 1.0)
                 )
             ).astype(np.float32)
+            # TODO: Account for axis-wise tilt
             rot: npt.NDArray[np.float32] = (
                 rot_y(float(hz))
                 @ rot_x(np.pi / 2 - float(v))
@@ -326,8 +325,8 @@ def run_annotate(
 
     console.print("Preprocessed images")
 
-    with Progress(transient=True) as progress:
-        progress.add_task(description="Finding seams...", total=None)
+    with Progress(transient=True, console=console) as progress:
+        progress.add_task(description="Finding seams", total=None)
         finder = cv.detail.SeamFinder.createDefault(seam_mode)
         seams = finder.find(
             images_warped,  # type: ignore[arg-type]
@@ -340,8 +339,8 @@ def run_annotate(
     if scale is None:
         scale = 1000
 
-    with Progress(transient=True) as progress:
-        progress.add_task(description="Merging images...", total=None)
+    with Progress(transient=True, console=console) as progress:
+        progress.add_task(description="Merging images", total=None)
         compensator = cv.detail.ExposureCompensator.createDefault(
             compenstation_mode
         )
@@ -399,7 +398,7 @@ def run_annotate(
 
     console.print("Merged images")
     if len(points) > 0:
-        with Progress(transient=True) as progress:
+        with Progress(transient=True, console=console) as progress:
             # Top left image center point for reference
             origin_x, origin_y, _, _ = cv.detail.resultRoi(
                 corners,
@@ -489,8 +488,8 @@ def run_annotate(
 
         console.print("Annotated points")
 
-    with Progress(transient=True) as progress:
-        progress.add_task("Saving final image...", total=None)
+    with Progress(transient=True, console=console) as progress:
+        progress.add_task("Saving final image", total=None)
         # For some reason the blending function returns the image as int16
         # instead uint8, and it might contain negative values. These need to be
         # clipped, otherwise the type conversion will result in color artifacts
@@ -579,7 +578,7 @@ def main(
     try:
         meta = read_metadata(metadata)
     except (ValidationError, JSONDecodeError):
-        echo_red(
+        print_error(
             "The metadata file is not a valid JSON or does not follow the "
             "required schema"
         )
@@ -669,5 +668,6 @@ def main(
             label_justify
         )
     except cv.error as cve:
-        echo_red(f"The process failed due to an OpenCV error ({cve.code})")
-        echo_red(cve.err)
+        print_error(f"The process failed due to an OpenCV error ({cve.code})")
+        print_error(cve.err)
+        raise cve
