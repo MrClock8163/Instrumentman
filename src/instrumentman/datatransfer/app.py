@@ -36,7 +36,7 @@ def main_download(
         eol_bytes = com.eombytes
         started = False
         logger.info("Starting data download")
-        logger.debug("Waiting for first line...")
+        logger.debug("Waiting for first line")
         with Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
@@ -44,7 +44,7 @@ def main_download(
             TimeElapsedColumn(),
             console=console
         ) as progress:
-            task = progress.add_task("Waiting for data...", total=None)
+            task = progress.add_task("Waiting for data", total=None)
 
             lines = 0
             while True:
@@ -52,7 +52,7 @@ def main_download(
                     data = com.receive_binary()
                     if not started:
                         started = True
-                        logger.debug("Received first line...")
+                        logger.debug("Received first line")
                         progress.update(task, description="Receiving data")
 
                     if data == eof_bytes and autoclose and not include_eof:

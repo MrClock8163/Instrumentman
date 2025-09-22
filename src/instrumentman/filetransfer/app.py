@@ -213,7 +213,7 @@ def run_listing_tree(
         transient=True
     ) as progress:
         task = progress.add_task(
-            "Indexing directories...",
+            "Indexing directories",
             total=None,
             path=""
         )

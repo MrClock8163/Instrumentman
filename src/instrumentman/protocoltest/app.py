@@ -46,7 +46,6 @@ def tests_geocom(
     )
     Confirm.ask("Proceed with tests", console=console, default=True)
 
-    console.print("Testing subsystems...")
     logger.info("Starting GeoCom tests")
     tests: list[
         tuple[str, Callable[..., GeoComResponse[Any]], tuple[Any, ...]]
@@ -105,7 +104,6 @@ def tests_gsidna(
     )
     Confirm.ask("Proceed with tests", console=console, default=True)
 
-    console.print("Testing commands...")
     logger.info("Starting GSI Online DNA tests")
     tests: list[
         tuple[str, Callable[..., GsiOnlineResponse[Any]], tuple[Any, ...]]
