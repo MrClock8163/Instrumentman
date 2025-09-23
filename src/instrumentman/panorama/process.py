@@ -14,7 +14,8 @@ from rich.progress import (
     TextColumn,
     BarColumn,
     MofNCompleteColumn,
-    TimeRemainingColumn
+    TimeRemainingColumn,
+    TimeElapsedColumn
 )
 from jsonschema import ValidationError
 from geocompy.data import Coordinate, Angle
@@ -217,8 +218,8 @@ def run_annotate(
         BarColumn(),
         MofNCompleteColumn(),
         TimeRemainingColumn(),
-        console=console,
-        transient=True
+        TimeElapsedColumn(),
+        console=console
     ) as progress:
         warper: cv.PyRotationWarper | None = None
         for data in progress.track(
@@ -312,10 +313,7 @@ def run_annotate(
             images_warped.append(image_warped)
             masks_warped.append(mask_warped)
 
-    console.print("Preprocessed images")
-
-    with Progress(transient=True, console=console) as progress:
-        progress.add_task(description="Finding seams", total=None)
+        task_seams = progress.add_task(description="Finding seams", total=None)
         finder = cv.detail.SeamFinder.createDefault(seam_mode)
         seams = finder.find(
             images_warped,  # type: ignore[arg-type]
@@ -323,13 +321,15 @@ def run_annotate(
             masks_warped  # type: ignore[arg-type]
         )
 
-    console.print("Identified seams")
+        if scale is None:
+            scale = 1000
 
-    if scale is None:
-        scale = 1000
+        progress.update(task_seams, completed=len(seams), total=len(seams))
 
-    with Progress(transient=True, console=console) as progress:
-        progress.add_task(description="Merging images", total=None)
+        task_merge = progress.add_task(
+            description="Merging images",
+            total=None
+        )
         compensator = cv.detail.ExposureCompensator.createDefault(
             compenstation_mode
         )
@@ -385,9 +385,13 @@ def run_annotate(
             None, None
         )  # type: ignore[call-overload]
 
-    console.print("Merged images")
-    if len(points) > 0:
-        with Progress(transient=True, console=console) as progress:
+        progress.update(
+            task_merge,
+            completed=len(images_warped),
+            total=len(images_warped)
+        )
+
+        if len(points) > 0:
             # Top left image center point for reference
             origin_x, origin_y, _, _ = cv.detail.resultRoi(
                 corners,
@@ -472,10 +476,7 @@ def run_annotate(
                     bottomLeftOrigin=False
                 )
 
-        console.print("Annotated points")
-
-    with Progress(transient=True, console=console) as progress:
-        progress.add_task("Saving final image", total=None)
+        task_save = progress.add_task("Saving final image", total=None)
         # For some reason the blending function returns the image as int16
         # instead uint8, and it might contain negative values. These need to be
         # clipped, otherwise the type conversion will result in color artifacts
@@ -485,9 +486,7 @@ def run_annotate(
             str(output),
             result.astype(np.uint8)
         )
-
-    console.print("Saved final image")
-    console.print("Panorama complete", style="green")
+        progress.update(task_save, completed=1, total=1)
 
 
 _MARKER_MAP = {
