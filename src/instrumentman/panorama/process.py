@@ -171,7 +171,6 @@ def run_annotate(
     shift: Angle,
     scale: float | None = None,
     points: list[tuple[str, Coordinate, str]] = [],
-    camera_offset: Coordinate | None = None,
     compenstation_mode: int = cv.detail.EXPOSURE_COMPENSATOR_GAIN,
     blending_mode: int = cv.detail.BLENDER_MULTI_BAND,
     seam_mode: int = cv.detail.SEAM_FINDER_VORONOI_SEAM,
@@ -196,10 +195,23 @@ def run_annotate(
     centers: list[tuple[int, int, Angle, Angle]] = []
     images_warped: list[npt.NDArray[np.uint8]] = []
     masks_warped: list[npt.NDArray[np.uint8]] = []
-    cam_offsets: list[Coordinate] = []
 
-    fov_w, fov_h = meta["fov"]
     center = Coordinate(*meta["center"])
+    focal = meta["focal"]
+    principal_x, principal_y = meta["principal"]
+    camera_offset = Coordinate(*meta["camera_offset"])
+    camera_yaw = meta["camera_deviation"][0]
+    camera_pitch = meta["camera_deviation"][1]
+    camera_roll = meta["camera_deviation"][2]
+
+    instrinsics: npt.NDArray[np.float32] = np.array(
+        (
+            (focal, 0.0, principal_x),
+            (0.0, focal, principal_y),
+            (0.0, 0.0, 1.0)
+        )
+    ).astype(np.float32)
+
     with Progress(
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
@@ -213,7 +225,6 @@ def run_annotate(
             meta["images"],
             description="Preprocessing images"
         ):
-            pos = Coordinate(*data["position"])
             vec = Coordinate(*data["vector"])
             path = images.get(data["filename"])
             if path is None:
@@ -234,8 +245,6 @@ def run_annotate(
             height: int
             width: int
             height, width, _ = img.shape
-            f_w: float = width / 2 / np.tan(fov_w / 2)
-            f_h: float = height / 2 / np.tan(fov_h / 2)
 
             if visualize_stitch:
                 img = np.stack(
@@ -261,22 +270,15 @@ def run_annotate(
 
             if warper is None:
                 if scale is None:
-                    scale = (f_w + f_h) / 2
+                    scale = focal
 
                 scale = min(scale, _MAX_SCALE)
                 warper = cv.PyRotationWarper("spherical", scale)
 
-            instrinsics: npt.NDArray[np.float32] = np.array(
-                (
-                    (f_w, 0.0, width/2),
-                    (0.0, f_h, height/2),
-                    (0.0, 0.0, 1.0)
-                )
-            ).astype(np.float32)
-            # TODO: Account for axis-wise tilt
             rot: npt.NDArray[np.float32] = (
                 rot_y(float(hz))
                 @ rot_x(np.pi / 2 - float(v))
+                @ rot_z(-camera_roll)
             ).astype(np.float32)
 
             # Maintains input type (uint8)
@@ -309,19 +311,6 @@ def run_annotate(
             corners.append(corner)
             images_warped.append(image_warped)
             masks_warped.append(mask_warped)
-
-            # The de-rotation of the camera offset is not completely accurate
-            # since the optical axis of the camera might not be parallel to the
-            # axis of the telescope (which results in some angle deviation),
-            # but it is good enough estimation in case the offset is not
-            # precisely known beforehand.
-            #
-            # The matrix used in the spherical warp cannot be reused here,
-            # because OpenCV uses a different axis orientation order.
-            offset_rot = rot_z(float(hz)) @ rot_x(np.pi / 2 - float(v))
-            cam_offsets.append(
-                apply_rotation(pos - center, np.linalg.inv(offset_rot))
-            )
 
     console.print("Preprocessed images")
 
@@ -410,9 +399,6 @@ def run_annotate(
 
             full_360 = round(scale * np.pi * 2)
 
-            if camera_offset is None:
-                camera_offset = mean_coordinate(cam_offsets)
-
             for pt, coord, label in progress.track(
                 points,
                 description="Annotating points"
@@ -422,8 +408,8 @@ def run_annotate(
                 # is rotated with the preliminary angles.
                 prelim_hz, prelim_v, _ = (coord - center).to_polar()
                 offset_rot = (
-                    rot_z(float((prelim_hz - shift).normalized()))
-                    @ rot_x(np.pi / 2 - float(prelim_v))
+                    rot_z(float((prelim_hz - shift).normalized()) - camera_yaw)
+                    @ rot_x(np.pi / 2 - float(prelim_v) - camera_pitch)
                 )
                 pt_hz, pt_v, _ = (
                     coord
@@ -547,7 +533,6 @@ def main(
     metadata: Path,
     output: Path,
     image: tuple[Path],
-    camera_offset: tuple[float, float, float] | None = None,
     shift: str | None = None,
     compensation: str = "channel",
     blending: str = "multiband",
@@ -596,15 +581,6 @@ def main(
     elif height is not None:
         scale = height / np.pi
 
-    if camera_offset is not None:
-        cam_offset = Coordinate(
-            camera_offset[0],
-            camera_offset[1],
-            camera_offset[2]
-        )
-    else:
-        cam_offset = None
-
     color = (color[2], color[1], color[0])
     if label_color is None:
         label_color = color
@@ -646,7 +622,6 @@ def main(
             Angle.from_dms(shift) if shift is not None else Angle(0),
             scale,
             points,
-            cam_offset,
             _COMP_MAP[compensation],
             _BLEND_MAP[blending],
             _SEAM_MAP[seams],

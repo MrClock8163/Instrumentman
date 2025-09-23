@@ -255,6 +255,22 @@ def run_panorama(
         logger.critical("Could not retrieve station coordinates")
         exit(1)
 
+    resp_intrinsic = tps.cam.get_overview_interior_orientation()
+    if resp_intrinsic.error != GeoComCode.OK or resp_intrinsic.params is None:
+        print_error("Could not retrieve camera intrinsics")
+        logger.critical("Could not retrieve camera intrinsics")
+        exit(1)
+
+    cx, cy, focal, pixelsize = resp_intrinsic.params
+
+    resp_extrinsic = tps.cam.get_overview_exterior_orientation()
+    if resp_extrinsic.error != GeoComCode.OK or resp_extrinsic.params is None:
+        print_error("Could not retrieve camera extrinsics")
+        logger.critical("Could not retrieve camera extrinsics")
+        exit(1)
+
+    offset, yaw, pitch, roll = resp_extrinsic.params
+
     station, hi = resp_station.params
     center = station + Coordinate(0, 0, hi)
 
@@ -361,8 +377,15 @@ def run_panorama(
     tps.aut.turn_to(0, math.pi)
 
     metadata: PanoramaMetadata = {
-        "fov": (float(fov_hz), float(fov_v)),
         "center": (center.x, center.y, center.z),
+        "focal": focal / pixelsize,
+        "principal": (cx, cy),
+        "camera_offset": (offset.x, offset.y, offset.z),
+        "camera_deviation": (
+            float(yaw),
+            float(pitch),
+            float(roll)
+        ),
         "images": images
     }
     json.dump(metadata, file, indent=4)

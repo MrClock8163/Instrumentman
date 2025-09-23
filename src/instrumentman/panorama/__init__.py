@@ -190,11 +190,6 @@ def cli_measure(**kwargs: Any) -> None:
     required=True
 )
 @option(
-    "--camera-offset",
-    help="Axis-aligned camera offset from the instrument center",
-    type=(float, float, float)
-)
-@option(
     "--shift",
     help=(
         "Shift bearing of panorama center to reorient view and potentially "

@@ -14,8 +14,11 @@ class PanoramaFrameMetadata(TypedDict):
 
 
 class PanoramaMetadata(TypedDict):
-    fov: tuple[float, float]  # horizontal, vertical
     center: tuple[float, float, float]
+    focal: float
+    principal: tuple[float, float]
+    camera_offset: tuple[float, float, float]
+    camera_deviation: tuple[float, float, float]
     images: list[PanoramaFrameMetadata]
 
 

@@ -3,20 +3,46 @@
     "description": "Additional data needed for panorama stitching and annotation",
     "type": "object",
     "additionalProperties": false,
-    "required": ["fov", "center", "images"],
+    "required": ["center", "focal", "principal", "camera_offset", "camera_deviation", "images"],
     "properties": {
-        "fov": {
-            "description": "Horizontal and vertical field of view in radians",
+        "center": {
+            "description": "Instrument center position",
             "type": "array",
-            "minItems": 2,
-            "maxItems": 2,
+            "minItems": 3,
+            "maxItems": 3,
             "items": {
                 "type": "number",
                 "unevaluatedItems": false
             }
         },
-        "center": {
-            "description": "Instrument center position",
+        "focal": {
+            "description": "Focal length in pixels",
+            "type": "number",
+            "minimum": 1.0
+        },
+        "principal": {
+            "description": "Image coordinates of principal point (x-y)",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false,
+                "minimum": 0.0
+            }
+        },
+        "camera_offset": {
+            "description": "Camera center offset from center (x-y-z)",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false
+            }
+        },
+        "camera_deviation": {
+            "description": "Camera axis deviation (yaw-pitch-roll) in radians",
             "type": "array",
             "minItems": 3,
             "maxItems": 3,
