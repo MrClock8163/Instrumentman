@@ -45,7 +45,8 @@ def image_positions(
     redfov_hz = fov_hz * (1 - overlap_hz / 50)
     redfov_v = fov_v * (1 - overlap_v / 50)
 
-    delta_v = delta_v - redfov_v
+    if redfov_v < delta_v:
+        delta_v -= redfov_v
 
     rows = math.ceil(float(delta_v) / float(redfov_v))
     delta_v = redfov_v * rows
@@ -185,8 +186,11 @@ def get_extents_strip(
         logger.critical("Could not retrieve strip bottom angles")
         exit(1)
 
-    from_hz, from_v = resp_start.params
-    to_hz, to_v = resp_end.params
+    _, from_v = resp_start.params
+    _, to_v = resp_end.params
+
+    from_hz = Angle(0)
+    to_hz = Angle.from_dms("359-59-59")
 
     return from_hz, from_v, to_hz, to_v
 
