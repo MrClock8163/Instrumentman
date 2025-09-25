@@ -42,7 +42,7 @@ from ..utils import print_warning, print_error, console
 from .metadata import read_metadata, PanoramaMetadata
 
 
-_MAX_SCALE = np.iinfo(np.int16).max // (2 * np.pi) - 1
+_MAX_SCALE = 5210  # np.iinfo(np.int16).max // (2 * np.pi)
 
 
 def rot_x(angle: float) -> np.typing.NDArray[np.float64]:

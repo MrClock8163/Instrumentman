@@ -249,17 +249,17 @@ def cli_measure(**kwargs: Any) -> None:
     option(
         "--scale",
         help="Panorama scale in [pixels/rad]",
-        type=FloatRange(0, 5215, min_open=True)
+        type=FloatRange(0, 5210, min_open=True)
     ),
     option(
         "--width",
         help="Width of complete sphere panorama in [pixels]",
-        type=IntRange(0, 32767, min_open=True)
+        type=IntRange(0, 32735, min_open=True)
     ),
     option(
         "--height",
         help="Height of complete sphere panorama in [pixels]",
-        type=IntRange(0, 16383, min_open=True)
+        type=IntRange(0, 16367, min_open=True)
     ),
     constraint=mutually_exclusive
 )
