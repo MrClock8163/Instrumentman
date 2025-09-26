@@ -100,7 +100,12 @@ def print_style(
     style: str | Style,
     newline: bool = True
 ) -> None:
-    console.print(message, style=style, end="\n" if newline else "")
+    console.print(
+        message,
+        style=style,
+        end="\n" if newline else "",
+        highlight=False
+    )
 
 
 def print_warning(
