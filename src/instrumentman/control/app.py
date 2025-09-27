@@ -15,7 +15,7 @@ def main_shutdown_geocom(
     baud: int = 9600,
     sync_after_timeout: bool = False
 ) -> None:
-    logger = getLogger("iman.files.list")
+    logger = getLogger("iman.control.shutdown_geocom")
     with open_serial(
         port,
         speed=baud,
@@ -59,7 +59,7 @@ def main_startup_geocom(
     baud: int = 9600,
     sync_after_timeout: bool = False
 ) -> None:
-    logger = getLogger("iman.files.list")
+    logger = getLogger("iman.control.startup_geocom")
     with open_serial(
         port,
         speed=baud,
