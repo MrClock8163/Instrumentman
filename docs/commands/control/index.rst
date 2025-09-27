@@ -10,4 +10,6 @@ certain components of an instrument.
     :maxdepth: 1
 
     shutdown_geocom
+    shutdown_gsidna
     startup_geocom
+    startup_gsidna

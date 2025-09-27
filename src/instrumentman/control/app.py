@@ -3,8 +3,35 @@ from logging import getLogger
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
+from geocompy.gsi.dna import GsiOnlineDNA
 
 from ..utils import print_error
+
+
+def main_shutdown_gsidna(
+    port: str,
+    timeout: int = 15,
+    retry: int = 1,
+    baud: int = 9600,
+    sync_after_timeout: bool = False
+) -> None:
+    logger = getLogger("iman.control.shutdown-gsidna")
+    with open_serial(
+        port,
+        speed=baud,
+        timeout=timeout,
+        retry=retry,
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
+    ) as com:
+        instrument = GsiOnlineDNA(com, logger.getChild("instrument"))
+        resp = instrument.shutdown()
+
+        if resp.value:
+            print_error(
+                f"Could not shut down instrument ({resp.response})"
+            )
+            exit(1)
 
 
 def main_shutdown_geocom(
@@ -15,7 +42,7 @@ def main_shutdown_geocom(
     baud: int = 9600,
     sync_after_timeout: bool = False
 ) -> None:
-    logger = getLogger("iman.control.shutdown_geocom")
+    logger = getLogger("iman.control.shutdown-geocom")
     with open_serial(
         port,
         speed=baud,
@@ -51,6 +78,32 @@ def main_shutdown_geocom(
             exit(1)
 
 
+def main_startup_gsidna(
+    port: str,
+    timeout: int = 15,
+    retry: int = 1,
+    baud: int = 9600,
+    sync_after_timeout: bool = False
+) -> None:
+    logger = getLogger("iman.control.startup-gsidna")
+    with open_serial(
+        port,
+        speed=baud,
+        timeout=timeout,
+        retry=retry,
+        sync_after_timeout=sync_after_timeout,
+        logger=logger.getChild("com")
+    ) as com:
+        instrument = GsiOnlineDNA(com, logger.getChild("instrument"))
+        resp = instrument.wakeup()
+
+        if resp.value:
+            print_error(
+                f"Could not shut down instrument ({resp.response})"
+            )
+            exit(1)
+
+
 def main_startup_geocom(
     component: str,
     port: str,
@@ -59,7 +112,7 @@ def main_startup_geocom(
     baud: int = 9600,
     sync_after_timeout: bool = False
 ) -> None:
-    logger = getLogger("iman.control.startup_geocom")
+    logger = getLogger("iman.control.startup-geocom")
     with open_serial(
         port,
         speed=baud,
