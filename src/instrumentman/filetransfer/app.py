@@ -295,7 +295,7 @@ def run_download(
                 )
                 return
 
-            file.write(bytes.fromhex(resp_pull.params))
+            file.write(resp_pull.params)
 
     logger.info("Download complete")
 
