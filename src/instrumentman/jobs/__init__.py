@@ -1,6 +1,6 @@
 from typing import Any
 
-from click_extra import extra_command
+from click_extra import extra_command, Choice, option
 
 from ..utils import (
     com_option_group,
@@ -15,6 +15,22 @@ from ..utils import (
 )  # type: ignore[misc]
 @com_port_argument()
 @com_option_group()
+@option(
+    "-d",
+    "--device",
+    help="Memory device",
+    type=Choice(
+        (
+            "internal",
+            "cf",
+            "sd",
+            "usb",
+            "ram"
+        ),
+        case_sensitive=False
+    ),
+    default="internal"
+)
 def cli_list(**kwargs: Any) -> None:
     """
     List job files on an instrument.

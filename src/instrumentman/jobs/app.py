@@ -5,16 +5,18 @@ from rich.table import Table, Column
 from geocompy.communication import open_serial
 from geocompy.geo import GeoCom
 from geocompy.geo.gctypes import GeoComCode
+from geocompy.geo.gcdata import Device
 
 from ..utils import print_error, print_warning, console
 
 
 def run_listing(
     tps: GeoCom,
+    device: Device,
     logger: Logger
 ) -> None:
     logger.info("Starting job listing")
-    resp_setup = tps.csv.setup_listing()
+    resp_setup = tps.csv.setup_listing(device)
     if resp_setup.error != GeoComCode.OK:
         print_error("Could not set up listing")
         logger.critical(
@@ -58,12 +60,22 @@ def run_listing(
     logger.info("Listing complete")
 
 
+_DEVICE = {
+    "internal": Device.INTERNAL,
+    "cf": Device.CFCARD,
+    "sd": Device.SDCARD,
+    "usb": Device.USB,
+    "ram": Device.RAM
+}
+
+
 def main_list(
     port: str,
     baud: int = 9600,
     timeout: int = 15,
     retry: int = 1,
-    sync_after_timeout: bool = False
+    sync_after_timeout: bool = False,
+    device: str = "internal"
 ) -> None:
     logger = getLogger("iman.jobs.list")
     with open_serial(
@@ -76,6 +88,6 @@ def main_list(
     ) as com:
         tps = GeoCom(com, logger.getChild("instrument"))
         try:
-            run_listing(tps, logger)
+            run_listing(tps, _DEVICE[device], logger)
         finally:
             tps.csv.abort_listing()
