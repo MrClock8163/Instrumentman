@@ -31,4 +31,5 @@ Applications
     commands/data/index
     commands/jobs/index
     commands/settings/index
+    commands/control/index
     commands/station/index
