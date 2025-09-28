@@ -26,6 +26,7 @@ from . import filetransfer
 from . import jobs
 from . import datatransfer
 from . import settings
+from . import control
 
 
 @extra_group(
@@ -151,6 +152,22 @@ def cli_upload() -> None:
     """Upload data to the instrument."""
 
 
+@cli.group(
+    "shutdown",
+    aliases=["sh", "exit", "deactivate", "turnoff", "switchoff"]
+)  # type: ignore[misc]
+def cli_shutdown() -> None:
+    """Deactivate various instrument functions."""
+
+
+@cli.group(
+    "startup",
+    aliases=["st", "enter", "activate", "turnon", "switchon"]
+)  # type: ignore[misc]
+def cli_startup() -> None:
+    """Activate various instrument functions."""
+
+
 cli.add_command(morse.cli)
 cli.add_command(terminal.cli)
 cli_measure.add_command(setmeasurement.cli_measure)
@@ -178,3 +195,7 @@ cli_convert.add_command(setup.cli_convert_targets_to_csv)
 cli_convert.add_command(setup.cli_convert_gsi_to_targets)
 cli_convert.add_command(setup.cli_convert_targets_to_gsi)
 cli_convert.add_command(setmeasurement.cli_convert_set_to_gsi)
+cli_shutdown.add_command(control.cli_shutdown_geocom)
+cli_shutdown.add_command(control.cli_shutdown_gsidna)
+cli_startup.add_command(control.cli_startup_geocom)
+cli_startup.add_command(control.cli_startup_gsidna)

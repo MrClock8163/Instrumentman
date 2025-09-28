@@ -9,6 +9,10 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added GeoCom shutdown utility (`shutdown geocom`)
+- Added GeoCom startup utility (`startup geocom`)
+- Added GSI Online DNA shutdown utility (`shutdown gsidna`)
+- Added GSI Online DNA startup utility (`startup gsidna`)
 - Added memory `device` option to job listing
 
 ### Changed
