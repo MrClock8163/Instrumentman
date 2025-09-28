@@ -2,6 +2,7 @@ import math
 from typing import Sequence
 
 import numpy as np
+import numpy.typing as npt
 from geocompy.data import Angle, Coordinate
 
 
@@ -132,7 +133,7 @@ def _weights_resection_horizontal(
     accuracy_hz: float = 1,
     accuracy_v: float = 1,
     accuracy_d: tuple[float, float] = (1, 1.5)
-) -> np.ndarray:
+) -> npt.NDArray[np.floating]:
     weights: list[float] = []
 
     accuracy_sd, accuracy_sd_ppm = accuracy_d
@@ -162,7 +163,7 @@ def _weights_resection_vertical(
     targets: list[Coordinate],
     *,
     accuracy_v: float = 1
-) -> np.ndarray:
+) -> npt.NDArray[np.floating]:
     weights: list[float] = []
 
     accuracy_v_rad = math.radians(accuracy_v / 3600)
@@ -187,8 +188,8 @@ def _iter_resection_horizontal(
     targets: list[Coordinate],
     station: Coordinate,
     orientation: Angle,
-    weights: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray]:
+    weights: npt.NDArray[np.floating],
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
     design_float, obs_float = _matrices_resection_horizontal(
         measurements,
         targets,
@@ -215,8 +216,8 @@ def _iter_resection_vertical(
     measurements: list[tuple[Angle, Angle, float]],
     targets: list[Coordinate],
     station: Coordinate,
-    weights: np.ndarray
-) -> tuple[np.ndarray, np.ndarray]:
+    weights: npt.NDArray[np.floating]
+) -> tuple[npt.NDArray[np.floating], npt.NDArray[np.floating]]:
     design_float, obs_float = _matrices_resection_vertical(
         measurements,
         targets,
@@ -262,7 +263,10 @@ def resection_horizontal(
     o_tolerance = float(orientation_tolerance)
 
     if uniform_weights:
-        weights = np.eye(len(measurements) * 2)
+        weights: npt.NDArray[np.floating] = np.eye(
+            len(measurements) * 2,
+            dtype=np.float64
+        )
     else:
         weights = _weights_resection_horizontal(
             measurements,
@@ -316,7 +320,10 @@ def resection_vertical(
     accuracy_v: float = 1
 ) -> tuple[Coordinate, Coordinate]:
     if uniform_weights:
-        weights = np.eye(len(measurements))
+        weights: npt.NDArray[np.floating] = np.eye(
+            len(measurements),
+            dtype=np.float64
+        )
     else:
         weights = _weights_resection_vertical(
             measurements,
