@@ -1,6 +1,7 @@
 from datetime import datetime
 from logging import Logger, getLogger
-from typing import Iterator, Literal
+from typing import Literal
+from collections.abc import Iterator
 from itertools import chain
 import pathlib
 

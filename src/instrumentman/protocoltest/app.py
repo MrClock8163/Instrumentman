@@ -1,5 +1,6 @@
 from logging import Logger, getLogger
-from typing import Callable, Any
+from typing import Any
+from collections.abc import Callable
 
 from rich.live import Live
 from rich.table import Table, Column

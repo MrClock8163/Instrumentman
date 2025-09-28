@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from io import BufferedWriter
-from typing import TypedDict, Callable
+from typing import TypedDict
+from collections.abc import Callable
 import os
 from re import compile, IGNORECASE
 from logging import getLogger, Logger

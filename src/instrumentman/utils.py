@@ -14,7 +14,8 @@ from logging import (
 from sys import stdout, stderr
 from logging.handlers import RotatingFileHandler
 import os
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
+from collections.abc import Callable
 from re import compile
 from pathlib import Path
 

@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 import json
 import re
-from typing import TypedDict, Iterator, Any, overload
+from typing import TypedDict, Any, overload
+from collections.abc import Iterator
 from io import TextIOWrapper
 
 from jsonschema import validate

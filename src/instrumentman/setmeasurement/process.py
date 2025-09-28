@@ -1,7 +1,7 @@
 import os
 import json
 import math
-from typing import Sequence
+from collections.abc import Sequence
 import pathlib
 from io import TextIOWrapper
 

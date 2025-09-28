@@ -1,5 +1,6 @@
 from time import sleep
-from typing import Callable, Any
+from typing import Any
+from collections.abc import Callable
 from logging import Logger, getLogger
 
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn

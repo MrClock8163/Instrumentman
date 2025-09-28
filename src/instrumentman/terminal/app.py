@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 from enum import IntEnum
 import logging
-from typing import Any, cast, Callable
+from typing import Any, cast
+from collections.abc import Callable
 import inspect
 from textwrap import dedent
 

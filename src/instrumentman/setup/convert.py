@@ -1,6 +1,7 @@
 from io import TextIOWrapper
 import csv
-from typing import cast, Callable
+from typing import cast
+from collections.abc import Callable
 
 from rich.prompt import Prompt, FloatPrompt
 from jsonschema import ValidationError

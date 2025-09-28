@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Callable, Any
+from typing import Any
+from collections.abc import Callable
 from enum import Enum
 from logging import Logger, getLogger
 
