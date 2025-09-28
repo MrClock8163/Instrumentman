@@ -7,9 +7,18 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+### Added
+
+- Added memory `device` option to job listing
+
 ### Changed
 
+- `geocompy` dependency minimum version was bumped to `v0.13.0`
 - All console output was updated to use the `rich` package instead of `click`
+
+### Fixed
+
+- Package could not be installed from ZIP due to a missing version fallback
 
 ## v0.4.0 (2025-08-26)
 
