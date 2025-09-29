@@ -10,7 +10,7 @@ taken, preferably in different horizontal positions of the instrument.
 Requirements
 ------------
 
-- GeoCom capable robotic total station
+- GeoCOM capable robotic total station
 
 Results
 -------

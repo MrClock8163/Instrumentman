@@ -14,7 +14,7 @@ manually cleaned of the irrelevant or unwanted settings.
 Requirements
 ------------
 
-- GeoCom capable instrument
+- GeoCOM capable instrument
 
 or
 
@@ -24,7 +24,7 @@ Examples
 --------
 
 .. code-block:: shell
-    :caption: Saving only applicable GeoCom settings
+    :caption: Saving only applicable GeoCOM settings
 
     iman download settings COM1 geocom tps_settings.json
 

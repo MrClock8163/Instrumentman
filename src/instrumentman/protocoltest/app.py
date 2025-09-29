@@ -36,9 +36,9 @@ def tests_geocom(
     tps: GeoCom,
     logger: Logger
 ) -> None:
-    console.print("GeoCom connection successful")
+    console.print("GeoCOM connection successful")
     console.print(
-        "Various GeoCom functions will be tested. Certain settings will be "
+        "Various GeoCOM functions will be tested. Certain settings will be "
         "changed on the instrument (ATR off, prism target off, etc.)."
     )
     console.print(
@@ -47,7 +47,7 @@ def tests_geocom(
     )
     Confirm.ask("Proceed with tests", console=console, default=True)
 
-    logger.info("Starting GeoCom tests")
+    logger.info("Starting GeoCOM tests")
     tests: list[
         tuple[str, Callable[..., GeoComResponse[Any]], tuple[Any, ...]]
     ] = [

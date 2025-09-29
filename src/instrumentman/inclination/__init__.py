@@ -56,7 +56,7 @@ def cli_measure(**kwargs: Any) -> None:
     position, the two inclination components, as well as the bearing is
     recorded for later processing.
 
-    This command requires a GeoCom capable total station.
+    This command requires a GeoCOM capable total station.
     """
     from .app import main_measure
 

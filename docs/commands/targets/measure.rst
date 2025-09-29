@@ -22,7 +22,7 @@ aimed at.
 Requirements
 ------------
 
-- GeoCom capable robotic total station with ATR
+- GeoCOM capable robotic total station with ATR
 
 Usage
 -----

@@ -332,7 +332,7 @@ class GeoComTerminal(App[None]):
                     yield Label("Protocol")
                     yield Select(
                         [
-                            ("GeoCom", Protocol.GEOCOM),
+                            ("GeoCOM", Protocol.GEOCOM),
                             ("GSI Online DNA", Protocol.GSIDNA)
                         ],
                         allow_blank=False,
@@ -503,7 +503,7 @@ class GeoComTerminal(App[None]):
             match self.query_one("#select_protocol", Select).value:
                 case Protocol.GEOCOM:
                     self.protocol = GeoCom(com, log)
-                    self.sub_title = f"GeoCom ({com._port.port})"
+                    self.sub_title = f"GeoCOM ({com._port.port})"
                 case Protocol.GSIDNA:
                     self.protocol = GsiOnlineDNA(com, log)
                     self.sub_title = f"GSI Online DNA ({com._port.port})"

@@ -94,7 +94,7 @@ def cli_measure(**kwargs: Any) -> None:
 
     The measurement results are saved in a JSON format for later processing.
 
-    This command requires a GeoCom capable robotic total station, that has
+    This command requires a GeoCOM capable robotic total station, that has
     ATR.
     """
     from .measure import main

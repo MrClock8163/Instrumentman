@@ -74,7 +74,7 @@ def cli(
 
     Instrumentman (or I-man for short) is a collection of command line programs
     related to the automation of surveying instruments (primarily robotic total
-    stations) through serial line command protocols (mainly Leica GeoCom).
+    stations) through serial line command protocols (mainly Leica GeoCOM).
 
     The individual commands are available through their respective action
     based command groups. The help page for each command can be accessed

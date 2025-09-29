@@ -9,8 +9,8 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Added GeoCom shutdown utility (`shutdown geocom`)
-- Added GeoCom startup utility (`startup geocom`)
+- Added GeoCOM shutdown utility (`shutdown geocom`)
+- Added GeoCOM startup utility (`startup geocom`)
 - Added GSI Online DNA shutdown utility (`shutdown gsidna`)
 - Added GSI Online DNA startup utility (`startup gsidna`)
 - Added memory `device` option to job listing
@@ -104,7 +104,7 @@ subcommands under a common `iman` entry command.
 ### Added
 
 - `iman` command line entry point
-- GeoCom protocol tester (`test geocom`)
+- GeoCOM protocol tester (`test geocom`)
 - GSI Online DNA protocol tester (`test gsidna`)
 - file lister (`list files`)
 - job lister (`list jobs`)

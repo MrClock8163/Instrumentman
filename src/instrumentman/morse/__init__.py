@@ -56,7 +56,7 @@ def cli(**kwargs: Any) -> None:
     """
     Play a Morse encoded ASCII message through the beep signals.
 
-    This command requires a GeoCom capable total station, that supports
+    This command requires a GeoCOM capable total station, that supports
     the required audio signal types (TPS1000 to TPS1200+, VivaTPS seem to have
     changed the commands, and they are not documented).
     """

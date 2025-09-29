@@ -17,10 +17,10 @@ from ..utils import (
 @com_option_group()
 def cli_geocom(**kwargs: Any) -> None:
     """
-    Test the availability of various GeoCom protocol functions on an
+    Test the availability of various GeoCOM protocol functions on an
     instrument.
 
-    From each GeoCom subsystem, a single command is run to test the
+    From each GeoCOM subsystem, a single command is run to test the
     responsiveness of the instrument. Some of the commands might change
     instrument settings.
 

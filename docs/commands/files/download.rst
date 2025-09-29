@@ -14,7 +14,7 @@ by either a file name and type, or a full file path.
 Requirements
 ------------
 
-- GeoCom capable instrument
+- GeoCOM capable instrument
 
 Process
 -------

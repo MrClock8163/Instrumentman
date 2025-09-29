@@ -12,7 +12,7 @@ displayed.
 Requirements
 ------------
 
-- GeoCom capable instrument
+- GeoCOM capable instrument
 
 Paths
 -----

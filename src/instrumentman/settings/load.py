@@ -77,7 +77,7 @@ def upload_settings_geocom(
     logger: Logger,
     settings: SettingsDict
 ) -> None:
-    logger.info("Starting GeoCom settings upload")
+    logger.info("Starting GeoCOM settings upload")
     for item in settings["settings"]:
         sysname = item["subsystem"]
         subsystem: Any = getattr(protocol, sysname)

@@ -10,7 +10,7 @@ Requirements
 ------------
 
 - Target definition file (see the Targets application)
-- GeoCom capable robotic total station with ATR
+- GeoCOM capable robotic total station with ATR
 
 Order
 -----

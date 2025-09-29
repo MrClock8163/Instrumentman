@@ -11,7 +11,7 @@ associated files, possibly the chunks, point code files, etc.).
 Requirements
 ------------
 
-- GeoCom capable instrument
+- GeoCOM capable instrument
 
 Usage
 -----

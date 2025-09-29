@@ -56,7 +56,7 @@ def cli_download(**kwargs: Any) -> None:
     are enabled. If defaults are enabled, the default values are saved for
     missing commands.
 
-    This command requires a GeoCom capable instrument.
+    This command requires a GeoCOM capable instrument.
     """
     from .save import main
 
@@ -89,7 +89,7 @@ def cli_upload(**kwargs: Any) -> None:
     The options are read from the settings config file, and the corresponding
     instrument commands are executed with the supplied values.
 
-    This command requires a GeoCom capable instrument.
+    This command requires a GeoCOM capable instrument.
     """
     from .load import main
 

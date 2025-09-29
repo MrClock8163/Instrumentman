@@ -1,7 +1,7 @@
-GeoCom
+GeoCOM
 ======
 
-The GeoCom protocol test suite runs commands from all GeoCom subsystems, to
+The GeoCOM protocol test suite runs commands from all GeoCOM subsystems, to
 see what part of the protocol might be usable on the instrument.
 
 .. note::
@@ -15,7 +15,7 @@ see what part of the protocol might be usable on the instrument.
 Requirements
 ------------
 
-- GeoCom capable instrument
+- GeoCOM capable instrument
 
 Usage
 -----

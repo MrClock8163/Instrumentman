@@ -15,7 +15,7 @@ the structure must follow the required schema.
 Requirements
 ------------
 
-- GeoCom capable instrument
+- GeoCOM capable instrument
 
 or
 

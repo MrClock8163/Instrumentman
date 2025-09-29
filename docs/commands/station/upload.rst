@@ -13,7 +13,7 @@ coordinates, instrument height and orientation.
 Requirements
 ------------
 
-- GeoCom capable total station
+- GeoCOM capable total station
 
 Usage
 -----

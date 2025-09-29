@@ -41,7 +41,7 @@ def cli_list(**kwargs: Any) -> None:
     (e.g. digital levels seem to list both job files and related point code
     files as well), the job directories or the database files themselves.
 
-    This command requires a GeoCom capable instrument.
+    This command requires a GeoCOM capable instrument.
     """
     from .app import main_list
 

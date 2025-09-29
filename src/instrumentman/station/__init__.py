@@ -123,7 +123,7 @@ def cli_upload(**kwargs: Any) -> None:
     This program cen be used to update the station coordinates and height,
     and/or the orientation or azimuth.
 
-    This command requires a GeoCom capable total station.
+    This command requires a GeoCOM capable total station.
     """
     from .upload import main
 

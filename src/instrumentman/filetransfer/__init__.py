@@ -82,7 +82,7 @@ def cli_list(**kwargs: Any) -> None:
     formats are shown green. Image and drawing formats are shown in magenta.
     Database files are red. Other files are shown without special color.
 
-    This command requires a GeoCom capable instrument, that supports file
+    This command requires a GeoCOM capable instrument, that supports file
     operations (TPS1200 and later).
     """
     from .app import main_list
@@ -167,7 +167,7 @@ def cli_download(**kwargs: Any) -> None:
     baud and chunk size. Use the highest baud supported by the instrument, and
     the largest chunk size for the fastest download.
 
-    This command requires a GeoCom capable instrument, that supports file
+    This command requires a GeoCOM capable instrument, that supports file
     operations (TPS1200 and later).
     """
     from .app import main_download

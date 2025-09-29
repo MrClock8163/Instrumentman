@@ -14,7 +14,7 @@ commands. The responses are displayed in a log format.
 Requirements
 ------------
 
-- GeoCom capable instrument
+- GeoCOM capable instrument
 
 or
 
