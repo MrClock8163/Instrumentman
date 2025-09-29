@@ -12,7 +12,7 @@ necessary metadata automatically being recorded as reported by the instrument.
 Requirements
 ------------
 
-- GeoCom capable robotic total station with overview camera and imaging license
+- GeoCOM capable robotic total station with overview camera and imaging license
 
 Positions
 ---------
