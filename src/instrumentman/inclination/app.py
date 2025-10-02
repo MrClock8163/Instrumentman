@@ -4,7 +4,6 @@ from math import tan, atan, degrees
 from re import compile
 from logging import Logger, getLogger
 
-from rich.console import Console
 from rich.progress import track
 from rich.table import Table, Column
 from geocompy.data import Angle, Coordinate
@@ -13,7 +12,7 @@ from geocompy.geo.gctypes import GeoComCode
 from geocompy.communication import open_serial
 
 from ..calculations import adjust_uniform_single
-from ..utils import print_success, console
+from ..utils import print_success, print_warning, print_error, console
 
 
 _LINE = compile(r"^\d+(?:\.\d+)?(?:,\-?\d+\.\d+){2}$")
@@ -44,16 +43,23 @@ def run_measure(
         f", {cycles * positions:d} position(s) total, "
         f"starting at {start:d} degrees"
     )
-    con = Console()
     values: list[tuple[str, str, str]] = []
     for a in track(
         range(start, start + cycles * 360, turn),
         description="Measuring",
-        console=con
+        console=console
     ):
         logger.info(f"Measuring at {a:d} degrees")
         hz = Angle(a, 'deg').normalized()
-        tps.aut.turn_to(hz, v)
+        resp_move = tps.aut.turn_to(hz, v)
+        if not resp_move.error == GeoComCode.OK:
+            logger.error(
+                f"Could not turn to target orientation ({resp_move})"
+            )
+            print_warning(
+                f"Could not turn to target orientation: {a} degrees"
+            )
+            continue
 
         sleep(1)  # giving time for the compensator to settle after the move
         fullangles = tps.tmc.get_angle_inclination('MEASURE')
@@ -61,7 +67,7 @@ def run_measure(
             logger.error(
                 f"Could not measure inclination ({fullangles})"
             )
-
+            print_warning("Could not measure inclination")
             continue
 
         az = fullangles.params[0]
@@ -77,6 +83,11 @@ def run_measure(
         )
 
     logger.info("Measurements complete")
+
+    if len(values) == 0:
+        logger.error("Could not measure inclination in any positions")
+        print_error("Could not measure inclination in any positions")
+        return
 
     if output is not None:
         print(
@@ -97,7 +108,7 @@ def run_measure(
         for line in values:
             table.add_row(*line)
 
-        con.print(table)
+        console.print(table)
 
 
 def main_measure(
