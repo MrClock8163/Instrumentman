@@ -161,6 +161,9 @@ def cli_measure(**kwargs: Any) -> None:
     Enabling increased positioning tolerances might sligtly reduce the time,
     but if an unexpected error occurs, the program might not be able to restore
     the original tolerances, so USE WITH CAUTION.
+
+    This command requires a GeoCOM capable robotic total station with overview
+    camera imaging functions.
     """
     from .measure import main
 
