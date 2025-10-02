@@ -59,6 +59,8 @@ def cli(**kwargs: Any) -> None:
     This command requires a GeoCOM capable total station, that supports
     the required audio signal types (TPS1000 to TPS1200+, VivaTPS seem to have
     changed the commands, and they are not documented).
+
+    This command requires a GeoCOM capable instrument up to TPS1200.
     """
 
     from .app import main
