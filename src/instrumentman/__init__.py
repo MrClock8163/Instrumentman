@@ -22,6 +22,7 @@ from . import setmeasurement
 from . import station
 from . import protocoltest
 from . import inclination
+from . import panorama
 from . import filetransfer
 from . import jobs
 from . import datatransfer
@@ -107,7 +108,7 @@ def cli(
     )
 
 
-@cli.group("measure")  # type: ignore[misc]
+@cli.group("measure", aliases=["capture"])  # type: ignore[misc]
 def cli_measure() -> None:
     """Conduct measurements."""
 
@@ -117,7 +118,7 @@ def cli_convert() -> None:
     """Convert between various file formats."""
 
 
-@cli.group("calculate", aliases=["calc"])  # type: ignore[misc]
+@cli.group("calculate", aliases=["calc", "process"])  # type: ignore[misc]
 def cli_calc() -> None:
     """Preform calculations from measurement results."""
 
@@ -173,9 +174,11 @@ cli.add_command(terminal.cli)
 cli_measure.add_command(setmeasurement.cli_measure)
 cli_measure.add_command(setup.cli_measure)
 cli_measure.add_command(inclination.cli_measure)
+cli_measure.add_command(panorama.cli_measure)
 cli_calc.add_command(setmeasurement.cli_calc)
 cli_calc.add_command(inclination.cli_calc)
 cli_calc.add_command(station.cli_calc)
+cli_calc.add_command(panorama.cli_calc)
 cli_test.add_command(protocoltest.cli_geocom)
 cli_test.add_command(protocoltest.cli_gsidna)
 cli_merge.add_command(setmeasurement.cli_merge)

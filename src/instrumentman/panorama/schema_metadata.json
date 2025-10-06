@@ -1,0 +1,92 @@
+{
+    "title": "Instrumentman panorama metadata schema",
+    "description": "Additional data needed for panorama stitching and annotation",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["center", "focal", "principal", "camera_offset", "camera_deviation", "images"],
+    "properties": {
+        "center": {
+            "description": "Instrument center position",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false
+            }
+        },
+        "focal": {
+            "description": "Focal length in pixels",
+            "type": "number",
+            "minimum": 1.0
+        },
+        "principal": {
+            "description": "Image coordinates of principal point (x-y)",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false,
+                "minimum": 0.0
+            }
+        },
+        "camera_offset": {
+            "description": "Camera center offset from center (x-y-z)",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false
+            }
+        },
+        "camera_deviation": {
+            "description": "Camera axis deviation (yaw-pitch-roll) in radians",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+                "type": "number",
+                "unevaluatedItems": false
+            }
+        },
+        "images": {
+            "description": "Panorama frames",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "unevaluatedItems": false,
+                "additionalProperties": false,
+                "required": ["filename", "position", "vector"],
+                "properties": {
+                    "filename": {
+                        "description": "Image file name",
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "position": {
+                        "description": "Camera position",
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                            "type": "number",
+                            "unevaluatedItems": false
+                        }
+                    },
+                    "vector": {
+                        "description": "Camera view vector",
+                        "type": "array",
+                        "minItems": 3,
+                        "maxItems": 3,
+                        "items": {
+                            "type": "number",
+                            "unevaluatedItems": false
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

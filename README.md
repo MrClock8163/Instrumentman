@@ -55,7 +55,11 @@ cd Instrumentman
 python -m pip install .
 ```
 
+Some commands require additional dependencies, that are not installed by
+default with I-man. These are indicated in the documentations of the specific
+commands.
+
 ## License
 
-I-man is free and open source software, and it is distributed under the terms of the
-[MIT License](https://opensource.org/license/mit).
+I-man is free and open source software, and it is distributed under the terms
+of the [MIT License](https://opensource.org/license/mit).

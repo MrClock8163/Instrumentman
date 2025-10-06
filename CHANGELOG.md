@@ -9,6 +9,8 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added panorama capturing (`capture panorama`)
+- Added panorama processing (`process panorama`)
 - Added GeoCOM shutdown utility (`shutdown geocom`)
 - Added GeoCOM startup utility (`startup geocom`)
 - Added GSI Online DNA shutdown utility (`shutdown gsidna`)

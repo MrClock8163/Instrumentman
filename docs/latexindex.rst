@@ -26,6 +26,7 @@ Applications
     commands/targets/index
     commands/sets/index
     commands/inclination/index
+    commands/panorama/index
     commands/protocoltest/index
     commands/files/index
     commands/data/index
