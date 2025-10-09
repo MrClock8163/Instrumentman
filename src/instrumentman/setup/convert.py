@@ -344,7 +344,7 @@ def main_targets_to_gsi(
     write_gsi_blocks_to_file(
         blocks,
         output,
-        gsi16,
+        gsi16=gsi16,
         distunit=unit,
         address=1
     )

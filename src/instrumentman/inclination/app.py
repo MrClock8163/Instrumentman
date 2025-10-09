@@ -126,13 +126,13 @@ def main_measure(
     logger.info(f"Opening connection on {port}")
     with open_serial(
         port,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,
         logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, logger.getChild("instrument"))
+        tps = GeoCom(com, logger=logger.getChild("instrument"))
         run_measure(
             tps,
             logger,

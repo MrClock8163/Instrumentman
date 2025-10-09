@@ -273,7 +273,7 @@ def main(
     logger = getLogger("iman.settings.save")
     with open_serial(
         port,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,
@@ -281,10 +281,16 @@ def main(
     ) as com:
         match protocol:
             case "geocom":
-                tps = GeoCom(com, logger.getChild("instrument"))
+                tps = GeoCom(
+                    com,
+                    logger=logger.getChild("instrument")
+                )
                 data = download_settings_geocom(tps, logger, defaults)
             case "gsidna":
-                dna = GsiOnlineDNA(com, logger.getChild("instrument"))
+                dna = GsiOnlineDNA(
+                    com,
+                    logger=logger.getChild("instrument")
+                )
                 data = download_settings_gsidna(dna, logger, defaults)
 
     data = clean_settings(data)

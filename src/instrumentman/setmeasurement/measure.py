@@ -192,13 +192,13 @@ def main(
     logger = getLogger("iman.sets.measure")
     with open_serial(
         port,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,
         logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, logger.getChild("instrument"))
+        tps = GeoCom(com, logger=logger.getChild("instrument"))
         if sync_time:
             tps.csv.set_datetime(datetime.now())
             logger.info("Synced instrument date-time to computer")

@@ -20,11 +20,11 @@ def main_shutdown_gsidna(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        instrument = GsiOnlineDNA(com, logger.getChild("instrument"))
+        instrument = GsiOnlineDNA(com, logger=logger.getChild("instrument"))
         resp = instrument.shutdown()
 
         if resp.value:
@@ -47,11 +47,11 @@ def main_shutdown_geocom(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        instrument = GeoCom(com, logger.getChild("instrument"))
+        instrument = GeoCom(com, logger=logger.getChild("instrument"))
 
         match component:
             case "protocol":
@@ -90,11 +90,11 @@ def main_startup_gsidna(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        instrument = GsiOnlineDNA(com, logger.getChild("instrument"))
+        instrument = GsiOnlineDNA(com, logger=logger.getChild("instrument"))
         resp = instrument.wakeup()
 
         if resp.value:
@@ -117,11 +117,11 @@ def main_startup_geocom(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        instrument = GeoCom(com, logger.getChild("instrument"))
+        instrument = GeoCom(com, logger=logger.getChild("instrument"))
 
         match component:
             case "instrument":

@@ -154,16 +154,22 @@ def main(
             port,
             speed=baud,
             timeout=timeout,
-            retry=retry,
+            attempts=retry,
             sync_after_timeout=sync_after_timeout,
             logger=logger.getChild("com")
         ) as com:
             try:
                 if protocol == "geocom":
-                    tps = GeoCom(com, logger.getChild("instrument"))
+                    tps = GeoCom(
+                        com,
+                        logger=logger.getChild("instrument")
+                    )
                     tests_geocom(tps, logger)
                 elif protocol == "gsidna":
-                    dna = GsiOnlineDNA(com, logger.getChild("instrument"))
+                    dna = GsiOnlineDNA(
+                        com,
+                        logger=logger.getChild("instrument")
+                    )
                     tests_gsidna(dna, logger)
             except Exception:
                 print_error("An exception occured while running the tests")

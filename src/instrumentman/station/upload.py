@@ -24,11 +24,11 @@ def main(
         port=port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, logger.getChild("instrument"))
+        tps = GeoCom(com, logger=logger.getChild("instrument"))
         if coordinates is not None and instrumentheight is not None:
             resp_stn = tps.tmc.set_station(
                 Coordinate(*coordinates),

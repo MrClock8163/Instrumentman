@@ -151,11 +151,11 @@ def main(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=retry,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, logger.getChild("instrument"))
+        tps = GeoCom(com, logger=logger.getChild("instrument"))
         beepstart = tps.bmm.beep_start
         beepstop = tps.bmm.beep_stop
         match compatibility.lower():
