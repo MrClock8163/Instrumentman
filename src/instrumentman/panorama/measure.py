@@ -396,7 +396,7 @@ def main(
     metadata: TextIO,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     zoom: str = "x1",
     overlap: tuple[int, int] = (5, 10),
@@ -411,7 +411,7 @@ def main(
     logger = getLogger("iman.panorama.measure")
     with open_serial(
         port,
-        attempts=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,

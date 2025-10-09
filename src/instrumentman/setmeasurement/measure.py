@@ -180,7 +180,7 @@ def main(
     output: str,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     dateformat: str = "%Y%m%d",
     timeformat: str = "%H%M%S",
@@ -192,7 +192,7 @@ def main(
     logger = getLogger("iman.sets.measure")
     with open_serial(
         port,
-        attempts=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,

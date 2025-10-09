@@ -265,7 +265,7 @@ def main(
     file: Path,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     format: str = "auto",
     defaults: bool = False
@@ -273,7 +273,7 @@ def main(
     logger = getLogger("iman.settings.save")
     with open_serial(
         port,
-        attempts=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,

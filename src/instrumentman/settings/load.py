@@ -125,7 +125,7 @@ def main(
     settings: Path,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     format: str = "auto"
 ) -> None:
@@ -138,7 +138,7 @@ def main(
 
     with open_serial(
         port,
-        attempts=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,

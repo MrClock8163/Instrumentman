@@ -307,7 +307,7 @@ def main_download(
     output: BufferedWriter,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     device: str = "internal",
     filetype: str = "unknown",
@@ -319,7 +319,7 @@ def main_download(
         port=port,
         speed=baud,
         timeout=timeout,
-        attempts=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
@@ -344,7 +344,7 @@ def main_list(
     directory: str = "/",
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     device: str = "internal",
     filetype: str | None = None,
@@ -355,7 +355,7 @@ def main_list(
         port=port,
         speed=baud,
         timeout=timeout,
-        attempts=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:

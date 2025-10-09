@@ -133,7 +133,7 @@ def main(
     ignore_non_ascii: bool = False,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     unittime: int = 50,
     compatibility: str = "none",
@@ -151,7 +151,7 @@ def main(
         port,
         speed=baud,
         timeout=timeout,
-        attempts=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
