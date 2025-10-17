@@ -5,7 +5,6 @@ from collections.abc import Callable
 from rich.live import Live
 from rich.table import Table, Column
 from rich.prompt import Confirm
-from serial import SerialException
 from geocompy.data import Angle
 from geocompy.geo import GeoCom
 from geocompy.geo.gcdata import Device
@@ -177,6 +176,6 @@ def main(
                     "An exception occured while running the tests"
                 )
 
-    except (SerialException, ConnectionError) as e:
+    except (ConnectionRefusedError, ConnectionError) as e:
         print_error(f"Connection was not successful ({e})")
         logger.exception("Connection was not successful")
