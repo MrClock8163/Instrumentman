@@ -19,8 +19,9 @@ The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- `geocompy` dependency minimum version was bumped to `v0.13.0`
-- All console output was updated to use the `rich` package instead of `click`
+- Bumped `geocompy` dependency minimum version to `v0.13.0`
+- Updated all console feedback to use the `rich` package instead of `click`
+- Changed `eof` option of `download data` to have no default value
 
 ### Fixed
 

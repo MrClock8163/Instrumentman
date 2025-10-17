@@ -21,11 +21,14 @@ def main_download(
     baud: int = 9600,
     timeout: int = 2,
     output: BufferedWriter | None = None,
-    eof: str = "",
+    eof: str | None = None,
     autoclose: bool = True,
     include_eof: bool = False
 ) -> None:
-    eof_bytes = eof.encode("ascii")
+    eof_bytes: bytes | None = None
+    if eof is not None:
+        eof_bytes = eof.encode("ascii")
+
     logger = getLogger("iman.data.download")
     with open_serial(
         port,
@@ -55,13 +58,18 @@ def main_download(
                         logger.debug("Received first line")
                         progress.update(task, description="Receiving data")
 
-                    if data == eof_bytes and autoclose and not include_eof:
+                    if (
+                        eof_bytes is not None
+                        and data == eof_bytes
+                        and autoclose
+                        and not include_eof
+                    ):
                         logger.info("Download finished (end-of-file)")
+                        print_success("Download reached end-of-file")
 
                         progress.update(
                             task,
-                            total=lines,
-                            description="End-Of-File"
+                            total=lines
                         )
                         break
 
@@ -71,7 +79,11 @@ def main_download(
                     if output is not None:
                         output.write(data + eol_bytes)
 
-                    if data == eof_bytes and autoclose:
+                    if (
+                        eof_bytes is not None
+                        and data == eof_bytes
+                        and autoclose
+                    ):
                         logger.info("Download finished (end-of-file)")
                         print_success("Download reached end-of-file")
 

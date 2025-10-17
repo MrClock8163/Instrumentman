@@ -32,8 +32,7 @@ from ..utils import (
 @option(
     "--eof",
     help="End-of-file marker (i.e. the last line to receive)",
-    type=str,
-    default=""
+    type=str
 )
 @option(
     "--autoclose/--no-autoclose",
