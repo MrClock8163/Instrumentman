@@ -5,6 +5,7 @@
 # actual behavior of the functions in the context of this program (and to
 # correct problems in the 'opencv-python' type hints).
 
+import os
 from pathlib import Path
 from typing import Sequence
 from json import JSONDecodeError
@@ -165,7 +166,7 @@ def text_pos(
     return round(x + ox), round(y + oy)
 
 
-def run_annotate(
+def run_processing(
     meta: PanoramaMetadata,
     output: Path,
     images: dict[str, Path],
@@ -193,7 +194,6 @@ def run_annotate(
     label_justify: str = "tl",
 ) -> None:
     corners: list[Sequence[int]] = []
-    centers: list[tuple[int, int, Angle, Angle]] = []
     images_warped: list[npt.NDArray[np.uint8]] = []
     masks_warped: list[npt.NDArray[np.uint8]] = []
 
@@ -300,15 +300,6 @@ def run_annotate(
                 cv.INTER_NEAREST,
                 cv.BORDER_CONSTANT
             )
-            cx, cy = warper.warpPoint(
-                (width / 2, height / 2), instrinsics, rot)
-
-            centers.append(
-                (
-                    int(cx), int(cy),
-                    hz, v
-                )
-            )
             corners.append(corner)
             images_warped.append(image_warped)
             masks_warped.append(mask_warped)
@@ -392,16 +383,14 @@ def run_annotate(
         )
 
         if len(points) > 0:
-            # Top left image center point for reference
+            # Top left image top left point for reference
             origin_x, origin_y, _, _ = cv.detail.resultRoi(
                 corners,
                 [(i.shape[1], i.shape[0]) for i in images_warped]
             )
-            tl_x, tl_y, tl_hz, tl_v = centers[0]
-            tl_x -= origin_x
-            tl_y -= origin_y
-
             full_360 = round(scale * np.pi * 2)
+
+            hz_0 = Angle(0)
 
             for pt, coord, label in progress.track(
                 points,
@@ -412,20 +401,26 @@ def run_annotate(
                 # is rotated with the preliminary angles.
                 prelim_hz, prelim_v, _ = (coord - center).to_polar()
                 offset_rot = (
-                    rot_z(float((prelim_hz - shift).normalized()) - camera_yaw)
+                    rot_z(
+                        float(prelim_hz)
+                        - np.asin(
+                            camera_yaw / np.sin(
+                                float(prelim_v)
+                                - camera_pitch
+                            )
+                        )
+                    )
                     @ rot_x(np.pi / 2 - float(prelim_v) - camera_pitch)
                 )
                 pt_hz, pt_v, _ = (
                     coord
-                    - (center + apply_rotation(camera_offset, offset_rot))
+                    - (center + apply_rotation(camera_offset * 2, offset_rot))
                 ).to_polar()
-
                 pt_hz = (pt_hz - shift).normalized()
 
-                pt_hz_f = float(pt_hz - tl_hz)
-                pt_v_f = float(pt_v - tl_v)
-                pt_x = round(tl_x + pt_hz_f * scale) % full_360
-                pt_y = round(tl_y + pt_v_f * scale) % full_360
+                pt_hz_rel = pt_hz.relative_to(hz_0)
+                pt_x = round(float(pt_hz_rel) * scale - origin_x) % full_360
+                pt_y = round(float(pt_v) * scale - origin_y) % full_360
 
                 cv.drawMarker(
                     result,
@@ -613,8 +608,13 @@ def main(
     if label_offset is None:
         label_offset = (label_fontsize // 2, label_fontsize // 2)
 
+    # Suppress OpenCV native warning logs if the user did not set a specific
+    # logging level. Warnings break the rich console feedback.
+    if "OPENCV_LOG_LEVEL" not in os.environ:
+        os.environ["OPENCV_LOG_LEVEL"] = "OFF"
+
     try:
-        run_annotate(
+        run_processing(
             meta,
             output,
             image_map,
