@@ -115,7 +115,7 @@ def main_measure(
     port: str,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     output: TextIOWrapper | None = None,
     positions: int = 1,
@@ -126,13 +126,13 @@ def main_measure(
     logger.info(f"Opening connection on {port}")
     with open_serial(
         port,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,
         logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, logger.getChild("instrument"))
+        tps = GeoCom(com, logger=logger.getChild("instrument"))
         run_measure(
             tps,
             logger,

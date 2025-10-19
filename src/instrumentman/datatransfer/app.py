@@ -1,7 +1,6 @@
 from io import BufferedWriter, TextIOWrapper
 from logging import getLogger
 
-from serial import SerialTimeoutException
 from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn
 from geocompy.communication import open_serial
 
@@ -92,7 +91,7 @@ def main_download(
                             total=lines
                         )
                         break
-                except SerialTimeoutException:
+                except TimeoutError:
                     if started and autoclose:
                         logger.info("Download finished (timeout)")
                         print_success("Download finished due to timeout")

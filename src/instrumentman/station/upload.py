@@ -12,7 +12,7 @@ def main(
     port: str,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     coordinates: tuple[float, float, float] | None = None,
     instrumentheight: float | None = None,
@@ -24,11 +24,11 @@ def main(
         port=port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, logger.getChild("instrument"))
+        tps = GeoCom(com, logger=logger.getChild("instrument"))
         if coordinates is not None and instrumentheight is not None:
             resp_stn = tps.tmc.set_station(
                 Coordinate(*coordinates),

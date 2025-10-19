@@ -125,7 +125,7 @@ def main(
     settings: Path,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     format: str = "auto"
 ) -> None:
@@ -138,7 +138,7 @@ def main(
 
     with open_serial(
         port,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,
@@ -146,10 +146,16 @@ def main(
     ) as com:
         match data["protocol"]:
             case "geocom":
-                tps = GeoCom(com, logger.getChild("instrument"))
+                tps = GeoCom(
+                    com,
+                    logger=logger.getChild("instrument")
+                )
                 upload_settings_geocom(tps, logger, data)
             case "gsidna":
-                dna = GsiOnlineDNA(com, logger.getChild("instrument"))
+                dna = GsiOnlineDNA(
+                    com,
+                    logger=logger.getChild("instrument")
+                )
                 upload_settings_gsidna(dna, logger, data)
 
     print_success(f"Settings loaded from {settings}")

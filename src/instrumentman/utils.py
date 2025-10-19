@@ -193,10 +193,10 @@ def com_option_group() -> Callable[[F], F]:
         com_baud_option(),
         com_timeout_option(),
         option(
-            "-r",
-            "--retry",
-            help="Number of connection retry attempts",
-            type=IntRange(min=0, max=10),
+            "-a",
+            "--attempts",
+            help="Number of connection attempts",
+            type=IntRange(min=1, max=10),
             default=1
         ),
         option(

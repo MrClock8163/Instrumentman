@@ -450,8 +450,8 @@ def main_convert_set_to_gsi(
     write_gsi_blocks_to_file(
         blocks,
         output,
-        gsi16,
-        angleunit,
-        distunit,
-        1
+        gsi16=gsi16,
+        angleunit=angleunit,
+        distunit=distunit,
+        address=1
     )

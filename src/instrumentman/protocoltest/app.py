@@ -5,7 +5,6 @@ from collections.abc import Callable
 from rich.live import Live
 from rich.table import Table, Column
 from rich.prompt import Confirm
-from serial import SerialException
 from geocompy.data import Angle
 from geocompy.geo import GeoCom
 from geocompy.geo.gcdata import Device
@@ -145,7 +144,7 @@ def main(
     protocol: str,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False
 ) -> None:
     logger = getLogger("iman.protocoltest")
@@ -154,16 +153,22 @@ def main(
             port,
             speed=baud,
             timeout=timeout,
-            retry=retry,
+            attempts=attempts,
             sync_after_timeout=sync_after_timeout,
             logger=logger.getChild("com")
         ) as com:
             try:
                 if protocol == "geocom":
-                    tps = GeoCom(com, logger.getChild("instrument"))
+                    tps = GeoCom(
+                        com,
+                        logger=logger.getChild("instrument")
+                    )
                     tests_geocom(tps, logger)
                 elif protocol == "gsidna":
-                    dna = GsiOnlineDNA(com, logger.getChild("instrument"))
+                    dna = GsiOnlineDNA(
+                        com,
+                        logger=logger.getChild("instrument")
+                    )
                     tests_gsidna(dna, logger)
             except Exception:
                 print_error("An exception occured while running the tests")
@@ -171,6 +176,6 @@ def main(
                     "An exception occured while running the tests"
                 )
 
-    except (SerialException, ConnectionError) as e:
+    except (ConnectionRefusedError, ConnectionError) as e:
         print_error(f"Connection was not successful ({e})")
         logger.exception("Connection was not successful")

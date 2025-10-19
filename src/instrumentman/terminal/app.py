@@ -502,10 +502,10 @@ class GeoComTerminal(App[None]):
             )
             match self.query_one("#select_protocol", Select).value:
                 case Protocol.GEOCOM:
-                    self.protocol = GeoCom(com, log)
+                    self.protocol = GeoCom(com, logger=log)
                     self.sub_title = f"GeoCOM ({com._port.port})"
                 case Protocol.GSIDNA:
-                    self.protocol = GsiOnlineDNA(com, log)
+                    self.protocol = GsiOnlineDNA(com, logger=log)
                     self.sub_title = f"GSI Online DNA ({com._port.port})"
 
             self.query_one("#btn_test_com").disabled = True

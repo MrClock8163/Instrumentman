@@ -11,7 +11,7 @@ from ..utils import print_error
 def main_shutdown_gsidna(
     port: str,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     baud: int = 9600,
     sync_after_timeout: bool = False
 ) -> None:
@@ -20,11 +20,11 @@ def main_shutdown_gsidna(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        instrument = GsiOnlineDNA(com, logger.getChild("instrument"))
+        instrument = GsiOnlineDNA(com, logger=logger.getChild("instrument"))
         resp = instrument.shutdown()
 
         if resp.value:
@@ -38,7 +38,7 @@ def main_shutdown_geocom(
     component: str,
     port: str,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     baud: int = 9600,
     sync_after_timeout: bool = False
 ) -> None:
@@ -47,11 +47,11 @@ def main_shutdown_geocom(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        instrument = GeoCom(com, logger.getChild("instrument"))
+        instrument = GeoCom(com, logger=logger.getChild("instrument"))
 
         match component:
             case "protocol":
@@ -81,7 +81,7 @@ def main_shutdown_geocom(
 def main_startup_gsidna(
     port: str,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     baud: int = 9600,
     sync_after_timeout: bool = False
 ) -> None:
@@ -90,11 +90,11 @@ def main_startup_gsidna(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        instrument = GsiOnlineDNA(com, logger.getChild("instrument"))
+        instrument = GsiOnlineDNA(com, logger=logger.getChild("instrument"))
         resp = instrument.wakeup()
 
         if resp.value:
@@ -108,7 +108,7 @@ def main_startup_geocom(
     component: str,
     port: str,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     baud: int = 9600,
     sync_after_timeout: bool = False
 ) -> None:
@@ -117,11 +117,11 @@ def main_startup_geocom(
         port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        instrument = GeoCom(com, logger.getChild("instrument"))
+        instrument = GeoCom(com, logger=logger.getChild("instrument"))
 
         match component:
             case "instrument":

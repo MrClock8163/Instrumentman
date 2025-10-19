@@ -73,7 +73,7 @@ def main_list(
     port: str,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False,
     device: str = "internal"
 ) -> None:
@@ -82,11 +82,11 @@ def main_list(
         port=port,
         speed=baud,
         timeout=timeout,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, logger.getChild("instrument"))
+        tps = GeoCom(com, logger=logger.getChild("instrument"))
         try:
             run_listing(tps, _DEVICE[device], logger)
         finally:

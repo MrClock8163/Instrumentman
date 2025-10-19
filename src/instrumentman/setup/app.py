@@ -164,19 +164,19 @@ def main_measure(
     output: str,
     baud: int = 9600,
     timeout: int = 15,
-    retry: int = 1,
+    attempts: int = 1,
     sync_after_timeout: bool = False
 ) -> None:
     logger = getLogger("iman.targets.measure")
     with open_serial(
         port,
-        retry=retry,
+        attempts=attempts,
         sync_after_timeout=sync_after_timeout,
         speed=baud,
         timeout=timeout,
         logger=logger.getChild("com")
     ) as com:
-        tps = GeoCom(com, logger.getChild("instrument"))
+        tps = GeoCom(com, logger=logger.getChild("instrument"))
         targets = measure_targets(tps, logger, output)
         if targets is None:
             print_error("Program was cancelled or no targets were recorded")
