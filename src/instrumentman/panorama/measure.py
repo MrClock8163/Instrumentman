@@ -223,8 +223,8 @@ def run_panorama(
         case "region":
             from_hz, from_v, to_hz, to_v = get_extents_region(
                 tps,
-                vertical,
                 horizontal,
+                vertical,
                 logger
             )
         case _:
