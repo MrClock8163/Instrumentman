@@ -5,6 +5,16 @@ file.
 
 The project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+
+- Reworked the panorama stitch visualization
+
+### Fixed
+
+- Horizontal and vertical region components were mixed up in panorama
+
 ## v0.5.0 (2025-10-19)
 
 ### Added
