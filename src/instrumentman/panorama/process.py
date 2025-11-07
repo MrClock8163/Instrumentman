@@ -246,6 +246,14 @@ def run_processing(
             height: int
             width: int
             height, width, _ = img.shape
+            mask = np.full((height, width), 255, np.uint8)
+
+            if scale is None:
+                scale = focal
+            scale = min(scale, _MAX_SCALE)
+
+            if warper is None:
+                warper = cv.PyRotationWarper("spherical", scale)
 
             if visualize_stitch:
                 img = np.stack(
@@ -268,13 +276,33 @@ def run_processing(
                     ),
                     axis=2
                 )
-
-            if warper is None:
-                if scale is None:
-                    scale = focal
-
-                scale = min(scale, _MAX_SCALE)
-                warper = cv.PyRotationWarper("spherical", scale)
+                mask = np.full((height, width), 0, np.uint8)
+                cv.rectangle(
+                    mask,
+                    (0, 0),
+                    (width, height),
+                    (255,),
+                    50
+                )
+                scaler = focal / scale
+                cv.putText(
+                    mask,
+                    data["filename"],
+                    text_pos(
+                        data["filename"],
+                        (round(width/2), round(height/2)),
+                        (0.0, 0.0),
+                        font,
+                        fontscale * scaler,
+                        round(thickness * scaler),
+                        "mc"
+                    ),
+                    font,
+                    fontscale * scaler,
+                    (255,),
+                    round(thickness * scaler),
+                    bottomLeftOrigin=False
+                )
 
             rot: npt.NDArray[np.float32] = (
                 rot_y(float(hz))
@@ -294,7 +322,7 @@ def run_processing(
 
             mask_warped: npt.NDArray[np.uint8]
             _, mask_warped = warper.warp(  # type: ignore[assignment]
-                np.full((height, width), 255, np.uint8),
+                mask,
                 instrinsics,
                 rot,
                 cv.INTER_NEAREST,
