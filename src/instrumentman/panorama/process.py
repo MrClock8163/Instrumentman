@@ -341,7 +341,7 @@ def run_processing(
         )
 
         if scale is None:
-            scale = 1000
+            scale = _MAX_SCALE
 
         progress.update(task_seams, completed=len(seams), total=len(seams))
 
@@ -438,11 +438,11 @@ def run_processing(
                             )
                         )
                     )
-                    @ rot_x(np.pi / 2 - float(prelim_v) - camera_pitch)
+                    @ rot_x(-(np.pi / 2 - float(prelim_v)) - camera_pitch)
                 )
                 pt_hz, pt_v, _ = (
                     coord
-                    - (center + apply_rotation(camera_offset * 2, offset_rot))
+                    - (center + apply_rotation(camera_offset, offset_rot))
                 ).to_polar()
                 pt_hz = (pt_hz - shift).normalized()
 
