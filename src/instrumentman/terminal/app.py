@@ -244,8 +244,15 @@ class CmdSuggester(Suggester):
 
         separator = "." if path != "" else ""
 
-        suggestion = process.extractOne(
-            partial, suggest, scorer=fuzz.partial_ratio)[0]
+        extracted = process.extractOne(
+            partial,
+            suggest,
+            scorer=fuzz.partial_ratio
+        )
+        if extracted is None:
+            return None
+
+        suggestion = extracted[0]
 
         return f"{path}{separator}{suggestion}"
 
